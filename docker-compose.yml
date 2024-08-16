@@ -1,0 +1,6 @@
+services:
+  redis:
+    image: valkey/valkey
+    restart: always
+    ports:
+      - '6379:6379'

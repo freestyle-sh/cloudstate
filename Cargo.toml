@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 deno_core = "0.303.0"
+redis = "0.26.1"
 tokio = "1.39.2"

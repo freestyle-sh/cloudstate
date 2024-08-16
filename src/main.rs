@@ -1,8 +1,7 @@
 use anyhow::Context;
 use deno_core::anyhow::Error;
 use deno_core::*;
-use std::collections::HashMap;
-use std::fs;
+use redis::Commands;
 use std::rc::Rc;
 
 #[op2]
@@ -12,8 +11,13 @@ fn op_cloudstate_object_set(
     #[string] id: String,
     #[buffer] value: JsBuffer,
 ) -> Result<(), Error> {
-    let map = state.try_borrow_mut::<HashMap<String, Vec<u8>>>().unwrap();
-    map.insert(format!("{}:{}", namespace, id).to_string(), value.to_vec());
+    let connection = state
+        .try_borrow_mut::<redis::Connection>()
+        .expect("Redis connection should be in OpState.");
+
+    let key = format!("{}:{}", namespace, id).to_string();
+    connection.set(key, value.to_vec())?;
+
     Ok(())
 }
 
@@ -24,16 +28,14 @@ fn op_cloudstate_object_get(
     #[string] namespace: String,
     #[string] id: String,
 ) -> Result<Option<Vec<u8>>, Error> {
-    let map = state.try_borrow_mut::<HashMap<String, Vec<u8>>>().unwrap();
-    let id: &String = &format!("{}:{}", namespace, id).to_string();
+    let connection = state
+        .try_borrow_mut::<redis::Connection>()
+        .expect("Redis connection should be in OpState.");
+    let key: &String = &format!("{}:{}", namespace, id).to_string();
 
-    if let Some(value) = map.get(id) {
-        Ok(Some(value.clone()))
-    } else if let Ok(value) = fs::read(id) {
-        Ok(Some(value))
-    } else {
-        Ok(None)
-    }
+    let result = connection.get::<String, String>(key.to_string())?;
+
+    Ok(Some(result.as_bytes().to_vec()))
 }
 
 extension!(
@@ -45,7 +47,9 @@ extension!(
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src", "cloudstate.js" ],
   state = | state: &mut OpState| {
-    state.put(HashMap::<String, Vec::<u8>>::new());
+    let client = redis::Client::open("redis://127.0.0.1/").expect("Redis should be running.");
+    let connection = client.get_connection().expect("Redis connection should be available.");
+    state.put(connection);
   },
 );
 
