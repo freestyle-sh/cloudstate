@@ -30,7 +30,7 @@ globalThis.Cloudstate = class Cloudstate {
     const data = Deno.core.ops.op_cloudstate_object_get(this.namespace, id);
     if (!data) throw new Error("Object not found");
 
-    const object = Deno.core.deserialize(data);
+    const object = JSON.parse(data);
 
     this.objectIds.set(object, id);
     this.objects.set(id, object);
@@ -49,7 +49,7 @@ globalThis.Cloudstate = class Cloudstate {
       Deno.core.ops.op_cloudstate_object_set(
         this.namespace,
         id,
-        Deno.core.serialize(object)
+        JSON.stringify(object)
       );
       this.objectIds.set(object, id);
       this.objects.set(id, object);
@@ -57,7 +57,7 @@ globalThis.Cloudstate = class Cloudstate {
       Deno.core.ops.op_cloudstate_object_set(
         this.namespace,
         existingId,
-        object
+        JSON.stringify(object)
       );
     }
   }

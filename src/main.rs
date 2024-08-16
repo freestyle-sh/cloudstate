@@ -4,36 +4,36 @@ use deno_core::*;
 use redis::Commands;
 use std::rc::Rc;
 
-#[op2]
+#[op2(fast)]
 fn op_cloudstate_object_set(
     state: &mut OpState,
     #[string] namespace: String,
     #[string] id: String,
-    #[buffer] value: JsBuffer,
+    #[string] value: String,
 ) -> Result<(), Error> {
     let connection = state
         .try_borrow_mut::<redis::Connection>()
         .expect("Redis connection should be in OpState.");
 
     let key = format!("objects:{}:{}", namespace, id).to_string();
-    connection.set(key, value.to_vec())?;
+    connection.set(key, value)?;
 
     Ok(())
 }
 
 #[op2]
-#[buffer]
+#[string]
 fn op_cloudstate_object_get(
     state: &mut OpState,
     #[string] namespace: String,
     #[string] id: String,
-) -> Result<Option<Vec<u8>>, Error> {
+) -> Result<Option<String>, Error> {
     let connection = state
         .try_borrow_mut::<redis::Connection>()
         .expect("Redis connection should be in OpState.");
     let key: &String = &format!("objects:{}:{}", namespace, id).to_string();
 
-    let result = connection.get::<String, Vec<u8>>(key.to_string())?;
+    let result = connection.get::<String, String>(key.to_string())?;
 
     Ok(Some(result))
 }
@@ -97,6 +97,7 @@ fn main() -> Result<(), Error> {
     // const object = { name: 'hello world' };
     // cloudstate.setObject(object);
     // cloudstate.setRoot(object, 'test');
+
     const object = cloudstate.getRoot('test');
     object.name = 'new world';
     cloudstate.setObject(object);
