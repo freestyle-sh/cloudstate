@@ -15,7 +15,7 @@ fn op_cloudstate_object_set(
         .try_borrow_mut::<redis::Connection>()
         .expect("Redis connection should be in OpState.");
 
-    let key = format!("{}:{}", namespace, id).to_string();
+    let key = format!("objects:{}:{}", namespace, id).to_string();
     connection.set(key, value.to_vec())?;
 
     Ok(())
@@ -31,11 +31,46 @@ fn op_cloudstate_object_get(
     let connection = state
         .try_borrow_mut::<redis::Connection>()
         .expect("Redis connection should be in OpState.");
-    let key: &String = &format!("{}:{}", namespace, id).to_string();
+    let key: &String = &format!("objects:{}:{}", namespace, id).to_string();
+
+    let result = connection.get::<String, Vec<u8>>(key.to_string())?;
+
+    Ok(Some(result))
+}
+
+#[op2(fast)]
+fn op_cloudstate_object_root_set(
+    state: &mut OpState,
+    #[string] namespace: String,
+    #[string] alias: String,
+    #[string] id: String,
+) -> Result<(), Error> {
+    let connection = state
+        .try_borrow_mut::<redis::Connection>()
+        .expect("Redis connection should be in OpState.");
+
+    let key = format!("roots:{}:{}", namespace, alias).to_string();
+    connection.set(key, id)?;
+
+    Ok(())
+}
+
+#[op2]
+#[string]
+fn op_cloudstate_object_root_get(
+    state: &mut OpState,
+    #[string] namespace: String,
+    #[string] alias: String,
+) -> Result<Option<String>, Error> {
+    let connection = state
+        .try_borrow_mut::<redis::Connection>()
+        .expect("Redis connection should be in OpState.");
+
+    let key: &String = &format!("roots:{}:{}", namespace, alias).to_string();
 
     let result = connection.get::<String, String>(key.to_string())?;
 
-    Ok(Some(result.as_bytes().to_vec()))
+    Ok(Some(result))
 }
 
 extension!(
@@ -43,6 +78,8 @@ extension!(
   ops = [
     op_cloudstate_object_set,
     op_cloudstate_object_get,
+    op_cloudstate_object_root_set,
+    op_cloudstate_object_root_get,
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src", "cloudstate.js" ],
@@ -57,10 +94,12 @@ fn main() -> Result<(), Error> {
     let module_name = "test.js";
     let module_code = "
     const cloudstate = new Cloudstate('test');
-    const object = { name: 'hello world' };
+    // const object = { name: 'hello world' };
+    // cloudstate.setObject(object);
+    // cloudstate.setRoot(object, 'test');
+    const object = cloudstate.getRoot('test');
+    object.name = 'new world';
     cloudstate.setObject(object);
-    cloudstate.setRoot(object, 'test');
-    cloudstate.getRoot('test');
   "
     .to_string();
 

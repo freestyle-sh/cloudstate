@@ -27,7 +27,7 @@ globalThis.Cloudstate = class Cloudstate {
     const existingObject = this.objects.get(id);
     if (existingObject) return existingObject;
 
-    const data = Deno.core.ops.op_cloudstate_object_get(namespace, id);
+    const data = Deno.core.ops.op_cloudstate_object_get(this.namespace, id);
     if (!data) throw new Error("Object not found");
 
     const object = Deno.core.deserialize(data);
@@ -71,14 +71,20 @@ globalThis.Cloudstate = class Cloudstate {
       throw new Error("object is not registered");
     }
 
-    // todo: remove
-    this.roots.set(alias, this.objectIds.get(object));
+    Deno.core.ops.op_cloudstate_object_root_set(
+      this.namespace,
+      alias,
+      existingId
+    );
   }
 
   getRoot(alias) {
     if (typeof alias !== "string") throw new Error("alias must be a string");
 
-    const id = this.roots.get(alias);
+    const id = Deno.core.ops.op_cloudstate_object_root_get(
+      this.namespace,
+      alias
+    );
     if (!id) throw new Error("alias not found");
 
     return this.getObject(id);
