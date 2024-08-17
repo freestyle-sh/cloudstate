@@ -5,4 +5,4 @@ const object = cloudstate.getRoot("test-root") || { count: 0 };
 object.count++;
 
 cloudstate.setObject(object);
-cloudstate.setRoot(object, "test-root");
+cloudstate.setRoot("test-root", object);

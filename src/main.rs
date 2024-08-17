@@ -67,11 +67,7 @@ fn op_cloudstate_object_root_get(
         .expect("Redis connection should be in OpState.");
 
     let key: &String = &format!("roots:{}:{}", namespace, alias).to_string();
-    println!("key: {}", key);
-
     let result = connection.get::<String, Option<String>>(key.to_string())?;
-
-    println!("result: {:?}", result);
 
     Ok(result)
 }

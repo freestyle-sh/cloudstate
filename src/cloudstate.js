@@ -49,18 +49,20 @@ globalThis.Cloudstate = class Cloudstate {
       );
       this.objectIds.set(object, id);
       this.objects.set(id, object);
+      return id;
     } else {
       Deno.core.ops.op_cloudstate_object_set(
         this.namespace,
         existingId,
         SuperJSON.stringify(object)
       );
+      return existingId;
     }
   }
 
-  setRoot(object, alias) {
-    if (typeof object !== "object") throw new Error("object must be an object");
+  setRoot(alias, object) {
     if (typeof alias !== "string") throw new Error("alias must be a string");
+    if (typeof object !== "object") throw new Error("object must be an object");
 
     const existingId = this.objectIds.get(object);
     if (!existingId) {
@@ -73,6 +75,13 @@ globalThis.Cloudstate = class Cloudstate {
       existingId
     );
   }
+
+  // // alternative behavior for setRoot
+  // setRoot(alias, object) {
+  //   const id = this.setObject(object);
+  //   Deno.core.ops.op_cloudstate_object_root_set(this.namespace, alias, id);
+  //   return id;
+  // }
 
   getRoot(alias) {
     if (typeof alias !== "string") throw new Error("alias must be a string");
