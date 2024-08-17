@@ -25,7 +25,7 @@ globalThis.Cloudstate = class Cloudstate {
     if (existingObject) return existingObject;
 
     const data = Deno.core.ops.op_cloudstate_object_get(this.namespace, id);
-    if (!data) throw new Error("Object not found");
+    if (!data) return undefined;
 
     const object = SuperJSON.parse(data);
 
@@ -82,7 +82,7 @@ globalThis.Cloudstate = class Cloudstate {
       alias
     );
 
-    if (!id) throw new Error("alias not found");
+    if (!id) return undefined;
 
     return this.getObject(id);
   }

@@ -1,7 +1,7 @@
-use anyhow::Context;
 use deno_core::anyhow::Error;
 use deno_core::*;
 use redis::Commands;
+use std::path::Path;
 use std::rc::Rc;
 
 #[op2(fast)]
@@ -33,9 +33,9 @@ fn op_cloudstate_object_get(
         .expect("Redis connection should be in OpState.");
     let key: &String = &format!("objects:{}:{}", namespace, id).to_string();
 
-    let result = connection.get::<String, String>(key.to_string())?;
+    let result = connection.get::<String, Option<String>>(key.to_string())?;
 
-    Ok(Some(result))
+    Ok(result)
 }
 
 #[op2(fast)]
@@ -67,10 +67,13 @@ fn op_cloudstate_object_root_get(
         .expect("Redis connection should be in OpState.");
 
     let key: &String = &format!("roots:{}:{}", namespace, alias).to_string();
+    println!("key: {}", key);
 
-    let result = connection.get::<String, String>(key.to_string())?;
+    let result = connection.get::<String, Option<String>>(key.to_string())?;
 
-    Ok(Some(result))
+    println!("result: {:?}", result);
+
+    Ok(result)
 }
 
 deno_core::extension!(
@@ -103,18 +106,8 @@ deno_core::extension!(
 );
 
 fn main() -> Result<(), Error> {
-    let module_name = "test.js";
-    let module_code = "
-    const cloudstate = new Cloudstate('test');
-    const object = { name: 'hello world' };
-    cloudstate.setObject(object);
-    cloudstate.setRoot(object, 'test');
-
-    // const object = cloudstate.getRoot('test');
-    // object.name = 'new world';
-    // cloudstate.setObject(object);
-  "
-    .to_string();
+    let js_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("examples/main.js");
+    let main_module = ModuleSpecifier::from_file_path(js_path).unwrap();
 
     let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
         module_loader: Some(Rc::new(FsModuleLoader)),
@@ -129,16 +122,8 @@ fn main() -> Result<(), Error> {
         ..Default::default()
     });
 
-    let main_module = resolve_path(
-        module_name,
-        &std::env::current_dir().context("Unable to get current working directory")?,
-    )?;
-
     let future = async move {
-        let mod_id = js_runtime
-            .load_main_es_module_from_code(&main_module, module_code)
-            .await?;
-
+        let mod_id = js_runtime.load_main_es_module(&main_module).await?;
         let result = js_runtime.mod_evaluate(mod_id);
         js_runtime.run_event_loop(Default::default()).await?;
         result.await
