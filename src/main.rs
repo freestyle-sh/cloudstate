@@ -1,7 +1,6 @@
 use anyhow::Context;
 use deno_core::anyhow::Error;
 use deno_core::*;
-use deno_url::deno_url;
 use redis::Commands;
 use std::rc::Rc;
 
@@ -97,6 +96,12 @@ deno_core::extension!(
     esm = [ dir "src", "superjson.js" ],
 );
 
+deno_core::extension!(
+    bootstrap,
+    esm_entry_point = "ext:bootstrap/bootstrap.js",
+    esm = [ dir "src", "bootstrap.js" ],
+);
+
 fn main() -> Result<(), Error> {
     let module_name = "test.js";
     let module_code = "
@@ -114,9 +119,12 @@ fn main() -> Result<(), Error> {
     let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
         module_loader: Some(Rc::new(FsModuleLoader)),
         extensions: vec![
+            deno_webidl::deno_webidl::init_ops_and_esm(),
+            deno_url::deno_url::init_ops_and_esm(),
+            deno_console::deno_console::init_ops_and_esm(),
+            bootstrap::init_ops_and_esm(),
             cloudstate::init_ops_and_esm(),
             superjson::init_ops_and_esm(),
-            deno_url::init_ops_and_esm(),
         ],
         ..Default::default()
     });

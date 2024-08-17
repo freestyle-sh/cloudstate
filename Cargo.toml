@@ -6,7 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-deno_core = "0.303.0"
+deno_console = "0.164.0"
+deno_core = "0.299.0"
 deno_url = "0.164.0"
+deno_webidl = "0.164.0"
 redis = "0.26.1"
 tokio = "1.39.2"
