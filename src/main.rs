@@ -1,6 +1,7 @@
 use anyhow::Context;
 use deno_core::anyhow::Error;
 use deno_core::*;
+use deno_url::deno_url;
 use redis::Commands;
 use std::rc::Rc;
 
@@ -11,7 +12,7 @@ fn op_cloudstate_object_set(
     #[string] id: String,
     #[string] value: String,
 ) -> Result<(), Error> {
-    let connection = state
+    let connection: &mut redis::Connection = state
         .try_borrow_mut::<redis::Connection>()
         .expect("Redis connection should be in OpState.");
 
@@ -73,7 +74,7 @@ fn op_cloudstate_object_root_get(
     Ok(Some(result))
 }
 
-extension!(
+deno_core::extension!(
   cloudstate,
   ops = [
     op_cloudstate_object_set,
@@ -90,23 +91,33 @@ extension!(
   },
 );
 
+deno_core::extension!(
+    superjson,
+    esm_entry_point = "ext:superjson/superjson.js",
+    esm = [ dir "src", "superjson.js" ],
+);
+
 fn main() -> Result<(), Error> {
     let module_name = "test.js";
     let module_code = "
     const cloudstate = new Cloudstate('test');
-    // const object = { name: 'hello world' };
-    // cloudstate.setObject(object);
-    // cloudstate.setRoot(object, 'test');
-
-    const object = cloudstate.getRoot('test');
-    object.name = 'new world';
+    const object = { name: 'hello world' };
     cloudstate.setObject(object);
+    cloudstate.setRoot(object, 'test');
+
+    // const object = cloudstate.getRoot('test');
+    // object.name = 'new world';
+    // cloudstate.setObject(object);
   "
     .to_string();
 
     let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
         module_loader: Some(Rc::new(FsModuleLoader)),
-        extensions: vec![cloudstate::init_ops_and_esm()],
+        extensions: vec![
+            cloudstate::init_ops_and_esm(),
+            superjson::init_ops_and_esm(),
+            deno_url::init_ops_and_esm(),
+        ],
         ..Default::default()
     });
 

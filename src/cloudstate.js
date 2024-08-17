@@ -10,9 +10,6 @@ globalThis.Cloudstate = class Cloudstate {
   objectIds = new Map();
   objects = new Map();
 
-  // todo: remove
-  roots = new Map();
-
   constructor(namespace) {
     if (typeof namespace !== "string") {
       throw new Error("namespace must be a string");
@@ -30,7 +27,7 @@ globalThis.Cloudstate = class Cloudstate {
     const data = Deno.core.ops.op_cloudstate_object_get(this.namespace, id);
     if (!data) throw new Error("Object not found");
 
-    const object = JSON.parse(data);
+    const object = SuperJSON.parse(data);
 
     this.objectIds.set(object, id);
     this.objects.set(id, object);
@@ -39,7 +36,6 @@ globalThis.Cloudstate = class Cloudstate {
   }
 
   setObject(object) {
-    // if (typeof id !== "string") throw new Error("id must be a string");
     if (typeof object !== "object") throw new Error("object must be an object");
 
     const existingId = this.objectIds.get(object);
@@ -49,7 +45,7 @@ globalThis.Cloudstate = class Cloudstate {
       Deno.core.ops.op_cloudstate_object_set(
         this.namespace,
         id,
-        JSON.stringify(object)
+        SuperJSON.stringify(object)
       );
       this.objectIds.set(object, id);
       this.objects.set(id, object);
@@ -57,7 +53,7 @@ globalThis.Cloudstate = class Cloudstate {
       Deno.core.ops.op_cloudstate_object_set(
         this.namespace,
         existingId,
-        JSON.stringify(object)
+        SuperJSON.stringify(object)
       );
     }
   }
@@ -85,6 +81,7 @@ globalThis.Cloudstate = class Cloudstate {
       this.namespace,
       alias
     );
+
     if (!id) throw new Error("alias not found");
 
     return this.getObject(id);
