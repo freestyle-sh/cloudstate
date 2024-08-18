@@ -6,6 +6,21 @@ function uuidv4() {
   });
 }
 
+class CloudstateReference {
+  constructor(objectId) {
+    this.objectId = objectId;
+  }
+}
+
+SuperJSON.registerCustom(
+  {
+    isApplicable: (v) => v instanceof CloudstateReference,
+    serialize: (v) => v.objectId,
+    deserialize: (v) => new CloudstateReference(v),
+  },
+  "cloudstate-reference"
+);
+
 globalThis.Cloudstate = class Cloudstate {
   objectIds = new Map();
   objects = new Map();
@@ -29,6 +44,21 @@ globalThis.Cloudstate = class Cloudstate {
 
     const object = SuperJSON.parse(data);
 
+    for (const [key, value] of Object.entries(object)) {
+      if (value instanceof CloudstateReference) {
+        Object.defineProperty(object, key, {
+          get: () => {
+            return this.getObject(value.objectId);
+          },
+          set: (v) => {
+            Object.defineProperty(object, key, {
+              value: v,
+            });
+          },
+        });
+      }
+    }
+
     this.objectIds.set(object, id);
     this.objects.set(id, object);
 
@@ -38,14 +68,54 @@ globalThis.Cloudstate = class Cloudstate {
   setObject(object) {
     if (typeof object !== "object") throw new Error("object must be an object");
 
-    const existingId = this.objectIds.get(object);
+    const stack = [object];
+    const visited = new Set();
 
+    while (stack.length > 0) {
+      const object = stack.pop();
+
+      const flatObject = {};
+      for (const [key, value] of Object.entries(object)) {
+        if (
+          typeof value === "number" ||
+          typeof value === "string" ||
+          typeof value === "boolean"
+        ) {
+          flatObject[key] = value;
+        }
+
+        if (typeof value === "object") {
+          let id = this.objectIds.get(value);
+          if (!id) {
+            id = uuidv4();
+            this.objectIds.set(value, id);
+          }
+
+          flatObject[key] = new CloudstateReference(id);
+
+          Object.defineProperty(object, key, {
+            get: () => this.getObject(id),
+          });
+
+          if (!visited.has(value)) {
+            visited.add(value);
+            stack.push(value);
+          }
+        }
+      }
+
+      this.#exportObject(object, flatObject);
+    }
+  }
+
+  #exportObject(object, data) {
+    const existingId = this.objectIds.get(object);
     if (!existingId) {
       const id = uuidv4();
       Deno.core.ops.op_cloudstate_object_set(
         this.namespace,
         id,
-        SuperJSON.stringify(object)
+        SuperJSON.stringify(data)
       );
       this.objectIds.set(object, id);
       this.objects.set(id, object);
@@ -54,7 +124,7 @@ globalThis.Cloudstate = class Cloudstate {
       Deno.core.ops.op_cloudstate_object_set(
         this.namespace,
         existingId,
-        SuperJSON.stringify(object)
+        SuperJSON.stringify(data)
       );
       return existingId;
     }

@@ -112,8 +112,8 @@ fn main() -> Result<(), Error> {
             deno_url::deno_url::init_ops_and_esm(),
             deno_console::deno_console::init_ops_and_esm(),
             bootstrap::init_ops_and_esm(),
-            cloudstate::init_ops_and_esm(),
             superjson::init_ops_and_esm(),
+            cloudstate::init_ops_and_esm(),
         ],
         ..Default::default()
     });
