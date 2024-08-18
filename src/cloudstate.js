@@ -76,15 +76,26 @@ globalThis.Cloudstate = class Cloudstate {
 
       const flatObject = {};
       for (const [key, value] of Object.entries(object)) {
+        if (!value) continue;
+
         if (
+          value === null ||
           typeof value === "number" ||
           typeof value === "string" ||
-          typeof value === "boolean"
+          typeof value === "boolean" ||
+          typeof value === "bigint" ||
+          typeof value === "undefined" ||
+          value?.constructor === Date ||
+          value?.constructor === RegExp ||
+          value?.constructor === URL ||
+          value?.constructor === Error
         ) {
           flatObject[key] = value;
-        }
+        } else if (typeof value === "object") {
+          if (value.constructor !== Object) {
+            throw new Error(`${value.constructor.name} cannot be serialized`);
+          }
 
-        if (typeof value === "object") {
           let id = this.objectIds.get(value);
           if (!id) {
             id = uuidv4();
@@ -101,6 +112,8 @@ globalThis.Cloudstate = class Cloudstate {
             visited.add(value);
             stack.push(value);
           }
+        } else {
+          throw new Error(`${typeof value} cannot be serialized`);
         }
       }
 
