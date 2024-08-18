@@ -74,7 +74,7 @@ globalThis.Cloudstate = class Cloudstate {
     while (stack.length > 0) {
       const object = stack.pop();
 
-      const flatObject = {};
+      const flatObject = object instanceof Array ? [] : {};
       for (const [key, value] of Object.entries(object)) {
         if (!value) continue;
 
@@ -92,7 +92,7 @@ globalThis.Cloudstate = class Cloudstate {
         ) {
           flatObject[key] = value;
         } else if (typeof value === "object") {
-          if (value.constructor !== Object) {
+          if (![Object, Array].includes(value.constructor)) {
             throw new Error(`${value.constructor.name} cannot be serialized`);
           }
 
