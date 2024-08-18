@@ -1,8 +1,6 @@
 use deno_core::anyhow::Error;
 use deno_core::*;
 use redis::Commands;
-use std::path::Path;
-use std::rc::Rc;
 
 #[op2(fast)]
 fn op_cloudstate_object_set(
@@ -55,6 +53,41 @@ fn op_cloudstate_object_root_set(
     Ok(())
 }
 
+#[op2(fast)]
+fn op_cloudstate_map_set(
+    state: &mut OpState,
+    #[string] namespace: String,
+    #[string] id: String,
+    #[string] field: String,
+    #[string] value: String,
+) -> Result<(), Error> {
+    let connection = state
+        .try_borrow_mut::<redis::Connection>()
+        .expect("Redis connection should be in OpState.");
+
+    let key = format!("maps:{}:{}", namespace, id).to_string();
+    connection.hset(key, field, value)?;
+    Ok(())
+}
+
+#[op2]
+#[string]
+fn op_cloudstate_map_get(
+    state: &mut OpState,
+    #[string] namespace: String,
+    #[string] id: String,
+    #[string] field: String,
+) -> Result<Option<String>, Error> {
+    let connection = state
+        .try_borrow_mut::<redis::Connection>()
+        .expect("Redis connection should be in OpState.");
+
+    let key: &String = &format!("maps:{}:{}", namespace, id).to_string();
+    let result = connection.hget(key, field)?;
+
+    Ok(result)
+}
+
 #[op2]
 #[string]
 fn op_cloudstate_object_root_get(
@@ -79,6 +112,8 @@ deno_core::extension!(
     op_cloudstate_object_get,
     op_cloudstate_object_root_set,
     op_cloudstate_object_root_get,
+    op_cloudstate_map_set,
+    op_cloudstate_map_get,
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],

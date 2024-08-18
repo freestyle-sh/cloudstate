@@ -6,24 +6,55 @@ function uuidv4() {
   });
 }
 
-class CloudstateReference {
+class CloudstateObjectReference {
   constructor(objectId) {
     this.objectId = objectId;
   }
 }
 
+class CloudstateMapReference {
+  constructor(objectId) {
+    this.objectId = objectId;
+  }
+}
+
+function isPrimitive(value) {
+  return (
+    value === null ||
+    typeof value === "number" ||
+    typeof value === "string" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint" ||
+    typeof value === "undefined" ||
+    value?.constructor === Date ||
+    value?.constructor === RegExp ||
+    value?.constructor === URL ||
+    value?.constructor === Error
+  );
+}
+
 SuperJSON.registerCustom(
   {
-    isApplicable: (v) => v instanceof CloudstateReference,
+    isApplicable: (v) => v instanceof CloudstateObjectReference,
     serialize: (v) => v.objectId,
-    deserialize: (v) => new CloudstateReference(v),
+    deserialize: (v) => new CloudstateObjectReference(v),
   },
-  "cloudstate-reference"
+  "cloudstate-object-reference"
+);
+
+SuperJSON.registerCustom(
+  {
+    isApplicable: (v) => v instanceof CloudstateMapReference,
+    serialize: (v) => v.objectId,
+    deserialize: (v) => new CloudstateMapReference(v),
+  },
+  "cloudstate-map-reference"
 );
 
 globalThis.Cloudstate = class Cloudstate {
   objectIds = new Map();
   objects = new Map();
+  mapChanges = new Map();
 
   constructor(namespace) {
     if (typeof namespace !== "string") {
@@ -45,10 +76,48 @@ globalThis.Cloudstate = class Cloudstate {
     const object = SuperJSON.parse(data);
 
     for (const [key, value] of Object.entries(object)) {
-      if (value instanceof CloudstateReference) {
+      if (value instanceof CloudstateObjectReference) {
         Object.defineProperty(object, key, {
           get: () => {
             return this.getObject(value.objectId);
+          },
+          set: (v) => {
+            Object.defineProperty(object, key, {
+              value: v,
+            });
+          },
+        });
+      }
+
+      if (value instanceof CloudstateMapReference) {
+        const map = new Map();
+        const mapSet = map.set;
+        const mapGet = map.get;
+        const changeMap = new Map();
+        this.mapChanges.set(map, changeMap);
+        this.objectIds.set(map, value.objectId);
+
+        map.get = (key) => {
+          const result = mapGet.apply(map, [key]);
+          if (result) return result;
+
+          const data = Deno.core.ops.op_cloudstate_map_get(
+            this.namespace,
+            value.objectId,
+            key
+          );
+          const object = SuperJSON.parse(data);
+          mapSet.apply(map, [key, object]);
+          return object;
+        };
+        map.set = (key, value) => {
+          mapSet.apply(map, [key, value]);
+          changeMap.set(key, value);
+        };
+
+        Object.defineProperty(object, key, {
+          get: () => {
+            return map;
           },
           set: (v) => {
             Object.defineProperty(object, key, {
@@ -74,25 +143,32 @@ globalThis.Cloudstate = class Cloudstate {
     while (stack.length > 0) {
       const object = stack.pop();
 
+      if (object instanceof Map) {
+        const changes = this.mapChanges.get(object) || object;
+        for (const [key, value] of changes.entries()) {
+          // todo: does map allow undefined values?
+          if (value === undefined) continue;
+
+          if (isPrimitive(value)) {
+            Deno.core.ops.op_cloudstate_map_set(
+              this.namespace,
+              this.objectIds.get(object),
+              key,
+              SuperJSON.stringify(value)
+            );
+          }
+        }
+        continue;
+      }
+
       const flatObject = object instanceof Array ? [] : {};
       for (const [key, value] of Object.entries(object)) {
-        if (!value) continue;
+        if (value === undefined) continue;
 
-        if (
-          value === null ||
-          typeof value === "number" ||
-          typeof value === "string" ||
-          typeof value === "boolean" ||
-          typeof value === "bigint" ||
-          typeof value === "undefined" ||
-          value?.constructor === Date ||
-          value?.constructor === RegExp ||
-          value?.constructor === URL ||
-          value?.constructor === Error
-        ) {
+        if (isPrimitive(value)) {
           flatObject[key] = value;
         } else if (typeof value === "object") {
-          if (![Object, Array].includes(value.constructor)) {
+          if (![Object, Array, Map].includes(value.constructor)) {
             throw new Error(`${value.constructor.name} cannot be serialized`);
           }
 
@@ -102,7 +178,11 @@ globalThis.Cloudstate = class Cloudstate {
             this.objectIds.set(value, id);
           }
 
-          flatObject[key] = new CloudstateReference(id);
+          if (value instanceof Map) {
+            flatObject[key] = new CloudstateMapReference(id);
+          } else {
+            flatObject[key] = new CloudstateObjectReference(id);
+          }
 
           Object.defineProperty(object, key, {
             get: () => this.getObject(id),
