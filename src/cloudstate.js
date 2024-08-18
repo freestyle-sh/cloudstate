@@ -106,6 +106,11 @@ globalThis.Cloudstate = class Cloudstate {
 
           Object.defineProperty(object, key, {
             get: () => this.getObject(id),
+            set: (v) => {
+              Object.defineProperty(object, key, {
+                value: v,
+              });
+            },
           });
 
           if (!visited.has(value)) {
