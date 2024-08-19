@@ -85,10 +85,8 @@ fn op_cloudstate_object_root_get(
     let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
     let table = read_txn.open_table(ROOTS_TABLE).unwrap();
     let key = format!("{}:{}", namespace, alias).to_string();
-    println!("op_cloudstate_object_root_get: {}", key);
     let result = table.get(key.as_str()).unwrap();
     let result = result.map(|s| s.value().to_string());
-    println!("op_cloudstate_object_root_get: {:?}", result);
     Ok(result)
 }
 
@@ -101,7 +99,6 @@ fn op_cloudstate_object_root_set(
     #[string] id: String,
 ) -> Result<(), Error> {
     let key = format!("{}:{}", namespace, alias).to_string();
-    println!("op_cloudstate_object_root_set: {}", key);
 
     let write_txn = state
         .try_borrow_mut::<ReDBCloudstate>()
