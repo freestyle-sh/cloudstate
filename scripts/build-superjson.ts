@@ -1,6 +1,3 @@
-// import { serialize } from "npm:superjson";
-// serialize;
-
 import { build } from "npm:esbuild";
 
 build({
