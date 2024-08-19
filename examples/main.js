@@ -1,6 +1,8 @@
 const cloudstate = new Cloudstate("test-namespace");
 
-const object = cloudstate.getRoot("test-root") || {
+const transaction = cloudstate.createTransaction();
+
+const object = transaction.getRoot("test-root") || {
   counters: [
     {
       count: 0,
@@ -10,6 +12,15 @@ const object = cloudstate.getRoot("test-root") || {
 
 object.counters[0].count += 1;
 console.log(object);
+// object.countersMap = new Map([["a", 1]]);
+// console.log(object);
+// console.log(object.countersMap.constructor.name);
 
-cloudstate.setObject(object);
-cloudstate.setRoot("test-root", object);
+// console.log(object.countersMap.get("a"));
+// const currentCount = object.countersMap.get("a");
+// object.countersMap.set("a", currentCount + 1);
+// console.log(object.countersMap.get("a"));
+
+transaction.setObject(object);
+transaction.setRoot("test-root", object);
+transaction.commit();
