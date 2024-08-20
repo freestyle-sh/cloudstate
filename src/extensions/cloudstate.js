@@ -52,6 +52,11 @@ SuperJSON.registerCustom(
 );
 
 globalThis.Cloudstate = class Cloudstate {
+  /**
+   * Maps references of objects to their ids, this works because object equality is based on reference
+   ** Keys: objects themselves
+   ** Values: object ids — strings
+   */
   constructor(namespace) {
     this.namespace = namespace;
   }
@@ -65,6 +70,11 @@ globalThis.Cloudstate = class Cloudstate {
 
 class CloudstateTransaction {
   objectIds = new Map();
+  /**
+   * Maps object ids to their objects
+   ** Keys: object ids — strings
+   ** Values: objects themselves
+   */ 
   objects = new Map();
   mapChanges = new Map();
 
@@ -98,6 +108,7 @@ class CloudstateTransaction {
 
     for (const [key, value] of Object.entries(object)) {
       if (value instanceof CloudstateObjectReference) {
+        
         Object.defineProperty(object, key, {
           get: () => {
             return this.getObject(value.objectId);
@@ -168,8 +179,6 @@ class CloudstateTransaction {
       if (object instanceof Map) {
         const changes = this.mapChanges.get(object) || object;
         for (const [key, value] of changes.entries()) {
-          // todo: does map allow undefined values?
-          if (value === undefined) continue;
 
           if (isPrimitive(value)) {
             Deno.core.ops.op_cloudstate_map_set(
@@ -179,13 +188,15 @@ class CloudstateTransaction {
               key,
               SuperJSON.stringify(value)
             );
-          }
+          } 
         }
         continue;
       }
 
-      const flatObject = object instanceof Array ? [] : {};
+      const isArray = object instanceof Array;
+      const flatObject = isArray ? [] : {};
       for (const [key, value] of Object.entries(object)) {
+        if (isArray) key = parseInt(key);
         if (value === undefined) continue;
 
         if (isPrimitive(value)) {
