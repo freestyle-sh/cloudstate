@@ -130,13 +130,13 @@ fn op_commit_transaction(state: &mut OpState, #[string] id: String) -> Result<()
     Ok(())
 }
 
-struct ReDBCloudstate {
+pub struct ReDBCloudstate {
     pub db: Database,
     pub transactions: HashMap<String, WriteTransaction>,
 }
 
 // const OBJECTS_TABLE: TableDefinition<&str, Test> = TableDefinition::new("objects");
-const ROOTS_TABLE: TableDefinition<&str, &str> = TableDefinition::new("roots");
+pub const ROOTS_TABLE: TableDefinition<&str, &str> = TableDefinition::new("roots");
 
 deno_core::extension!(
   cloudstate,
@@ -155,14 +155,14 @@ deno_core::extension!(
   state = | state: &mut OpState| {
     let client = redis::Client::open("redis://127.0.0.1/").unwrap();
     let connection = client.get_connection().unwrap();
-    let cs = ReDBCloudstate {
-        db: Database::builder()
-            .create("test-db.redb")
-            // .create_with_backend(InMemoryBackend::default())
-            .unwrap(),
-        transactions: HashMap::<String, WriteTransaction>::new()
-    };
-    state.put(cs);
+    // let cs = ReDBCloudstate {
+    //     db: Database::builder()
+    //         .create("test-db.redb")
+    //         // .create_with_backend(InMemoryBackend::default())
+    //         .unwrap(),
+    //     transactions: HashMap::<String, WriteTransaction>::new()
+    // };
+    // state.put(cs);
     state.put(connection);
   },
 );
