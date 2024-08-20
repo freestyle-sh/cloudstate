@@ -6,7 +6,7 @@ pub mod extensions;
 mod tests;
 
 use deno_core::anyhow::Error;
-use extensions::cloudstate::{cloudstate, ReDBCloudstate};
+use extensions::cloudstate::ReDBCloudstate;
 use redb::{backends::InMemoryBackend, Database};
 use std::collections::HashMap;
 

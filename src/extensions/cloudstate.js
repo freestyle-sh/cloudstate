@@ -87,7 +87,11 @@ class CloudstateTransaction {
     const existingObject = this.objects.get(id);
     if (existingObject) return existingObject;
 
-    const data = Deno.core.ops.op_cloudstate_object_get(this.namespace, id);
+    const data = Deno.core.ops.op_cloudstate_object_get(
+      this.transactionId,
+      this.namespace,
+      id
+    );
     if (!data) return undefined;
 
     const object = SuperJSON.parse(data);
@@ -119,6 +123,7 @@ class CloudstateTransaction {
           if (result) return result;
 
           const data = Deno.core.ops.op_cloudstate_map_get(
+            this.transactionId,
             this.namespace,
             value.objectId,
             key
@@ -168,6 +173,7 @@ class CloudstateTransaction {
 
           if (isPrimitive(value)) {
             Deno.core.ops.op_cloudstate_map_set(
+              this.transactionId,
               this.namespace,
               this.objectIds.get(object),
               key,
@@ -228,6 +234,7 @@ class CloudstateTransaction {
     if (!existingId) {
       const id = uuidv4();
       Deno.core.ops.op_cloudstate_object_set(
+        this.transactionId,
         this.namespace,
         id,
         SuperJSON.stringify(data)
@@ -237,6 +244,7 @@ class CloudstateTransaction {
       return id;
     } else {
       Deno.core.ops.op_cloudstate_object_set(
+        this.transactionId,
         this.namespace,
         existingId,
         SuperJSON.stringify(data)

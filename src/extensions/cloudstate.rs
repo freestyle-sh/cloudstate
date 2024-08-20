@@ -3,23 +3,30 @@ use deno_core::anyhow::Error;
 use deno_core::*;
 use redb::ReadableTable;
 use redb::{Database, TableDefinition, WriteTransaction};
-use redis::Commands;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[op2(fast)]
 fn op_cloudstate_object_set(
     state: &mut OpState,
+    #[string] transaction_id: String,
     #[string] namespace: String,
     #[string] id: String,
     #[string] value: String,
 ) -> Result<(), Error> {
-    let connection: &mut redis::Connection = state
-        .try_borrow_mut::<redis::Connection>()
-        .expect("Redis connection should be in OpState.");
+    let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
+    let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
 
-    let key = format!("objects:{}:{}", namespace, id).to_string();
-    connection.set(key, value)?;
+    let mut table = write_txn.open_table(OBJECTS_TABLE).unwrap();
+
+    let key = CloudstateObjectKey {
+        namespace: namespace.to_string(),
+        id: id.to_string(),
+    };
+
+    let _ = table
+        .insert(&key, CloudstateObjectValue { data: value })
+        .unwrap();
 
     Ok(())
 }
@@ -28,33 +35,47 @@ fn op_cloudstate_object_set(
 #[string]
 fn op_cloudstate_object_get(
     state: &mut OpState,
+    #[string] transaction_id: String,
     #[string] namespace: String,
     #[string] id: String,
 ) -> Result<Option<String>, Error> {
-    let connection = state
-        .try_borrow_mut::<redis::Connection>()
-        .expect("Redis connection should be in OpState.");
-    let key: &String = &format!("objects:{}:{}", namespace, id).to_string();
+    let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
+    let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
+    let table = read_txn.open_table(OBJECTS_TABLE).unwrap();
 
-    let result = connection.get::<String, Option<String>>(key.to_string())?;
+    let key = CloudstateObjectKey {
+        namespace: namespace.to_string(),
+        id: id.to_string(),
+    };
 
+    let result = table.get(key).unwrap();
+    let result = result.map(|s| s.value().data);
     Ok(result)
 }
 
 #[op2(fast)]
 fn op_cloudstate_map_set(
     state: &mut OpState,
+    #[string] transaction_id: String,
     #[string] namespace: String,
     #[string] id: String,
     #[string] field: String,
     #[string] value: String,
 ) -> Result<(), Error> {
-    let connection = state
-        .try_borrow_mut::<redis::Connection>()
-        .expect("Redis connection should be in OpState.");
+    let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
+    let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
 
-    let key = format!("maps:{}:{}", namespace, id).to_string();
-    connection.hset(key, field, value)?;
+    let mut table = write_txn.open_table(MAPS_TABLE).unwrap();
+
+    let key = CloudstateMapFieldKey {
+        namespace: namespace.to_string(),
+        id: id.to_string(),
+        field: field.to_string(),
+    };
+
+    let _ = table
+        .insert(&key, CloudstateMapFieldValue { data: value })
+        .unwrap();
     Ok(())
 }
 
@@ -62,16 +83,23 @@ fn op_cloudstate_map_set(
 #[string]
 fn op_cloudstate_map_get(
     state: &mut OpState,
+    #[string] transaction_id: String,
     #[string] namespace: String,
     #[string] id: String,
     #[string] field: String,
 ) -> Result<Option<String>, Error> {
-    let connection = state
-        .try_borrow_mut::<redis::Connection>()
-        .expect("Redis connection should be in OpState.");
+    let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
+    let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
+    let table = read_txn.open_table(MAPS_TABLE).unwrap();
 
-    let key: &String = &format!("maps:{}:{}", namespace, id).to_string();
-    let result = connection.hget(key, field)?;
+    let key = CloudstateMapFieldKey {
+        namespace: namespace.to_string(),
+        id: id.to_string(),
+        field: field.to_string(),
+    };
+
+    let result = table.get(key).unwrap();
+    let result = result.map(|s| s.value().data);
 
     Ok(result)
 }
@@ -155,10 +183,41 @@ pub struct CloudstateRootValue {
     pub id: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+pub struct CloudstateObjectKey {
+    pub namespace: String,
+    pub id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub struct CloudstateObjectValue {
+    pub data: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+pub struct CloudstateMapFieldKey {
+    pub namespace: String,
+    pub id: String,
+    field: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub struct CloudstateMapFieldValue {
+    pub data: String,
+}
+
 pub const ROOTS_TABLE: TableDefinition<Bincode<CloudstateRootKey>, Bincode<CloudstateRootValue>> =
     TableDefinition::new("roots");
 
-// const OBJECTS_TABLE: TableDefinition<&str, Test> = TableDefinition::new("objects");
+pub const OBJECTS_TABLE: TableDefinition<
+    Bincode<CloudstateObjectKey>,
+    Bincode<CloudstateObjectValue>,
+> = TableDefinition::new("objects");
+
+pub const MAPS_TABLE: TableDefinition<
+    Bincode<CloudstateMapFieldKey>,
+    Bincode<CloudstateMapFieldValue>,
+> = TableDefinition::new("maps");
 
 deno_core::extension!(
   cloudstate,
@@ -174,9 +233,4 @@ deno_core::extension!(
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],
-  state = | state: &mut OpState| {
-    let client = redis::Client::open("redis://127.0.0.1/").unwrap();
-    let connection = client.get_connection().unwrap();
-    state.put(connection);
-  },
 );
