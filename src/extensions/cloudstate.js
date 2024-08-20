@@ -67,8 +67,8 @@ globalThis.Cloudstate = class Cloudstate {
     return new CloudstateTransaction(this.namespace, id);
   }
 
-  getTestsObject() {
-    return Deno.core.ops.op_cloudstate_get_test_object();
+  getTestsObject(object) {
+    return Deno.core.ops.op_cloudstate_get_test_object(object);
   }
 };
 

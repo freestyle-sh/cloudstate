@@ -7,7 +7,9 @@ use redb::ReadableTable;
 use redb::{Database, TableDefinition, WriteTransaction};
 use serde::{Deserialize, Serialize};
 use serde_v8::BigInt;
+use std::borrow::BorrowMut;
 use std::collections::HashMap;
+use std::ops::{Deref, DerefMut};
 use url::Url;
 
 #[op2]
@@ -173,22 +175,29 @@ fn op_commit_transaction(state: &mut OpState, #[string] id: String) -> Result<()
 }
 
 #[op2]
-#[serde]
-fn op_cloudstate_get_test_object() -> CloudstateObjectData {
-    return CloudstateObjectData {
-        fields: HashMap::from([
-            ("test".to_string(), CloudstatePrimitiveData::Number(1.0)),
-            (
-                "test2".to_string(),
-                CloudstatePrimitiveData::String("test".to_string()),
-            ),
-            ("test3".to_string(), CloudstatePrimitiveData::Boolean(true)),
-            (
-                "test4".to_string(),
-                CloudstatePrimitiveData::Date(DateTime::<Utc>::from_timestamp_nanos(320598230958)),
-            ),
-        ]),
-    };
+fn op_cloudstate_get_test_object<'a>(
+    state: &mut OpState,
+    value: v8::Local<'a, v8::Object>,
+) -> v8::Local<'a, v8::Object> {
+    // println!("{:?}", state);
+    // let isolate_ptr = *state.try_borrow_mut::<*mut v8::OwnedIsolate>().unwrap();
+    // let owned_isolate: Box<v8::OwnedIsolate> = unsafe { Box::from_raw(isolate_ptr) };
+    // let isolate: v8::OwnedIsolate = *owned_isolate;
+
+    // isolate
+
+    // V8TaskSpawner::
+
+    // let scope: v8::HandleScope<'_, deno_core::v8::Context> = v8::HandleScope::new(&mut isolate);
+    // let context = v8::Context::new(&mut scope);
+
+    // let obj = v8::Object::new(&mut scope);
+    // println!("{:?}", isolate);
+    // v8::HandleScope::new(&mut *isolate);
+
+    println!("{:?}", value);
+
+    return value;
 }
 
 pub struct ReDBCloudstate {
