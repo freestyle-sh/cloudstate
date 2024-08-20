@@ -66,6 +66,10 @@ globalThis.Cloudstate = class Cloudstate {
     Deno.core.ops.op_create_transaction(id, this.namespace);
     return new CloudstateTransaction(this.namespace, id);
   }
+
+  getTestsObject() {
+    return Deno.core.ops.op_cloudstate_get_test_object();
+  }
 };
 
 class CloudstateTransaction {
@@ -184,7 +188,7 @@ class CloudstateTransaction {
               this.namespace,
               this.objectIds.get(object),
               key,
-              SuperJSON.stringify(value)
+              value
             );
           }
         }

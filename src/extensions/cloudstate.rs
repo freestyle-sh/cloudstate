@@ -1,18 +1,22 @@
 use crate::bincode::Bincode;
+use chrono::{DateTime, Utc};
 use deno_core::anyhow::Error;
+use deno_core::error::JsError;
 use deno_core::*;
 use redb::ReadableTable;
 use redb::{Database, TableDefinition, WriteTransaction};
 use serde::{Deserialize, Serialize};
+use serde_v8::BigInt;
 use std::collections::HashMap;
+use url::Url;
 
-#[op2(fast)]
+#[op2]
 fn op_cloudstate_object_set(
     state: &mut OpState,
     #[string] transaction_id: String,
     #[string] namespace: String,
     #[string] id: String,
-    #[string] value: String,
+    #[serde] value: CloudstateObjectData,
 ) -> Result<(), Error> {
     let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
     let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
@@ -32,13 +36,13 @@ fn op_cloudstate_object_set(
 }
 
 #[op2]
-#[string]
+#[serde]
 fn op_cloudstate_object_get(
     state: &mut OpState,
     #[string] transaction_id: String,
     #[string] namespace: String,
     #[string] id: String,
-) -> Result<Option<String>, Error> {
+) -> Result<Option<CloudstateObjectData>, Error> {
     let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
     let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
     let table = read_txn.open_table(OBJECTS_TABLE).unwrap();
@@ -50,6 +54,7 @@ fn op_cloudstate_object_get(
 
     let result = table.get(key).unwrap();
     let result = result.map(|s| s.value().data);
+
     Ok(result)
 }
 
@@ -167,6 +172,25 @@ fn op_commit_transaction(state: &mut OpState, #[string] id: String) -> Result<()
     Ok(())
 }
 
+#[op2]
+#[serde]
+fn op_cloudstate_get_test_object() -> CloudstateObjectData {
+    return CloudstateObjectData {
+        fields: HashMap::from([
+            ("test".to_string(), CloudstatePrimitiveData::Number(1.0)),
+            (
+                "test2".to_string(),
+                CloudstatePrimitiveData::String("test".to_string()),
+            ),
+            ("test3".to_string(), CloudstatePrimitiveData::Boolean(true)),
+            (
+                "test4".to_string(),
+                CloudstatePrimitiveData::Date(DateTime::<Utc>::from_timestamp_nanos(320598230958)),
+            ),
+        ]),
+    };
+}
+
 pub struct ReDBCloudstate {
     pub db: Database,
     pub transactions: HashMap<String, WriteTransaction>,
@@ -191,7 +215,28 @@ pub struct CloudstateObjectKey {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct CloudstateObjectValue {
-    pub data: String,
+    pub data: CloudstateObjectData,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub struct CloudstateObjectData {
+    pub fields: HashMap<String, CloudstatePrimitiveData>,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub enum CloudstatePrimitiveData {
+    Number(f64),
+    String(String),
+    Boolean(bool),
+    BigInt(serde_v8::BigInt),
+    Undefined,
+    Null,
+    Date(DateTime<Utc>),
+    RegExp(String),
+    URL(Url),
+    Error(JsError),
+    ObjectReference(String),
+    MapReference(String),
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -230,6 +275,8 @@ deno_core::extension!(
     op_cloudstate_map_get,
     op_create_transaction,
     op_commit_transaction,
+
+    op_cloudstate_get_test_object
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],
