@@ -1,7 +1,10 @@
+use crate::bincode::Bincode;
 use deno_core::anyhow::Error;
 use deno_core::*;
-use redb::{Database, ReadableTable, TableDefinition, WriteTransaction};
+use redb::ReadableTable;
+use redb::{Database, TableDefinition, WriteTransaction};
 use redis::Commands;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[op2(fast)]
@@ -84,9 +87,12 @@ fn op_cloudstate_object_root_get(
     let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
     let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
     let table = read_txn.open_table(ROOTS_TABLE).unwrap();
-    let key = format!("{}:{}", namespace, alias).to_string();
-    let result = table.get(key.as_str()).unwrap();
-    let result = result.map(|s| s.value().to_string());
+    let key = CloudstateRootKey {
+        namespace: namespace.to_string(),
+        alias: alias.to_string(),
+    };
+    let result = table.get(key).unwrap();
+    let result = result.map(|s| s.value().id);
     Ok(result)
 }
 
@@ -98,8 +104,6 @@ fn op_cloudstate_object_root_set(
     #[string] alias: String,
     #[string] id: String,
 ) -> Result<(), Error> {
-    let key = format!("{}:{}", namespace, alias).to_string();
-
     let write_txn = state
         .try_borrow_mut::<ReDBCloudstate>()
         .unwrap()
@@ -109,7 +113,12 @@ fn op_cloudstate_object_root_set(
 
     let mut table = write_txn.open_table(ROOTS_TABLE).unwrap();
 
-    let _ = table.insert(key.as_str(), id.as_str()).unwrap();
+    let key = CloudstateRootKey {
+        namespace: namespace.to_string(),
+        alias: alias.to_string(),
+    };
+
+    let _ = table.insert(&key, CloudstateRootValue { id: id }).unwrap();
     Ok(())
 }
 
@@ -135,8 +144,21 @@ pub struct ReDBCloudstate {
     pub transactions: HashMap<String, WriteTransaction>,
 }
 
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+pub struct CloudstateRootKey {
+    pub namespace: String,
+    pub alias: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub struct CloudstateRootValue {
+    pub id: String,
+}
+
+pub const ROOTS_TABLE: TableDefinition<Bincode<CloudstateRootKey>, Bincode<CloudstateRootValue>> =
+    TableDefinition::new("roots");
+
 // const OBJECTS_TABLE: TableDefinition<&str, Test> = TableDefinition::new("objects");
-pub const ROOTS_TABLE: TableDefinition<&str, &str> = TableDefinition::new("roots");
 
 deno_core::extension!(
   cloudstate,
@@ -155,14 +177,6 @@ deno_core::extension!(
   state = | state: &mut OpState| {
     let client = redis::Client::open("redis://127.0.0.1/").unwrap();
     let connection = client.get_connection().unwrap();
-    // let cs = ReDBCloudstate {
-    //     db: Database::builder()
-    //         .create("test-db.redb")
-    //         // .create_with_backend(InMemoryBackend::default())
-    //         .unwrap(),
-    //     transactions: HashMap::<String, WriteTransaction>::new()
-    // };
-    // state.put(cs);
     state.put(connection);
   },
 );

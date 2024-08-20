@@ -178,6 +178,7 @@ dependencies = [
 name = "cloudstate"
 version = "0.1.0"
 dependencies = [
+ "bincode",
  "deno_console",
  "deno_core",
  "deno_url",

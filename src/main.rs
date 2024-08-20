@@ -1,3 +1,4 @@
+pub mod bincode;
 pub mod execution;
 pub mod extensions;
 
