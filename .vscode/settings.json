@@ -1,0 +1,5 @@
+{
+    "rust-analyzer.runnables.extraEnv": {
+            "RUST_BACKTRACE": "0"
+    }
+}

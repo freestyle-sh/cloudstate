@@ -57,6 +57,18 @@ globalThis.Cloudstate = class Cloudstate {
    ** Keys: objects themselves
    ** Values: object ids — strings
    */
+  constructor(namespace) {
+    this.namespace = namespace;
+  }
+
+  createTransaction() {
+    const id = uuidv4();
+    Deno.core.ops.op_create_transaction(id, this.namespace);
+    return new CloudstateTransaction(this.namespace, id);
+  }
+};
+
+class CloudstateTransaction {
   objectIds = new Map();
   /**
    * Maps object ids to their objects
@@ -66,12 +78,17 @@ globalThis.Cloudstate = class Cloudstate {
   objects = new Map();
   mapChanges = new Map();
 
-  constructor(namespace) {
+  constructor(namespace, transactionId) {
     if (typeof namespace !== "string") {
       throw new Error("namespace must be a string");
     }
 
     this.namespace = namespace;
+    this.transactionId = transactionId;
+  }
+
+  commit() {
+    Deno.core.ops.op_commit_transaction(this.transactionId);
   }
 
   getObject(id) {
@@ -249,6 +266,7 @@ globalThis.Cloudstate = class Cloudstate {
     }
 
     Deno.core.ops.op_cloudstate_object_root_set(
+      this.transactionId,
       this.namespace,
       alias,
       existingId
@@ -266,6 +284,7 @@ globalThis.Cloudstate = class Cloudstate {
     if (typeof alias !== "string") throw new Error("alias must be a string");
 
     const id = Deno.core.ops.op_cloudstate_object_root_get(
+      this.transactionId,
       this.namespace,
       alias
     );
@@ -274,4 +293,4 @@ globalThis.Cloudstate = class Cloudstate {
 
     return this.getObject(id);
   }
-};
+}

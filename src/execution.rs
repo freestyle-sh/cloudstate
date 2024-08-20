@@ -3,10 +3,13 @@ use std::path::Path;
 use std::rc::Rc;
 
 use crate::extensions::bootstrap::bootstrap;
-use crate::extensions::cloudstate::cloudstate;
+use crate::extensions::cloudstate::{cloudstate, ReDBCloudstate};
 use crate::extensions::superjson::superjson;
 
-pub fn run_script(path: &str) -> Result<(), anyhow::Error> {
+pub fn run_script(
+    path: &str,
+    cloudstate: ReDBCloudstate,
+) -> Result<(ReDBCloudstate, Result<(), anyhow::Error>), anyhow::Error> {
     let js_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(path);
     let main_module = ModuleSpecifier::from_file_path(js_path).unwrap();
 
@@ -23,16 +26,23 @@ pub fn run_script(path: &str) -> Result<(), anyhow::Error> {
         ..Default::default()
     });
 
+    js_runtime.op_state().borrow_mut().put(cloudstate);
+
     let future = async move {
-        let mod_id = js_runtime.load_main_es_module(&main_module).await?;
+        let mod_id = js_runtime.load_main_es_module(&main_module).await.unwrap();
         let result = js_runtime.mod_evaluate(mod_id);
-        js_runtime.run_event_loop(Default::default()).await?;
-        result.await
+        js_runtime.run_event_loop(Default::default()).await.unwrap();
+
+        (js_runtime, result.await)
     };
 
-    tokio::runtime::Builder::new_current_thread()
+    let (mut js_runtime, result) = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
         .unwrap()
-        .block_on(future)
+        .block_on(future);
+
+    let cloudstate = js_runtime.op_state().borrow_mut().take::<ReDBCloudstate>();
+
+    return Ok((cloudstate, result));
 }
