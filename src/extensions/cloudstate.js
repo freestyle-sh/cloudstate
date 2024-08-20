@@ -193,7 +193,7 @@ class CloudstateTransaction {
 
       const isArray = object instanceof Array;
       const flatObject = isArray ? [] : {};
-      for (const [key, value] of Object.entries(object)) {
+      for (let [key, value] of Object.entries(object)) {
         if (isArray) key = parseInt(key);
         if (value === undefined) continue;
 
