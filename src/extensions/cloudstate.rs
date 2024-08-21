@@ -1,13 +1,10 @@
 use crate::bincode::Bincode;
-use chrono::{DateTime, Utc};
 use deno_core::anyhow::Error;
 use deno_core::error::JsError;
 use deno_core::*;
 use redb::ReadableTable;
 use redb::{Database, TableDefinition, WriteTransaction};
 use serde::{Deserialize, Serialize};
-use serde_v8::BigInt;
-use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 use url::Url;
@@ -175,29 +172,14 @@ fn op_commit_transaction(state: &mut OpState, #[string] id: String) -> Result<()
 }
 
 #[op2]
-fn op_cloudstate_get_test_object<'a>(
-    state: &mut OpState,
-    value: v8::Local<'a, v8::Object>,
-) -> v8::Local<'a, v8::Object> {
-    // println!("{:?}", state);
-    // let isolate_ptr = *state.try_borrow_mut::<*mut v8::OwnedIsolate>().unwrap();
-    // let owned_isolate: Box<v8::OwnedIsolate> = unsafe { Box::from_raw(isolate_ptr) };
-    // let isolate: v8::OwnedIsolate = *owned_isolate;
-
-    // isolate
-
-    // V8TaskSpawner::
-
-    // let scope: v8::HandleScope<'_, deno_core::v8::Context> = v8::HandleScope::new(&mut isolate);
-    // let context = v8::Context::new(&mut scope);
-
-    // let obj = v8::Object::new(&mut scope);
-    // println!("{:?}", isolate);
-    // v8::HandleScope::new(&mut *isolate);
-
-    println!("{:?}", value);
-
-    return value;
+#[to_v8]
+fn op_cloudstate_get_test_object<'a>(state: &mut OpState) -> CloudstateObjectData {
+    return CloudstateObjectData {
+        fields: HashMap::from([
+            ("test".to_string(), CloudstatePrimitiveData::Number(1.0)),
+            ("test2".to_string(), CloudstatePrimitiveData::Number(2.0)),
+        ]),
+    };
 }
 
 pub struct ReDBCloudstate {
@@ -232,20 +214,75 @@ pub struct CloudstateObjectData {
     pub fields: HashMap<String, CloudstatePrimitiveData>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+impl ToV8<'_> for CloudstateObjectData {
+    fn to_v8<'a>(
+        self,
+        scope: &mut v8::HandleScope<'a>,
+    ) -> Result<deno_core::v8::Local<'a, deno_core::v8::Value>, JsError> {
+        let object = v8::Object::new(scope);
+        for (key, value) in self.fields.iter() {
+            let key = v8::Local::<v8::Value>::from(v8::String::new(scope, key).unwrap());
+            let value = value.clone().to_v8(scope).unwrap();
+            object.set(scope, key, value);
+        }
+        Ok(v8::Local::<v8::Value>::from(object))
+    }
+
+    type Error = JsError;
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub enum CloudstatePrimitiveData {
     Number(f64),
     String(String),
     Boolean(bool),
-    BigInt(serde_v8::BigInt),
+    BigInt(i64),
     Undefined,
     Null,
-    Date(DateTime<Utc>),
-    RegExp(String),
+    // Date(DateTime<Utc>),
+    // RegExp(String),
     URL(Url),
-    Error(JsError),
+    // Error(JsError),
     ObjectReference(String),
     MapReference(String),
+}
+
+impl ToV8<'_> for CloudstatePrimitiveData {
+    fn to_v8<'a>(
+        self,
+        scope: &mut v8::HandleScope<'a>,
+    ) -> Result<v8::Local<'a, v8::Value>, JsError> {
+        Ok(v8::Local::<v8::Value>::from(match self {
+            CloudstatePrimitiveData::Number(value) => v8::Number::new(scope, value).into(),
+            CloudstatePrimitiveData::String(value) => {
+                v8::String::new(scope, &value).unwrap().into()
+            }
+            CloudstatePrimitiveData::Boolean(value) => v8::Boolean::new(scope, value).into(),
+            CloudstatePrimitiveData::BigInt(value) => {
+                v8::BigInt::new_from_i64(scope, value.clone()).into()
+            }
+            CloudstatePrimitiveData::Undefined => v8::undefined(scope),
+            CloudstatePrimitiveData::Null => v8::null(scope).into(),
+            // CloudstatePrimitiveData::Date(value) => v8::Date::new(
+            //     scope,
+            //     value.timestamp_nanos_opt().unwrap() as f64 / 1_000_000.0,
+            // )
+            // .unwrap(),
+            // CloudstatePrimitiveData::RegExp(value) => v8::RegExp::new(scope, value).unwrap().into(),
+            CloudstatePrimitiveData::URL(value) => {
+                v8::String::new(scope, value.as_str()).unwrap().into()
+            }
+            // CloudstatePrimitiveData::Error(value) => v8::Error::new(scope, value.clone()).into(),
+            CloudstatePrimitiveData::ObjectReference(value) => {
+                v8::String::new(scope, &value).unwrap().into()
+            }
+            CloudstatePrimitiveData::MapReference(value) => {
+                v8::String::new(scope, &value).unwrap().into()
+            }
+        }))
+    }
+
+    type Error = JsError;
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]

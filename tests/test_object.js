@@ -6,8 +6,10 @@ const object = {
   test: 5,
 };
 
-const object2 = cloudstate.getTestsObject(object);
+const object2 = cloudstate.getTestsObject();
 
-console.log(object2 === object);
-object.test = 6;
-console.log(object2.test);
+console.log(object2);
+
+// console.log(object2 === object);
+// object.test = 6;
+// console.log(object2.test);
