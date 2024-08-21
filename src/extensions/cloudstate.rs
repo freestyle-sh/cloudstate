@@ -6,8 +6,8 @@ use redb::ReadableTable;
 use redb::{Database, TableDefinition, WriteTransaction};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::ops::{Deref, DerefMut};
 use url::Url;
+use v8::GetPropertyNamesArgs;
 
 #[op2]
 fn op_cloudstate_object_set(
@@ -15,7 +15,7 @@ fn op_cloudstate_object_set(
     #[string] transaction_id: String,
     #[string] namespace: String,
     #[string] id: String,
-    #[serde] value: CloudstateObjectData,
+    #[from_v8] value: CloudstateObjectData,
 ) -> Result<(), Error> {
     let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
     let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
@@ -35,13 +35,13 @@ fn op_cloudstate_object_set(
 }
 
 #[op2]
-#[serde]
+#[to_v8]
 fn op_cloudstate_object_get(
     state: &mut OpState,
     #[string] transaction_id: String,
     #[string] namespace: String,
     #[string] id: String,
-) -> Result<Option<CloudstateObjectData>, Error> {
+) -> Result<CloudstateObjectData, Error> {
     let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
     let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
     let table = read_txn.open_table(OBJECTS_TABLE).unwrap();
@@ -54,7 +54,7 @@ fn op_cloudstate_object_get(
     let result = table.get(key).unwrap();
     let result = result.map(|s| s.value().data);
 
-    Ok(result)
+    Ok(result.unwrap())
 }
 
 #[op2(fast)]
@@ -231,6 +231,37 @@ impl ToV8<'_> for CloudstateObjectData {
     type Error = JsError;
 }
 
+impl FromV8<'_> for CloudstateObjectData {
+    fn from_v8<'a>(
+        scope: &mut v8::HandleScope<'a>,
+        value: v8::Local<'a, v8::Value>,
+    ) -> Result<Self, Self::Error> {
+        let object = v8::Local::<v8::Object>::try_from(value).unwrap();
+        let mut fields = HashMap::new();
+        let array = object
+            .get_own_property_names(
+                scope,
+                GetPropertyNamesArgs {
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+
+        let length = array.length();
+
+        for i in 0..length {
+            let key = array.get_index(scope, i).unwrap();
+            // let key = key.to_rust_string_lossy(scope);
+            let value = object.get(scope, key).unwrap();
+            let value = CloudstatePrimitiveData::from_v8(scope, value).unwrap();
+            fields.insert(key.to_rust_string_lossy(scope), value);
+        }
+        Ok(CloudstateObjectData { fields })
+    }
+
+    type Error = JsError;
+}
+
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub enum CloudstatePrimitiveData {
     Number(f64),
@@ -280,6 +311,39 @@ impl ToV8<'_> for CloudstatePrimitiveData {
                 v8::String::new(scope, &value).unwrap().into()
             }
         }))
+    }
+
+    type Error = JsError;
+}
+
+impl FromV8<'_> for CloudstatePrimitiveData {
+    fn from_v8<'a>(
+        scope: &mut v8::HandleScope<'a>,
+        value: v8::Local<'a, v8::Value>,
+    ) -> Result<Self, Self::Error> {
+        if value.is_null() {
+            Ok(CloudstatePrimitiveData::Null)
+        } else if value.is_undefined() {
+            Ok(CloudstatePrimitiveData::Undefined)
+        } else if value.is_big_int() {
+            let bigint = v8::Local::<v8::BigInt>::try_from(value).unwrap();
+            let (value, _) = bigint.i64_value();
+            Ok(CloudstatePrimitiveData::BigInt(value))
+        } else if value.is_number() {
+            let number = v8::Local::<v8::Number>::try_from(value).unwrap();
+            let value = number.value();
+            Ok(CloudstatePrimitiveData::Number(value))
+        } else if value.is_string() {
+            let string = v8::Local::<v8::String>::try_from(value).unwrap();
+            let value = string.to_rust_string_lossy(scope);
+            Ok(CloudstatePrimitiveData::String(value))
+        } else if value.is_boolean() {
+            let boolean = v8::Local::<v8::Boolean>::try_from(value).unwrap();
+            let value = boolean.boolean_value(scope);
+            Ok(CloudstatePrimitiveData::Boolean(value))
+        } else {
+            Ok(CloudstatePrimitiveData::Undefined)
+        }
     }
 
     type Error = JsError;

@@ -34,21 +34,15 @@ fn test_maps() {
 }
 
 #[test]
-fn test() {
-    // let mut fields = HashMap::new();
-    // fields.insert("test".to_string(), CloudstatePrimitiveData::Number(1.0));
-    // let string =
-    //     deno_core::serde_json::to_string(&CloudstateObjectData { fields: fields }).unwrap();
-
-    // println!("{:?}", string);
-
+fn test_simple_objects() {
     let _ = run_script(
-        "tests/test_object.js",
+        "tests/simple_objects.js",
         ReDBCloudstate {
             db: Database::builder()
                 .create_with_backend(InMemoryBackend::default())
                 .unwrap(),
             transactions: HashMap::new(),
         },
-    );
+    )
+    .unwrap();
 }

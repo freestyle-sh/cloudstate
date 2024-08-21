@@ -66,10 +66,6 @@ globalThis.Cloudstate = class Cloudstate {
     Deno.core.ops.op_create_transaction(id, this.namespace);
     return new CloudstateTransaction(this.namespace, id);
   }
-
-  getTestsObject(object) {
-    return Deno.core.ops.op_cloudstate_get_test_object(object);
-  }
 };
 
 class CloudstateTransaction {
@@ -101,14 +97,13 @@ class CloudstateTransaction {
     const existingObject = this.objects.get(id);
     if (existingObject) return existingObject;
 
-    const data = Deno.core.ops.op_cloudstate_object_get(
+    const object = Deno.core.ops.op_cloudstate_object_get(
       this.transactionId,
       this.namespace,
       id
     );
-    if (!data) return undefined;
 
-    const object = SuperJSON.parse(data);
+    if (!object) return undefined;
 
     for (const [key, value] of Object.entries(object)) {
       if (value instanceof CloudstateObjectReference) {
@@ -250,7 +245,7 @@ class CloudstateTransaction {
         this.transactionId,
         this.namespace,
         id,
-        SuperJSON.stringify(data)
+        data
       );
       this.objectIds.set(object, id);
       this.objects.set(id, object);
@@ -260,7 +255,7 @@ class CloudstateTransaction {
         this.transactionId,
         this.namespace,
         existingId,
-        SuperJSON.stringify(data)
+        data
       );
       return existingId;
     }
