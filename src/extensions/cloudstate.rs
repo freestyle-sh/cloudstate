@@ -1,4 +1,5 @@
 use crate::bincode::Bincode;
+use chrono::{DateTime, TimeZone, Utc};
 use deno_core::anyhow::Error;
 use deno_core::error::JsError;
 use deno_core::*;
@@ -270,7 +271,7 @@ pub enum CloudstatePrimitiveData {
     BigInt(i64),
     Undefined,
     Null,
-    // Date(DateTime<Utc>),
+    Date(DateTime<Utc>),
     // RegExp(String),
     URL(Url),
     // Error(JsError),
@@ -284,6 +285,9 @@ impl ToV8<'_> for CloudstatePrimitiveData {
         scope: &mut v8::HandleScope<'a>,
     ) -> Result<v8::Local<'a, v8::Value>, JsError> {
         Ok(v8::Local::<v8::Value>::from(match self {
+            CloudstatePrimitiveData::Date(value) => deno_core::v8::Local::<v8::Value>::from(
+                v8::Date::new(scope, value.timestamp_millis() as f64).unwrap(),
+            ),
             CloudstatePrimitiveData::Number(value) => v8::Number::new(scope, value).into(),
             CloudstatePrimitiveData::String(value) => {
                 v8::String::new(scope, &value).unwrap().into()
@@ -292,7 +296,7 @@ impl ToV8<'_> for CloudstatePrimitiveData {
             CloudstatePrimitiveData::BigInt(value) => {
                 v8::BigInt::new_from_i64(scope, value.clone()).into()
             }
-            CloudstatePrimitiveData::Undefined => v8::undefined(scope),
+            CloudstatePrimitiveData::Undefined => v8::undefined(scope).into(),
             CloudstatePrimitiveData::Null => v8::null(scope).into(),
             // CloudstatePrimitiveData::Date(value) => v8::Date::new(
             //     scope,
@@ -341,8 +345,20 @@ impl FromV8<'_> for CloudstatePrimitiveData {
             let boolean = v8::Local::<v8::Boolean>::try_from(value).unwrap();
             let value = boolean.boolean_value(scope);
             Ok(CloudstatePrimitiveData::Boolean(value))
-        } else {
+        } else if value.is_date() {
+            let date = v8::Local::<v8::Date>::try_from(value).unwrap();
+            let value = date.value_of();
+            Ok(CloudstatePrimitiveData::Date(
+                Utc.timestamp_millis_opt(value as i64).unwrap(),
+            ))
+        } else if value.is_undefined() {
             Ok(CloudstatePrimitiveData::Undefined)
+        } else {
+            let msg_str = v8::String::new(scope, "Not implemented").unwrap();
+            let msg = v8::Exception::error(scope, msg_str);
+            Err(
+                JsError::from_v8_exception(scope, msg),
+            )
         }
     }
 
