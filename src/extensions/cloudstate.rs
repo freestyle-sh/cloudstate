@@ -176,9 +176,20 @@ fn op_commit_transaction(state: &mut OpState, #[string] id: String) -> Result<()
 
 #[op2]
 fn op_cloudstate_get_test_object<'a>(
+    scope: &mut v8::HandleScope<'a>,
     state: &mut OpState,
     value: v8::Local<'a, v8::Object>,
 ) -> v8::Local<'a, v8::Object> {
+
+    let newObj = v8::Object::new(scope);
+    let key = v8::String::new(scope, "test").unwrap();
+    let value = v8::String::new(scope, "test").unwrap();
+
+    newObj.set(scope, key.into(), value.into());
+
+    return newObj;
+
+    
     // println!("{:?}", state);
     // let isolate_ptr = *state.try_borrow_mut::<*mut v8::OwnedIsolate>().unwrap();
     // let owned_isolate: Box<v8::OwnedIsolate> = unsafe { Box::from_raw(isolate_ptr) };
@@ -195,9 +206,9 @@ fn op_cloudstate_get_test_object<'a>(
     // println!("{:?}", isolate);
     // v8::HandleScope::new(&mut *isolate);
 
-    println!("{:?}", value);
+    // println!("{:?}", value);
 
-    return value;
+    // return value;
 }
 
 pub struct ReDBCloudstate {

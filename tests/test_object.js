@@ -8,6 +8,4 @@ const object = {
 
 const object2 = cloudstate.getTestsObject(object);
 
-console.log(object2 === object);
-object.test = 6;
-console.log(object2.test);
+console.log(object2);
