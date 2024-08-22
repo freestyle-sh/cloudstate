@@ -294,10 +294,32 @@ impl ToV8<'_> for CloudstatePrimitiveData {
             }
             // CloudstatePrimitiveData::Error(value) => v8::Error::new(scope, value.clone()).into(),
             CloudstatePrimitiveData::ObjectReference(value) => {
-                v8::String::new(scope, &value).unwrap().into()
+                let context = scope.get_current_context();
+                let export_name = "CloudstateObjectReference";
+
+                let class = {
+                    let global = context.global(scope);
+
+                    let export_name = v8::String::new(scope, export_name).unwrap().into();
+                    global.get(scope, export_name).expect(
+                        "CloudstateMapReference class should be exported from cloudstate.js",
+                    )
+                };
+
+                let prototype_key = v8::String::new(scope, "prototype").unwrap().into();
+                let prototype = v8::Local::<v8::Function>::try_from(class)
+                    .unwrap()
+                    .get(scope, prototype_key)
+                    .unwrap();
+
+                let object = v8::Object::new(scope);
+                object.set_prototype(scope, prototype).unwrap();
+                let key = v8::String::new(scope, "objectId").unwrap().into();
+                let value = v8::String::new(scope, &value).unwrap().into();
+                object.set(scope, key, value);
+                object.into()
             }
             CloudstatePrimitiveData::MapReference(value) => {
-                // println!("CloudstatePrimitiveData::MapReference: {}", value);
                 let context = scope.get_current_context();
                 let export_name = "CloudstateMapReference";
 
@@ -316,20 +338,8 @@ impl ToV8<'_> for CloudstatePrimitiveData {
                     .get(scope, prototype_key)
                     .unwrap();
 
-                // println!(
-                //     "{:?}",
-                //     v8::Function::try_from(prototype).unwrap().get_name(scope)
-                // );
-
-                // print!("is function: {:?}", prototype.is_function());
-
                 let object = v8::Object::new(scope);
-                // println!("{:?}", v8::Object::try_from(prototype).unwrap().get_constructor_name());
                 object.set_prototype(scope, prototype).unwrap();
-                // println!(
-                //     "{:?}",
-                //     object.get_constructor_name().to_rust_string_lossy(scope)
-                // );
                 let key = v8::String::new(scope, "objectId").unwrap().into();
                 let value = v8::String::new(scope, &value).unwrap().into();
                 object.set(scope, key, value);
@@ -384,6 +394,14 @@ impl FromV8<'_> for CloudstatePrimitiveData {
                 "CloudstateMapReference" => {
                     let key = v8::String::new(scope, "objectId").unwrap().into();
                     return Ok(CloudstatePrimitiveData::MapReference(
+                        v8::Local::<v8::String>::try_from(object.get(scope, key).unwrap())
+                            .unwrap()
+                            .to_rust_string_lossy(scope),
+                    ));
+                }
+                "CloudstateObjectReference" => {
+                    let key = v8::String::new(scope, "objectId").unwrap().into();
+                    return Ok(CloudstatePrimitiveData::ObjectReference(
                         v8::Local::<v8::String>::try_from(object.get(scope, key).unwrap())
                             .unwrap()
                             .to_rust_string_lossy(scope),

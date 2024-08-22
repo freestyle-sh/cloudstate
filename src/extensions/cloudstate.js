@@ -19,6 +19,7 @@ class CloudstateMapReference {
 }
 
 globalThis.CloudstateMapReference = CloudstateMapReference;
+globalThis.CloudstateObjectReference = CloudstateObjectReference;
 
 function isPrimitive(value) {
   return (
