@@ -46,3 +46,32 @@ fn test_simple_objects() {
     )
     .unwrap();
 }
+
+
+#[test]
+fn test_date() {
+    let _ = run_script(
+        "tests/dates.js",
+        ReDBCloudstate {
+            db: Database::builder()
+                .create_with_backend(InMemoryBackend::default())
+                .unwrap(),
+            transactions: HashMap::new(),
+        },
+    )
+    .unwrap();
+}
+
+#[test]
+fn test_bigint() {
+    let _ = run_script(
+        "tests/bigints.js",
+        ReDBCloudstate {
+            db: Database::builder()
+                .create_with_backend(InMemoryBackend::default())
+                .unwrap(),
+            transactions: HashMap::new(),
+        },
+    )
+    .unwrap();
+}
