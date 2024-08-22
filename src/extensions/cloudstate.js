@@ -18,8 +18,15 @@ class CloudstateMapReference {
   }
 }
 
+class CloudstateArrayReference {
+  constructor(objectId) {
+    this.objectId = objectId;
+  }
+}
+
 globalThis.CloudstateMapReference = CloudstateMapReference;
 globalThis.CloudstateObjectReference = CloudstateObjectReference;
+globalThis.CloudstateArrayReference = CloudstateArrayReference;
 
 function isPrimitive(value) {
   return (
@@ -90,6 +97,67 @@ class CloudstateTransaction {
     this.transactionId = transactionId;
   }
 
+  hydrate(object, key, value) {
+    if (value instanceof CloudstateObjectReference) {
+      Object.defineProperty(object, key, {
+        get: () => {
+          return this.getObject(value.objectId);
+        },
+        set: (v) => {
+          Object.defineProperty(object, key, {
+            value: v,
+          });
+        },
+      });
+    }
+
+    if (value instanceof CloudstateArrayReference) {
+      Object.defineProperty(object, key, {
+        value: this.getArray(value.objectId),
+      });
+    }
+
+    if (value instanceof CloudstateMapReference) {
+      const map = new Map();
+      const mapSet = map.set;
+      const mapGet = map.get;
+      const changeMap = new Map();
+      this.mapChanges.set(map, changeMap);
+      this.objectIds.set(map, value.objectId);
+
+      map.get = (key) => {
+        const result = mapGet.apply(map, [key]);
+        if (result) return result;
+
+        console.log("mapGet", key);
+        const object = Deno.core.ops.op_cloudstate_map_get(
+          this.transactionId,
+          this.namespace,
+          value.objectId,
+          key
+        );
+        // const object = SuperJSON.parse(data);
+        mapSet.apply(map, [key, object]);
+        return object;
+      };
+      map.set = (key, value) => {
+        mapSet.apply(map, [key, value]);
+        changeMap.set(key, value);
+      };
+
+      Object.defineProperty(object, key, {
+        get: () => {
+          return map;
+        },
+        set: (v) => {
+          Object.defineProperty(object, key, {
+            value: v,
+          });
+        },
+      });
+    }
+  }
+
   commit() {
     Deno.core.ops.op_commit_transaction(this.transactionId);
   }
@@ -109,58 +177,7 @@ class CloudstateTransaction {
     if (!object) return undefined;
 
     for (const [key, value] of Object.entries(object)) {
-      if (value instanceof CloudstateObjectReference) {
-        Object.defineProperty(object, key, {
-          get: () => {
-            return this.getObject(value.objectId);
-          },
-          set: (v) => {
-            Object.defineProperty(object, key, {
-              value: v,
-            });
-          },
-        });
-      }
-
-      if (value instanceof CloudstateMapReference) {
-        const map = new Map();
-        const mapSet = map.set;
-        const mapGet = map.get;
-        const changeMap = new Map();
-        this.mapChanges.set(map, changeMap);
-        this.objectIds.set(map, value.objectId);
-
-        map.get = (key) => {
-          const result = mapGet.apply(map, [key]);
-          if (result) return result;
-
-          console.log("mapGet", key);
-          const object = Deno.core.ops.op_cloudstate_map_get(
-            this.transactionId,
-            this.namespace,
-            value.objectId,
-            key
-          );
-          // const object = SuperJSON.parse(data);
-          mapSet.apply(map, [key, object]);
-          return object;
-        };
-        map.set = (key, value) => {
-          mapSet.apply(map, [key, value]);
-          changeMap.set(key, value);
-        };
-
-        Object.defineProperty(object, key, {
-          get: () => {
-            return map;
-          },
-          set: (v) => {
-            Object.defineProperty(object, key, {
-              value: v,
-            });
-          },
-        });
-      }
+      this.hydrate(object, key, value);
     }
 
     this.objectIds.set(object, id);
@@ -215,6 +232,8 @@ class CloudstateTransaction {
 
           if (value instanceof Map) {
             flatObject[key] = new CloudstateMapReference(id);
+          } else if (value instanceof Array) {
+            flatObject[key] = new CloudstateArrayReference(id);
           } else {
             flatObject[key] = new CloudstateObjectReference(id);
           }
@@ -237,8 +256,64 @@ class CloudstateTransaction {
         }
       }
 
-      this.#exportObject(object, flatObject);
+      if (object instanceof Array) {
+        object.forEach((item, i) => {
+          Deno.core.ops.op_cloudstate_array_set(
+            this.transactionId,
+            this.namespace,
+            this.objectIds.get(object),
+            i,
+            item
+          );
+        });
+      } else {
+        this.#exportObject(object, flatObject);
+      }
     }
+  }
+
+  getArray(id) {
+    if (typeof id !== "string") throw new Error("id must be a string");
+
+    const existingArray = this.arrays.get(id);
+    if (existingArray) return existingArray;
+
+    const array = new Proxy(
+      {},
+      {
+        get: (_target, key) => {
+          if (key === "length") {
+            return Deno.core.ops.op_cloudstate_array_length(id);
+          }
+
+          const result = Deno.core.ops.op_cloudstate_array_get(
+            this.transactionId,
+            this.namespace,
+            id,
+            key
+          );
+
+          return result;
+        },
+        set: (_target, key, value) => {
+          if (typeof key !== "number") return;
+
+          Deno.core.ops.op_cloudstate_array_set(
+            this.transactionId,
+            this.namespace,
+            id,
+            key,
+            value
+          );
+        },
+      }
+    );
+
+    Object.setPrototypeOf(array, Array.prototype);
+
+    this.arrays.set(id, array);
+
+    return array;
   }
 
   #exportObject(object, data) {

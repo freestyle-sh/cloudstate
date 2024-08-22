@@ -2,6 +2,7 @@ use crate::{
     execution::run_script,
     extensions::cloudstate::{CloudstateObjectData, CloudstatePrimitiveData, ReDBCloudstate},
     gc::mark_and_sweep,
+    print::print_database,
     tables,
 };
 use redb::{backends::InMemoryBackend, Database, ReadableTable};
@@ -23,7 +24,7 @@ fn test_object() {
 
 #[test]
 fn test_maps() {
-    let _ = run_script(
+    let (cs, _) = run_script(
         "tests/maps.js",
         ReDBCloudstate {
             db: Database::builder()
@@ -33,11 +34,13 @@ fn test_maps() {
         },
     )
     .unwrap();
+
+    print_database(&cs.db);
 }
 
 #[test]
 fn test_simple_objects() {
-    let _ = run_script(
+    let (cs, _) = run_script(
         "tests/simple_objects.js",
         ReDBCloudstate {
             db: Database::builder()
@@ -47,11 +50,13 @@ fn test_simple_objects() {
         },
     )
     .unwrap();
+
+    print_database(&cs.db);
 }
 
 #[test]
 fn test_date() {
-    let _ = run_script(
+    let (cs, _) = run_script(
         "tests/dates.js",
         ReDBCloudstate {
             db: Database::builder()
@@ -61,11 +66,13 @@ fn test_date() {
         },
     )
     .unwrap();
+
+    print_database(&cs.db);
 }
 
 #[test]
 fn test_bigint() {
-    let _ = run_script(
+    let (cs, _) = run_script(
         "tests/bigints.js",
         ReDBCloudstate {
             db: Database::builder()
@@ -75,11 +82,13 @@ fn test_bigint() {
         },
     )
     .unwrap();
+
+    print_database(&cs.db);
 }
 
 #[test]
 fn test_nested_objects() {
-    let _ = run_script(
+    let (cs, _) = run_script(
         "tests/nested_objects.js",
         ReDBCloudstate {
             db: Database::builder()
@@ -89,21 +98,23 @@ fn test_nested_objects() {
         },
     )
     .unwrap();
+
+    print_database(&cs.db);
 }
 
 #[test]
 fn gc_test() {
-    let mut db = Database::builder()
+    let db = Database::builder()
         .create_with_backend(InMemoryBackend::default())
         .unwrap();
-    let mut cloudstate = ReDBCloudstate {
+    let cloudstate = ReDBCloudstate {
         db: db,
         transactions: HashMap::new(),
     };
 
     let (cloudstate, _) = run_script("tests/gc_test.js", cloudstate).unwrap();
 
-    let mut db = cloudstate.db;
+    let db = cloudstate.db;
     let read = db.begin_read();
     let read = match read {
         Ok(read) => read,
@@ -116,7 +127,7 @@ fn gc_test() {
         };
         let mut count = 0;
         for item in objects_table.iter().unwrap() {
-            if let Ok((key, value)) = item {
+            if let Ok((_key, _value)) = item {
                 count += 1;
             }
         }
@@ -124,7 +135,10 @@ fn gc_test() {
     }
     read.close().unwrap();
 
+    // Run the garbage collector
     mark_and_sweep(&db).unwrap();
+
+
     let read = db.begin_read().unwrap();
 
     {
@@ -133,10 +147,8 @@ fn gc_test() {
             Err(e) => panic!("Error opening objects table: {}", e),
         };
         let mut count = 0;
-        println!("\n\n");
         for item in objects_table.iter().unwrap() {
-            if let Ok((key, value)) = item {
-                println!("DATA: {:?}", value.value().data);
+            if let Ok((_key, _value)) = item {
                 count += 1;
             }
         }

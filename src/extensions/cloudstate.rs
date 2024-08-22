@@ -1,3 +1,4 @@
+use crate::tables::{ARRAYS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
 use chrono::{DateTime, TimeZone, Utc};
 use deno_core::anyhow::Error;
 use deno_core::error::JsError;
@@ -5,12 +6,10 @@ use deno_core::*;
 use redb::ReadableTable;
 use redb::{Database, WriteTransaction};
 use serde::{Deserialize, Serialize};
-use std::clone;
 use std::collections::HashMap;
+use std::i32;
 use url::Url;
 use v8::GetPropertyNamesArgs;
-
-use crate::tables::{MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
 
 #[op2]
 fn op_cloudstate_object_set(
@@ -103,6 +102,72 @@ fn op_cloudstate_map_get(
         namespace: namespace.to_string(),
         id: id.to_string(),
         field: field.to_string(),
+    };
+
+    let result = table.get(key).unwrap();
+    let result = result.map(|s| s.value().data);
+
+    result.unwrap()
+}
+
+#[op2]
+fn op_cloudstate_array_set(
+    state: &mut OpState,
+    #[string] transaction_id: String,
+    #[string] namespace: String,
+    #[string] id: String,
+    index: i32,
+    #[from_v8] value: CloudstatePrimitiveData,
+) -> Result<(), Error> {
+    let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
+    let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
+
+    let mut table = write_txn.open_table(ARRAYS_TABLE).unwrap();
+
+    let key = CloudstateArrayItemKey {
+        namespace: namespace.to_string(),
+        id: id.to_string(),
+        index: index,
+    };
+
+    let _ = table
+        .insert(&key, CloudstateArrayItemValue { data: value })
+        .unwrap();
+    Ok(())
+}
+
+#[op2(fast)]
+fn op_cloudstate_array_length(state: &mut OpState, #[string] id: String) -> i32 {
+    let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
+    let read_txn = cs.transactions.get(id.as_str()).unwrap();
+    let table = read_txn.open_table(ARRAYS_TABLE).unwrap();
+
+    let count = table
+        .iter()
+        .unwrap()
+        .filter(|entry| entry.as_ref().unwrap().0.value().id == id)
+        .count();
+
+    count as i32
+}
+
+#[op2]
+#[to_v8]
+fn op_cloudstate_array_get(
+    state: &mut OpState,
+    #[string] transaction_id: String,
+    #[string] namespace: String,
+    #[string] id: String,
+    index: i32,
+) -> CloudstatePrimitiveData {
+    let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
+    let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
+    let table = read_txn.open_table(ARRAYS_TABLE).unwrap();
+
+    let key = CloudstateArrayItemKey {
+        namespace: namespace.to_string(),
+        id: id.to_string(),
+        index: index,
     };
 
     let result = table.get(key).unwrap();
@@ -269,6 +334,7 @@ pub enum CloudstatePrimitiveData {
     // Error(JsError),
     ObjectReference(String),
     MapReference(String),
+    ArrayReference(String),
 }
 
 impl ToV8<'_> for CloudstatePrimitiveData {
@@ -299,6 +365,32 @@ impl ToV8<'_> for CloudstatePrimitiveData {
             CloudstatePrimitiveData::ObjectReference(value) => {
                 let context = scope.get_current_context();
                 let export_name = "CloudstateObjectReference";
+
+                let class = {
+                    let global = context.global(scope);
+
+                    let export_name = v8::String::new(scope, export_name).unwrap().into();
+                    global.get(scope, export_name).expect(
+                        "CloudstateMapReference class should be exported from cloudstate.js",
+                    )
+                };
+
+                let prototype_key = v8::String::new(scope, "prototype").unwrap().into();
+                let prototype = v8::Local::<v8::Function>::try_from(class)
+                    .unwrap()
+                    .get(scope, prototype_key)
+                    .unwrap();
+
+                let object = v8::Object::new(scope);
+                object.set_prototype(scope, prototype).unwrap();
+                let key = v8::String::new(scope, "objectId").unwrap().into();
+                let value = v8::String::new(scope, &value).unwrap().into();
+                object.set(scope, key, value);
+                object.into()
+            }
+            CloudstatePrimitiveData::ArrayReference(value) => {
+                let context = scope.get_current_context();
+                let export_name = "CloudstateArrayReference";
 
                 let class = {
                     let global = context.global(scope);
@@ -410,6 +502,14 @@ impl FromV8<'_> for CloudstatePrimitiveData {
                             .to_rust_string_lossy(scope),
                     ));
                 }
+                "CloudstateArrayReference" => {
+                    let key = v8::String::new(scope, "objectId").unwrap().into();
+                    return Ok(CloudstatePrimitiveData::ArrayReference(
+                        v8::Local::<v8::String>::try_from(object.get(scope, key).unwrap())
+                            .unwrap()
+                            .to_rust_string_lossy(scope),
+                    ));
+                }
                 _ => panic!("Custom classes not implemented yet"),
             }
         } else {
@@ -434,7 +534,17 @@ pub struct CloudstateMapFieldValue {
     pub data: CloudstatePrimitiveData,
 }
 
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+pub struct CloudstateArrayItemKey {
+    pub namespace: String,
+    pub id: String,
+    pub index: i32,
+}
 
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub struct CloudstateArrayItemValue {
+    pub data: CloudstatePrimitiveData,
+}
 
 deno_core::extension!(
   cloudstate,
@@ -447,6 +557,9 @@ deno_core::extension!(
     op_cloudstate_map_get,
     op_create_transaction,
     op_commit_transaction,
+    op_cloudstate_array_set,
+    op_cloudstate_array_get,
+    op_cloudstate_array_length,
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],

@@ -26,6 +26,8 @@
 
   const object = transaction.getRoot("objects-test-root");
 
+  console.log(object);
+
   if (!object) throw new Error("object should exist");
   if (object.counters.length !== 1)
     throw new Error("object.counters should have length 1");
