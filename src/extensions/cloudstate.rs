@@ -268,7 +268,7 @@ pub enum CloudstatePrimitiveData {
     Number(f64),
     String(String),
     Boolean(bool),
-    BigInt(i64),
+    BigInt(Box<[u64]>),
     Undefined,
     Null,
     Date(DateTime<Utc>),
@@ -294,7 +294,7 @@ impl ToV8<'_> for CloudstatePrimitiveData {
             }
             CloudstatePrimitiveData::Boolean(value) => v8::Boolean::new(scope, value).into(),
             CloudstatePrimitiveData::BigInt(value) => {
-                v8::BigInt::new_from_i64(scope, value.clone()).into()
+                v8::BigInt::new_from_words(scope, false, &value).unwrap().into()
             }
             CloudstatePrimitiveData::Undefined => v8::undefined(scope).into(),
             CloudstatePrimitiveData::Null => v8::null(scope).into(),
@@ -331,7 +331,10 @@ impl FromV8<'_> for CloudstatePrimitiveData {
             Ok(CloudstatePrimitiveData::Undefined)
         } else if value.is_big_int() {
             let bigint = v8::Local::<v8::BigInt>::try_from(value).unwrap();
-            let (value, _) = bigint.i64_value();
+            let length = bigint.word_count();
+            let mut value = vec![0; length];
+            bigint.to_words_array(&mut value);
+            let value = value.into_boxed_slice();
             Ok(CloudstatePrimitiveData::BigInt(value))
         } else if value.is_number() {
             let number = v8::Local::<v8::Number>::try_from(value).unwrap();

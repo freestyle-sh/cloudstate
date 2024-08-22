@@ -61,3 +61,17 @@ fn test_date() {
     )
     .unwrap();
 }
+
+#[test]
+fn test_bigint() {
+    let _ = run_script(
+        "tests/bigints.js",
+        ReDBCloudstate {
+            db: Database::builder()
+                .create_with_backend(InMemoryBackend::default())
+                .unwrap(),
+            transactions: HashMap::new(),
+        },
+    )
+    .unwrap();
+}
