@@ -60,14 +60,14 @@ fn op_cloudstate_object_get(
     Ok(result.unwrap())
 }
 
-#[op2(fast)]
+#[op2]
 fn op_cloudstate_map_set(
     state: &mut OpState,
     #[string] transaction_id: String,
     #[string] namespace: String,
     #[string] id: String,
     #[string] field: String,
-    #[string] value: String,
+    #[from_v8] value: CloudstatePrimitiveData,
 ) -> Result<(), Error> {
     let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
     let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
@@ -87,14 +87,14 @@ fn op_cloudstate_map_set(
 }
 
 #[op2]
-#[string]
+#[to_v8]
 fn op_cloudstate_map_get(
     state: &mut OpState,
     #[string] transaction_id: String,
     #[string] namespace: String,
     #[string] id: String,
     #[string] field: String,
-) -> Result<Option<String>, Error> {
+) -> CloudstatePrimitiveData {
     let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
     let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
     let table = read_txn.open_table(MAPS_TABLE).unwrap();
@@ -108,7 +108,7 @@ fn op_cloudstate_map_get(
     let result = table.get(key).unwrap();
     let result = result.map(|s| s.value().data);
 
-    Ok(result)
+    result.unwrap()
 }
 
 #[op2]
@@ -128,6 +128,7 @@ fn op_cloudstate_object_root_get(
     };
     let result = table.get(key).unwrap();
     let result = result.map(|s| s.value().id);
+    println!("op_cloudstate_object_root_get, result: {:?}", result);
     Ok(result)
 }
 
@@ -295,10 +296,32 @@ impl ToV8<'_> for CloudstatePrimitiveData {
             }
             // CloudstatePrimitiveData::Error(value) => v8::Error::new(scope, value.clone()).into(),
             CloudstatePrimitiveData::ObjectReference(value) => {
-                v8::String::new(scope, &value).unwrap().into()
+                let context = scope.get_current_context();
+                let export_name = "CloudstateObjectReference";
+
+                let class = {
+                    let global = context.global(scope);
+
+                    let export_name = v8::String::new(scope, export_name).unwrap().into();
+                    global.get(scope, export_name).expect(
+                        "CloudstateMapReference class should be exported from cloudstate.js",
+                    )
+                };
+
+                let prototype_key = v8::String::new(scope, "prototype").unwrap().into();
+                let prototype = v8::Local::<v8::Function>::try_from(class)
+                    .unwrap()
+                    .get(scope, prototype_key)
+                    .unwrap();
+
+                let object = v8::Object::new(scope);
+                object.set_prototype(scope, prototype).unwrap();
+                let key = v8::String::new(scope, "objectId").unwrap().into();
+                let value = v8::String::new(scope, &value).unwrap().into();
+                object.set(scope, key, value);
+                object.into()
             }
             CloudstatePrimitiveData::MapReference(value) => {
-                // println!("CloudstatePrimitiveData::MapReference: {}", value);
                 let context = scope.get_current_context();
                 let export_name = "CloudstateMapReference";
 
@@ -317,20 +340,8 @@ impl ToV8<'_> for CloudstatePrimitiveData {
                     .get(scope, prototype_key)
                     .unwrap();
 
-                // println!(
-                //     "{:?}",
-                //     v8::Function::try_from(prototype).unwrap().get_name(scope)
-                // );
-
-                // print!("is function: {:?}", prototype.is_function());
-
                 let object = v8::Object::new(scope);
-                // println!("{:?}", v8::Object::try_from(prototype).unwrap().get_constructor_name());
                 object.set_prototype(scope, prototype).unwrap();
-                // println!(
-                //     "{:?}",
-                //     object.get_constructor_name().to_rust_string_lossy(scope)
-                // );
                 let key = v8::String::new(scope, "objectId").unwrap().into();
                 let value = v8::String::new(scope, &value).unwrap().into();
                 object.set(scope, key, value);
@@ -390,6 +401,14 @@ impl FromV8<'_> for CloudstatePrimitiveData {
                             .to_rust_string_lossy(scope),
                     ));
                 }
+                "CloudstateObjectReference" => {
+                    let key = v8::String::new(scope, "objectId").unwrap().into();
+                    return Ok(CloudstatePrimitiveData::ObjectReference(
+                        v8::Local::<v8::String>::try_from(object.get(scope, key).unwrap())
+                            .unwrap()
+                            .to_rust_string_lossy(scope),
+                    ));
+                }
                 _ => panic!("Custom classes not implemented yet"),
             }
         } else {
@@ -411,7 +430,7 @@ pub struct CloudstateMapFieldKey {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct CloudstateMapFieldValue {
-    pub data: String,
+    pub data: CloudstatePrimitiveData,
 }
 
 

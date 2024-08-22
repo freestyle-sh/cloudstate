@@ -19,6 +19,7 @@ class CloudstateMapReference {
 }
 
 globalThis.CloudstateMapReference = CloudstateMapReference;
+globalThis.CloudstateObjectReference = CloudstateObjectReference;
 
 function isPrimitive(value) {
   return (
@@ -104,8 +105,6 @@ class CloudstateTransaction {
       this.namespace,
       id
     );
-
-    console.log("object", object.counters.prototype);
 
     if (!object) return undefined;
 
