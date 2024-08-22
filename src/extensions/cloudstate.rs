@@ -171,17 +171,6 @@ fn op_commit_transaction(state: &mut OpState, #[string] id: String) -> Result<()
     Ok(())
 }
 
-#[op2]
-#[to_v8]
-fn op_cloudstate_get_test_object<'a>(state: &mut OpState) -> CloudstateObjectData {
-    return CloudstateObjectData {
-        fields: HashMap::from([
-            ("test".to_string(), CloudstatePrimitiveData::Number(1.0)),
-            ("test2".to_string(), CloudstatePrimitiveData::Number(2.0)),
-        ]),
-    };
-}
-
 pub struct ReDBCloudstate {
     pub db: Database,
     pub transactions: HashMap<String, WriteTransaction>,
@@ -251,7 +240,6 @@ impl FromV8<'_> for CloudstateObjectData {
 
         for i in 0..length {
             let key = array.get_index(scope, i).unwrap();
-            // let key = key.to_rust_string_lossy(scope);
             let value = object.get(scope, key).unwrap();
             let value = CloudstatePrimitiveData::from_v8(scope, value).unwrap();
             fields.insert(key.to_rust_string_lossy(scope), value);
@@ -385,8 +373,6 @@ deno_core::extension!(
     op_cloudstate_map_get,
     op_create_transaction,
     op_commit_transaction,
-
-    op_cloudstate_get_test_object
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],
