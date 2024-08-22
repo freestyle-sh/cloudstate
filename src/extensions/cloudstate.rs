@@ -175,6 +175,7 @@ fn op_commit_transaction(state: &mut OpState, #[string] id: String) -> Result<()
     Ok(())
 }
 
+
 pub struct ReDBCloudstate {
     pub db: Database,
     pub transactions: HashMap<String, WriteTransaction>,
