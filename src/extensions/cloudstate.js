@@ -18,6 +18,8 @@ class CloudstateMapReference {
   }
 }
 
+globalThis.CloudstateMapReference = CloudstateMapReference;
+
 function isPrimitive(value) {
   return (
     value === null ||
@@ -103,6 +105,8 @@ class CloudstateTransaction {
       id
     );
 
+    console.log("object", object.counters.prototype);
+
     if (!object) return undefined;
 
     for (const [key, value] of Object.entries(object)) {
@@ -131,13 +135,14 @@ class CloudstateTransaction {
           const result = mapGet.apply(map, [key]);
           if (result) return result;
 
-          const data = Deno.core.ops.op_cloudstate_map_get(
+          console.log("mapGet", key);
+          const object = Deno.core.ops.op_cloudstate_map_get(
             this.transactionId,
             this.namespace,
             value.objectId,
             key
           );
-          const object = SuperJSON.parse(data);
+          // const object = SuperJSON.parse(data);
           mapSet.apply(map, [key, object]);
           return object;
         };

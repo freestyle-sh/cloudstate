@@ -10,8 +10,6 @@
   const count = object.counters.get("a");
   object.counters.set("a", count + 1);
 
-  console.log(object.counters.get("a"));
-
   transaction.setObject(object);
   transaction.setRoot("test-root", object);
   transaction.commit();
@@ -23,6 +21,9 @@
   const transaction = cloudstate.createTransaction();
 
   const object = transaction.getRoot("test-root");
+
+  // console.log(object);
+  // console.log(object.counters.get("a"));
 
   if (!object) throw new Error("object should exist");
   // if (object.counters.size !== 1)

@@ -282,16 +282,12 @@ impl ToV8<'_> for CloudstatePrimitiveData {
             }
             CloudstatePrimitiveData::Boolean(value) => v8::Boolean::new(scope, value).into(),
             CloudstatePrimitiveData::BigInt(value) => {
-                v8::BigInt::new_from_words(scope, false, &value).unwrap().into()
+                v8::BigInt::new_from_words(scope, false, &value)
+                    .unwrap()
+                    .into()
             }
             CloudstatePrimitiveData::Undefined => v8::undefined(scope).into(),
             CloudstatePrimitiveData::Null => v8::null(scope).into(),
-            // CloudstatePrimitiveData::Date(value) => v8::Date::new(
-            //     scope,
-            //     value.timestamp_nanos_opt().unwrap() as f64 / 1_000_000.0,
-            // )
-            // .unwrap(),
-            // CloudstatePrimitiveData::RegExp(value) => v8::RegExp::new(scope, value).unwrap().into(),
             CloudstatePrimitiveData::URL(value) => {
                 v8::String::new(scope, value.as_str()).unwrap().into()
             }
@@ -300,7 +296,43 @@ impl ToV8<'_> for CloudstatePrimitiveData {
                 v8::String::new(scope, &value).unwrap().into()
             }
             CloudstatePrimitiveData::MapReference(value) => {
-                v8::String::new(scope, &value).unwrap().into()
+                // println!("CloudstatePrimitiveData::MapReference: {}", value);
+                let context = scope.get_current_context();
+                let export_name = "CloudstateMapReference";
+
+                let class = {
+                    let global = context.global(scope);
+
+                    let export_name = v8::String::new(scope, export_name).unwrap().into();
+                    global.get(scope, export_name).expect(
+                        "CloudstateMapReference class should be exported from cloudstate.js",
+                    )
+                };
+
+                let prototype_key = v8::String::new(scope, "prototype").unwrap().into();
+                let prototype = v8::Local::<v8::Function>::try_from(class)
+                    .unwrap()
+                    .get(scope, prototype_key)
+                    .unwrap();
+
+                // println!(
+                //     "{:?}",
+                //     v8::Function::try_from(prototype).unwrap().get_name(scope)
+                // );
+
+                // print!("is function: {:?}", prototype.is_function());
+
+                let object = v8::Object::new(scope);
+                // println!("{:?}", v8::Object::try_from(prototype).unwrap().get_constructor_name());
+                object.set_prototype(scope, prototype).unwrap();
+                // println!(
+                //     "{:?}",
+                //     object.get_constructor_name().to_rust_string_lossy(scope)
+                // );
+                let key = v8::String::new(scope, "objectId").unwrap().into();
+                let value = v8::String::new(scope, &value).unwrap().into();
+                object.set(scope, key, value);
+                object.into()
             }
         }))
     }
@@ -344,12 +376,24 @@ impl FromV8<'_> for CloudstatePrimitiveData {
             ))
         } else if value.is_undefined() {
             Ok(CloudstatePrimitiveData::Undefined)
+        } else if value.is_object() {
+            let object = v8::Local::<v8::Object>::try_from(value).unwrap();
+            let constructor = object.get_constructor_name().to_rust_string_lossy(scope);
+            match constructor.as_str() {
+                "CloudstateMapReference" => {
+                    let key = v8::String::new(scope, "objectId").unwrap().into();
+                    return Ok(CloudstatePrimitiveData::MapReference(
+                        v8::Local::<v8::String>::try_from(object.get(scope, key).unwrap())
+                            .unwrap()
+                            .to_rust_string_lossy(scope),
+                    ));
+                }
+                _ => panic!("Custom classes not implemented yet"),
+            }
         } else {
             let msg_str = v8::String::new(scope, "Not implemented").unwrap();
             let msg = v8::Exception::error(scope, msg_str);
-            Err(
-                JsError::from_v8_exception(scope, msg),
-            )
+            Err(JsError::from_v8_exception(scope, msg))
         }
     }
 
