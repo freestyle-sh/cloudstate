@@ -58,14 +58,14 @@ fn op_cloudstate_object_get(
     Ok(result.unwrap())
 }
 
-#[op2(fast)]
+#[op2]
 fn op_cloudstate_map_set(
     state: &mut OpState,
     #[string] transaction_id: String,
     #[string] namespace: String,
     #[string] id: String,
     #[string] field: String,
-    #[string] value: String,
+    #[from_v8] value: CloudstatePrimitiveData,
 ) -> Result<(), Error> {
     let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
     let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
@@ -85,14 +85,14 @@ fn op_cloudstate_map_set(
 }
 
 #[op2]
-#[string]
+#[to_v8]
 fn op_cloudstate_map_get(
     state: &mut OpState,
     #[string] transaction_id: String,
     #[string] namespace: String,
     #[string] id: String,
     #[string] field: String,
-) -> Result<Option<String>, Error> {
+) -> CloudstatePrimitiveData {
     let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
     let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
     let table = read_txn.open_table(MAPS_TABLE).unwrap();
@@ -106,7 +106,7 @@ fn op_cloudstate_map_get(
     let result = table.get(key).unwrap();
     let result = result.map(|s| s.value().data);
 
-    Ok(result)
+    result.unwrap()
 }
 
 #[op2]
@@ -126,6 +126,7 @@ fn op_cloudstate_object_root_get(
     };
     let result = table.get(key).unwrap();
     let result = result.map(|s| s.value().id);
+    println!("op_cloudstate_object_root_get, result: {:?}", result);
     Ok(result)
 }
 
@@ -409,7 +410,7 @@ pub struct CloudstateMapFieldKey {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct CloudstateMapFieldValue {
-    pub data: String,
+    pub data: CloudstatePrimitiveData,
 }
 
 pub const ROOTS_TABLE: TableDefinition<Bincode<CloudstateRootKey>, Bincode<CloudstateRootValue>> =
