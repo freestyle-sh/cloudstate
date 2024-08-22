@@ -1,6 +1,7 @@
 use crate::{
     execution::run_script,
     extensions::cloudstate::{CloudstateObjectData, CloudstatePrimitiveData, ReDBCloudstate},
+    print::print_database,
 };
 use redb::{backends::InMemoryBackend, Database};
 use std::collections::HashMap;
@@ -21,7 +22,7 @@ fn test_object() {
 
 #[test]
 fn test_maps() {
-    let _ = run_script(
+    let (cs, _) = run_script(
         "tests/maps.js",
         ReDBCloudstate {
             db: Database::builder()
@@ -31,11 +32,13 @@ fn test_maps() {
         },
     )
     .unwrap();
+
+    print_database(&cs.db);
 }
 
 #[test]
 fn test_simple_objects() {
-    let _ = run_script(
+    let (cs, _) = run_script(
         "tests/simple_objects.js",
         ReDBCloudstate {
             db: Database::builder()
@@ -45,11 +48,13 @@ fn test_simple_objects() {
         },
     )
     .unwrap();
+
+    print_database(&cs.db);
 }
 
 #[test]
 fn test_date() {
-    let _ = run_script(
+    let (cs, _) = run_script(
         "tests/dates.js",
         ReDBCloudstate {
             db: Database::builder()
@@ -59,11 +64,13 @@ fn test_date() {
         },
     )
     .unwrap();
+
+    print_database(&cs.db);
 }
 
 #[test]
 fn test_bigint() {
-    let _ = run_script(
+    let (cs, _) = run_script(
         "tests/bigints.js",
         ReDBCloudstate {
             db: Database::builder()
@@ -73,11 +80,13 @@ fn test_bigint() {
         },
     )
     .unwrap();
+
+    print_database(&cs.db);
 }
 
 #[test]
 fn test_nested_objects() {
-    let _ = run_script(
+    let (cs, _) = run_script(
         "tests/nested_objects.js",
         ReDBCloudstate {
             db: Database::builder()
@@ -87,4 +96,6 @@ fn test_nested_objects() {
         },
     )
     .unwrap();
+
+    print_database(&cs.db);
 }
