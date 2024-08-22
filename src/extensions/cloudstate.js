@@ -105,8 +105,6 @@ class CloudstateTransaction {
       id
     );
 
-    console.log("object", object.counters.prototype);
-
     if (!object) return undefined;
 
     for (const [key, value] of Object.entries(object)) {
