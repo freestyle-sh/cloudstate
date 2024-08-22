@@ -1,10 +1,10 @@
-use crate::bincode::Bincode;
+use crate::tables::{ARRAYS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
 use chrono::{DateTime, TimeZone, Utc};
 use deno_core::anyhow::Error;
 use deno_core::error::JsError;
 use deno_core::*;
 use redb::ReadableTable;
-use redb::{Database, TableDefinition, WriteTransaction};
+use redb::{Database, WriteTransaction};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::i32;
@@ -256,7 +256,7 @@ pub struct CloudstateRootValue {
     pub id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct CloudstateObjectKey {
     pub namespace: String,
     pub id: String,
@@ -544,24 +544,6 @@ pub struct CloudstateArrayItemKey {
 pub struct CloudstateArrayItemValue {
     pub data: CloudstatePrimitiveData,
 }
-
-pub const ROOTS_TABLE: TableDefinition<Bincode<CloudstateRootKey>, Bincode<CloudstateRootValue>> =
-    TableDefinition::new("roots");
-
-pub const OBJECTS_TABLE: TableDefinition<
-    Bincode<CloudstateObjectKey>,
-    Bincode<CloudstateObjectValue>,
-> = TableDefinition::new("objects");
-
-pub const MAPS_TABLE: TableDefinition<
-    Bincode<CloudstateMapFieldKey>,
-    Bincode<CloudstateMapFieldValue>,
-> = TableDefinition::new("maps");
-
-pub const ARRAYS_TABLE: TableDefinition<
-    Bincode<CloudstateArrayItemKey>,
-    Bincode<CloudstateArrayItemValue>,
-> = TableDefinition::new("arrays");
 
 deno_core::extension!(
   cloudstate,
