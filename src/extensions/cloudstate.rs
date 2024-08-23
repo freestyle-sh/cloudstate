@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::i32;
 use url::Url;
-use v8::GetPropertyNamesArgs;
+use v8::{Data, GetPropertyNamesArgs};
 
 #[op2]
 fn op_cloudstate_object_set(
@@ -240,11 +240,11 @@ fn op_commit_transaction(state: &mut OpState, #[string] id: String) -> Result<()
     Ok(())
 }
 
-
 pub struct ReDBCloudstate {
     pub db: Database,
     pub transactions: HashMap<String, WriteTransaction>,
 }
+
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CloudstateRootKey {
@@ -522,11 +522,11 @@ impl FromV8<'_> for CloudstatePrimitiveData {
     type Error = JsError;
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct CloudstateMapFieldKey {
     pub namespace: String,
     pub id: String,
-    field: String,
+    pub field: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
