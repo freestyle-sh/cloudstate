@@ -152,10 +152,10 @@ fn test_gc_objects() {
             if let Ok((_key, _value)) = item {
                 count += 1;
             }
-        }   
+        }
         assert_eq!(count, 5);
     }
-    
+
     read.close().unwrap();
 
     // Run the garbage collector
@@ -209,7 +209,7 @@ fn test_gc_maps() {
             if let Ok((_key, _value)) = item {
                 count += 1;
             }
-        }   
+        }
         assert_eq!(count, 2);
     }
     read.close().unwrap();
@@ -232,13 +232,13 @@ fn test_gc_maps() {
             if let Ok((_key, _value)) = item {
                 count += 1;
             }
-        }   
+        }
         assert_eq!(count, 0);
     }
 }
 
 #[test]
-pub fn test_gc_array(){
+pub fn test_gc_array() {
     let db = Database::builder()
         .create_with_backend(InMemoryBackend::default())
         .unwrap();
@@ -265,7 +265,7 @@ pub fn test_gc_array(){
             if let Ok((_key, _value)) = item {
                 count += 1;
             }
-        }   
+        }
         assert_eq!(count, 9);
     }
     read.close().unwrap();
@@ -288,8 +288,7 @@ pub fn test_gc_array(){
             if let Ok((_key, _value)) = item {
                 count += 1;
             }
-        }   
+        }
         assert_eq!(count, 0);
     }
-
 }
