@@ -21,7 +21,9 @@ fn main() {
         transactions: HashMap::new(),
     };
 
-    let (cs, _) = run_script("tests/objects_and_arrays.js", cs).unwrap();
+    let (cs, result) = run_script("tests/objects_and_arrays.js", cs).unwrap();
 
     print_database(&cs.db);
+
+    result.unwrap();
 }

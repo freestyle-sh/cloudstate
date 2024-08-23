@@ -7,8 +7,9 @@ function uuidv4() {
 }
 
 class CloudstateObjectReference {
-  constructor(objectId) {
+  constructor(objectId, constructorName) {
     this.objectId = objectId;
+    this.constructorName = constructorName;
   }
 }
 
@@ -49,14 +50,15 @@ globalThis.Cloudstate = class Cloudstate {
    ** Keys: objects themselves
    ** Values: object ids - strings
    */
-  constructor(namespace) {
+  constructor(namespace, options) {
     this.namespace = namespace;
+    this.customClasses = options?.customClasses || [];
   }
 
   createTransaction() {
     const id = uuidv4();
     Deno.core.ops.op_create_transaction(id, this.namespace);
-    return new CloudstateTransaction(this.namespace, id);
+    return new CloudstateTransaction(this.namespace, id, this.customClasses);
   }
 };
 
@@ -70,21 +72,39 @@ class CloudstateTransaction {
   objects = new Map();
   mapChanges = new Map();
   arrays = new Map();
+  customClasses = [];
 
-  constructor(namespace, transactionId) {
+  constructor(namespace, transactionId, customClasses) {
     if (typeof namespace !== "string") {
       throw new Error("namespace must be a string");
     }
 
     this.namespace = namespace;
     this.transactionId = transactionId;
+    this.customClasses = customClasses;
   }
 
   hydrate(object, key, value) {
     if (value instanceof CloudstateObjectReference) {
       Object.defineProperty(object, key, {
         get: () => {
-          return this.getObject(value.objectId);
+          const object = this.getObject(value.objectId);
+
+          if (value.constructorName) {
+            const constructor = this.customClasses.find(
+              (klass) => klass.name === value.constructorName
+            );
+
+            if (!constructor) {
+              throw new Error(
+                `Custom class ${value.constructorName} not found`
+              );
+            }
+
+            Object.setPrototypeOf(object, constructor.prototype);
+          }
+
+          return object;
         },
         set: (v) => {
           Object.defineProperty(object, key, {
@@ -194,6 +214,8 @@ class CloudstateTransaction {
 
       const isArray = object instanceof Array;
       const flatObject = isArray ? [] : {};
+      Object.setPrototypeOf(flatObject, object.constructor.prototype);
+
       for (let [key, value] of Object.entries(object)) {
         if (isArray) key = parseInt(key);
         if (value === undefined) continue;
@@ -201,9 +223,9 @@ class CloudstateTransaction {
         if (isPrimitive(value)) {
           flatObject[key] = value;
         } else if (typeof value === "object") {
-          if (![Object, Array, Map].includes(value.constructor)) {
-            throw new Error(`${value.constructor.name} cannot be serialized`);
-          }
+          // if (![Object, Array, Map].includes(value.constructor)) {
+          //   throw new Error(`${value.constructor.name} cannot be serialized`);
+          // }
 
           let id = this.objectIds.get(value);
           if (!id) {
@@ -216,7 +238,12 @@ class CloudstateTransaction {
           } else if (value instanceof Array) {
             flatObject[key] = new CloudstateArrayReference(id);
           } else {
-            flatObject[key] = new CloudstateObjectReference(id);
+            flatObject[key] = new CloudstateObjectReference(
+              id,
+              [Object, Array, Map].includes(value.constructor)
+                ? undefined
+                : value.constructor.name
+            );
           }
 
           Object.defineProperty(object, key, {
@@ -287,6 +314,20 @@ class CloudstateTransaction {
             Object.entries(object).forEach(([key, value]) => {
               this.hydrate(object, key, value);
             });
+
+            if (result.constructorName) {
+              const constructor = this.customClasses.find(
+                (klass) => klass.name === result.constructorName
+              );
+
+              if (!constructor) {
+                throw new Error(
+                  `Custom class ${result.constructorName} not found`
+                );
+              }
+
+              Object.setPrototypeOf(object, constructor.prototype);
+            }
 
             return object;
           } else {

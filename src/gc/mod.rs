@@ -50,7 +50,6 @@ fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
             Err(_e) => None,
         };
 
-
         let map_table = match tx.open_table(MAPS_TABLE) {
             Ok(table) => Some(table),
             Err(_e) => None,
@@ -80,7 +79,7 @@ fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
                                 // CloudstatePrimitiveData::URL(i)
                                 CloudstatePrimitiveData::ObjectReference(obj_ref) => {
                                     stack.push(Pointer::Object(CloudstateObjectKey {
-                                        id: obj_ref,
+                                        id: obj_ref.id,
                                         namespace: object_key.namespace.clone(),
                                     }));
                                 }
@@ -91,8 +90,8 @@ fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
                                         namespace: object_key.namespace.clone(),
                                     }));
                                 }
-                                _ => { 
-                                    
+                                _ => {
+
                                     /* These don't have references so they don't need anything */
                                 }
                             }
@@ -108,19 +107,19 @@ fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
                         match map.value().data {
                             CloudstatePrimitiveData::ObjectReference(reference) => {
                                 stack.push(Pointer::Object(CloudstateObjectKey {
-                                    id: reference,
+                                    id: reference.id,
                                     namespace: key.namespace.clone(),
                                 }));
-                            },
+                            }
                             CloudstatePrimitiveData::MapReference(reference) => {
                                 stack.push(Pointer::Map(CloudstateMapFieldKey {
                                     id: reference,
                                     field: key.field.clone(),
                                     namespace: key.namespace.clone(),
                                 }));
-                            },
+                            }
                             CloudstatePrimitiveData::ArrayReference(_) => todo!(),
-                            _ => {/*Irrelevant for marking */}
+                            _ => { /*Irrelevant for marking */ }
                         }
                     } else {
                         // This should never happen, but it def could 💀
@@ -171,13 +170,13 @@ fn sweep(tx: WriteTransaction, reachable: &BTreeSet<Pointer>) -> anyhow::Result<
             // delete key
             let _: Result<(), ()> = match pointer {
                 Pointer::Object(key) => {
-                    let _ =objects_table.remove(&key)?;
+                    let _ = objects_table.remove(&key)?;
                     Ok(())
-                },
+                }
                 Pointer::Map(key) => {
                     let _ = maps_table.remove(&key)?;
                     Ok(())
-                },
+                }
             };
         }
     }
