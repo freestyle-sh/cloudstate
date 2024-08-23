@@ -5,22 +5,13 @@
   const root = {};
 
   const nested1 = {
-    value: 5,
-    nestedObject: {
-      value: 6,
-    },
+    value: new Map([
+      [1, 2],
+      ["a", "b"],
+    ]),
   };
 
   root.nested1 = nested1;
-
-  const nested2 = {
-    value: 7,
-    otherNest: {
-      value: 8,
-    },
-  };
-
-  root.nested2 = nested2;
 
   const transaction = cloudstate.createTransaction();
 
@@ -43,13 +34,13 @@
 
   if (!root.nested1) throw new Error("root.nested1 should exist");
 
-  if (!root.nested1.nestedObject)
-    throw new Error("root.nested1.nestedObject should exist");
+  if (!root.nested1.value) throw new Error("root.nested1.value should exist");
 
-  if (!root.nested2) throw new Error("root.nested2 should exist");
+  if (!root.nested1.value.get(1))
+    throw new Error("root.nested1.value.get(1) should exist");
 
-  if (!root.nested2.otherNest)
-    throw new Error("root.nested2.otherNest should exist");
+  if (!root.nested1.value.get("a"))
+    throw new Error("root.nested1.value.get('a') should exist");
 
   transaction.commit();
 }
@@ -64,7 +55,8 @@
 
   if (!root) throw new Error("root should exist");
 
-  delete root.nested1;
+  delete root.nested1.value;
+
 
   transaction.setObject(root);
   transaction.setRoot("test-root", root);
@@ -73,8 +65,6 @@
 }
 
 {
-  // confirm nested1 is gone but nested2 is still there
-
   const cloudstate = new Cloudstate("test-namespace");
 
   const transaction = cloudstate.createTransaction();
@@ -83,12 +73,10 @@
 
   if (!root) throw new Error("root should exist");
 
-  if (root.nested1) throw new Error("root.nested1 should not exist");
+  if (!root.nested1) throw new Error("root.nested1 should exist");
 
-  if (!root.nested2) throw new Error("root.nested2 should exist");
-
-  if (!root.nested2.otherNest)
-    throw new Error("root.nested2.otherNest should exist");
+  if (root.nested1.value)
+    throw new Error("root.nested1.value should not exist");
 
   transaction.commit();
 }
