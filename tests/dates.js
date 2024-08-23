@@ -19,7 +19,6 @@ const baseDate = new Date();
   const transaction = cloudstate.createTransaction();
 
   const object = transaction.getRoot("test-root");
-  console.log("OUTPUT WITH DATE", object, typeof object.date, object.date.getFullYear());
 
   if (!object) throw new Error("object should exist");
   if (!object.date) throw new Error("object.date should exist");

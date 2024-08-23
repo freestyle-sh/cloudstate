@@ -316,6 +316,8 @@ impl FromV8<'_> for CloudstateObjectData {
             let value = CloudstatePrimitiveData::from_v8(scope, value).unwrap();
             fields.insert(key.to_rust_string_lossy(scope), value);
         }
+
+        let constructor_key = v8::String::new(scope, "constructorName").unwrap();
         Ok(CloudstateObjectData { fields })
     }
 
@@ -334,9 +336,15 @@ pub enum CloudstatePrimitiveData {
     // RegExp(String),
     URL(Url),
     // Error(JsError),
-    ObjectReference(String),
+    ObjectReference(ObjectReference),
     MapReference(String),
     ArrayReference(String),
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub struct ObjectReference {
+    pub id: String,
+    pub constructor_name: Option<String>,
 }
 
 impl ToV8<'_> for CloudstatePrimitiveData {
@@ -372,9 +380,9 @@ impl ToV8<'_> for CloudstatePrimitiveData {
                     let global = context.global(scope);
 
                     let export_name = v8::String::new(scope, export_name).unwrap().into();
-                    global.get(scope, export_name).expect(
-                        "CloudstateMapReference class should be exported from cloudstate.js",
-                    )
+                    global
+                        .get(scope, export_name)
+                        .expect("CloudstateObjectReference class should be globally defined")
                 };
 
                 let prototype_key = v8::String::new(scope, "prototype").unwrap().into();
@@ -383,11 +391,27 @@ impl ToV8<'_> for CloudstatePrimitiveData {
                     .get(scope, prototype_key)
                     .unwrap();
 
+                let constructor_name_key = v8::String::new(scope, "constructorName").unwrap();
+
                 let object = v8::Object::new(scope);
                 object.set_prototype(scope, prototype).unwrap();
                 let key = v8::String::new(scope, "objectId").unwrap().into();
-                let value = v8::String::new(scope, &value).unwrap().into();
-                object.set(scope, key, value);
+                let object_value = v8::String::new(scope, &value.id).unwrap().into();
+
+                let constructor_name = &value.constructor_name;
+                let constructor_name = if let Some(constructor_name) = constructor_name {
+                    v8::String::new(scope, constructor_name).unwrap().into()
+                } else {
+                    None
+                };
+                if let Some(constructor_name) = constructor_name {
+                    object
+                        .set(scope, constructor_name_key.into(), constructor_name.into())
+                        .unwrap();
+                }
+
+                object.set(scope, key, object_value);
+
                 object.into()
             }
             CloudstatePrimitiveData::ArrayReference(value) => {
@@ -398,9 +422,9 @@ impl ToV8<'_> for CloudstatePrimitiveData {
                     let global = context.global(scope);
 
                     let export_name = v8::String::new(scope, export_name).unwrap().into();
-                    global.get(scope, export_name).expect(
-                        "CloudstateMapReference class should be exported from cloudstate.js",
-                    )
+                    global
+                        .get(scope, export_name)
+                        .expect("CloudstateArrayReference class should be globally defined")
                 };
 
                 let prototype_key = v8::String::new(scope, "prototype").unwrap().into();
@@ -424,9 +448,9 @@ impl ToV8<'_> for CloudstatePrimitiveData {
                     let global = context.global(scope);
 
                     let export_name = v8::String::new(scope, export_name).unwrap().into();
-                    global.get(scope, export_name).expect(
-                        "CloudstateMapReference class should be exported from cloudstate.js",
-                    )
+                    global
+                        .get(scope, export_name)
+                        .expect("CloudstateMapReference class should be globally defined")
                 };
 
                 let prototype_key = v8::String::new(scope, "prototype").unwrap().into();
@@ -497,12 +521,31 @@ impl FromV8<'_> for CloudstatePrimitiveData {
                     ));
                 }
                 "CloudstateObjectReference" => {
-                    let key = v8::String::new(scope, "objectId").unwrap().into();
-                    return Ok(CloudstatePrimitiveData::ObjectReference(
-                        v8::Local::<v8::String>::try_from(object.get(scope, key).unwrap())
+                    let object_key = v8::String::new(scope, "objectId").unwrap().into();
+                    let constructor_name_key = v8::String::new(scope, "constructorName").unwrap();
+
+                    let constructor_name = object.get(scope, constructor_name_key.into()).unwrap();
+                    let constructor_name = if constructor_name.is_undefined() {
+                        None
+                    } else {
+                        Some(
+                            v8::Local::<v8::String>::try_from(constructor_name)
+                                .unwrap()
+                                .to_rust_string_lossy(scope),
+                        )
+                    };
+
+                    let object_reference =
+                        CloudstatePrimitiveData::ObjectReference(ObjectReference {
+                            id: v8::Local::<v8::String>::try_from(
+                                object.get(scope, object_key).unwrap(),
+                            )
                             .unwrap()
                             .to_rust_string_lossy(scope),
-                    ));
+                            constructor_name: constructor_name,
+                        });
+
+                    return Ok(object_reference);
                 }
                 "CloudstateArrayReference" => {
                     let key = v8::String::new(scope, "objectId").unwrap().into();

@@ -74,7 +74,7 @@ fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<CloudstateObjectKey>> {
                     // CloudstatePrimitiveData::URL(i)
                     CloudstatePrimitiveData::ObjectReference(obj_reference) => {
                         stack.push(CloudstateObjectKey {
-                            id: obj_reference,
+                            id: obj_reference.id,
                             namespace: object_key.namespace.clone(),
                         });
                     }
@@ -108,7 +108,7 @@ fn sweep(tx: WriteTransaction, reachable: BTreeSet<CloudstateObjectKey>) -> anyh
         println!("TO DELETE: {:?}", to_delete);
         for key in to_delete {
             // open table
-            
+
             // delete key
             objects_table.remove(&key)?;
         }

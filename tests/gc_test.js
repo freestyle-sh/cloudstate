@@ -22,9 +22,6 @@
 
   root.nested2 = nested2;
 
-
-
-
   const transaction = cloudstate.createTransaction();
 
   transaction.setObject(root);
@@ -34,65 +31,64 @@
   transaction.commit();
 }
 
-
 {
-    // confirm that the object is still there
-    const cloudstate = new Cloudstate("test-namespace");
+  // confirm that the object is still there
+  const cloudstate = new Cloudstate("test-namespace");
 
-    const transaction = cloudstate.createTransaction();
+  const transaction = cloudstate.createTransaction();
 
-    const root = transaction.getRoot("test-root");
+  const root = transaction.getRoot("test-root");
 
-    if (!root) throw new Error("root should exist");
+  if (!root) throw new Error("root should exist");
 
-    if (!root.nested1) throw new Error("root.nested1 should exist");
+  if (!root.nested1) throw new Error("root.nested1 should exist");
 
-    if (!root.nested1.nestedObject) throw new Error("root.nested1.nestedObject should exist");
+  if (!root.nested1.nestedObject)
+    throw new Error("root.nested1.nestedObject should exist");
 
-    if (!root.nested2) throw new Error("root.nested2 should exist");
+  if (!root.nested2) throw new Error("root.nested2 should exist");
 
-    if (!root.nested2.otherNest) throw new Error("root.nested2.otherNest should exist");
+  if (!root.nested2.otherNest)
+    throw new Error("root.nested2.otherNest should exist");
 
-    transaction.commit();
-
+  transaction.commit();
 }
 
 {
-    // delete the nested1
-    const cloudstate = new Cloudstate("test-namespace");
+  // delete the nested1
+  const cloudstate = new Cloudstate("test-namespace");
 
-    const transaction = cloudstate.createTransaction();
+  const transaction = cloudstate.createTransaction();
 
-    const root = transaction.getRoot("test-root");
+  const root = transaction.getRoot("test-root");
 
-    if (!root) throw new Error("root should exist");
+  if (!root) throw new Error("root should exist");
 
-    delete root.nested1;
+  delete root.nested1;
 
-    console.log("New root: ", root);
+  transaction.setObject(root);
+  transaction.setRoot("test-root", root);
 
-    transaction.setObject(root);
-    transaction.setRoot("test-root", root);
-
-    transaction.commit();
+  transaction.commit();
 }
 
 {
-    // confirm nested1 is gone but nested2 is still there
+  // confirm nested1 is gone but nested2 is still there
 
-    const cloudstate = new Cloudstate("test-namespace");
+  const cloudstate = new Cloudstate("test-namespace");
 
-    const transaction = cloudstate.createTransaction();
+  const transaction = cloudstate.createTransaction();
 
-    const root = transaction.getRoot("test-root");
+  const root = transaction.getRoot("test-root");
 
-    if (!root) throw new Error("root should exist");
+  if (!root) throw new Error("root should exist");
 
-    if (root.nested1) throw new Error("root.nested1 should not exist");
-    
-    if (!root.nested2) throw new Error("root.nested2 should exist");
+  if (root.nested1) throw new Error("root.nested1 should not exist");
 
-    if (!root.nested2.otherNest) throw new Error("root.nested2.otherNest should exist");
+  if (!root.nested2) throw new Error("root.nested2 should exist");
 
-    transaction.commit();
+  if (!root.nested2.otherNest)
+    throw new Error("root.nested2.otherNest should exist");
+
+  transaction.commit();
 }

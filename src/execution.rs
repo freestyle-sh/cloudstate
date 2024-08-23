@@ -30,10 +30,12 @@ pub fn run_script(
 
     let future = async move {
         let mod_id = js_runtime.load_main_es_module(&main_module).await.unwrap();
-        let result = js_runtime.mod_evaluate(mod_id);
-        js_runtime.run_event_loop(Default::default()).await.unwrap();
+        let evaluation = js_runtime.mod_evaluate(mod_id);
+        let result = js_runtime.run_event_loop(Default::default()).await;
 
-        (js_runtime, result.await)
+        let _ = evaluation.await;
+
+        (js_runtime, result)
     };
 
     let (mut js_runtime, result) = tokio::runtime::Builder::new_current_thread()
