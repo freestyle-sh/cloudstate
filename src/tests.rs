@@ -105,7 +105,7 @@ fn test_gc_objects() {
         .create_with_backend(InMemoryBackend::default())
         .unwrap();
     let cloudstate = ReDBCloudstate {
-        db: db,
+        db,
         transactions: HashMap::new(),
     };
 
@@ -154,6 +154,8 @@ fn test_gc_objects() {
     read.close().unwrap();
 }
 
+//TODO: THIS PROCESS SHOULD BE FUNCTION-IZED AND REUSED CUZ IT'S THE SAME AS THE ONE ABOVE
+
 #[test]
 fn test_gc_maps() {
     let db = Database::builder()
@@ -180,7 +182,6 @@ fn test_gc_maps() {
         let mut count = 0;
         for item in map_table.iter().unwrap() {
             if let Ok((_key, _value)) = item {
-                println!("Key: {:?}, Value: {:?}", _key.value(), _value.value());
                 count += 1;
             }
         }   
@@ -190,7 +191,6 @@ fn test_gc_maps() {
 
     // Run the garbage collector
     mark_and_sweep(&db).unwrap();
-    println!("POST GC");
 
     let read = db.begin_read();
     let read = match read {
@@ -205,7 +205,6 @@ fn test_gc_maps() {
         let mut count = 0;
         for item in map_table.iter().unwrap() {
             if let Ok((_key, _value)) = item {
-                println!("Key: {:?}, Value: {:?}", _key.value(), _value.value());
                 count += 1;
             }
         }   

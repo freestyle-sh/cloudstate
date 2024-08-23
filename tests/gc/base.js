@@ -69,9 +69,7 @@
       if (!root) throw new Error("root should exist");
   
       delete root.nested1;
-  
-      console.log("New root: ", root);
-  
+    
       transaction.setObject(root);
       transaction.setRoot("test-root", root);
   

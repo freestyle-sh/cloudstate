@@ -57,7 +57,6 @@
 
   delete root.nested1.value;
 
-  console.log("New root: ", root);
 
   transaction.setObject(root);
   transaction.setRoot("test-root", root);
