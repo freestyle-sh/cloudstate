@@ -1,9 +1,6 @@
 use crate::{
-    execution::run_script,
-    extensions::cloudstate::{CloudstateObjectData, CloudstatePrimitiveData, ReDBCloudstate},
-    gc::mark_and_sweep,
-    print::print_database,
-    tables,
+    execution::run_script, extensions::cloudstate::ReDBCloudstate, gc::mark_and_sweep,
+    print::print_database, tables,
 };
 use redb::{backends::InMemoryBackend, Database, ReadableTable};
 use std::collections::HashMap;
@@ -137,7 +134,6 @@ fn gc_test() {
 
     // Run the garbage collector
     mark_and_sweep(&db).unwrap();
-
 
     let read = db.begin_read().unwrap();
 

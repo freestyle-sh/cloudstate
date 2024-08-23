@@ -137,9 +137,13 @@ fn op_cloudstate_array_set(
 }
 
 #[op2(fast)]
-fn op_cloudstate_array_length(state: &mut OpState, #[string] id: String) -> i32 {
+fn op_cloudstate_array_length(
+    state: &mut OpState,
+    #[string] transaction_id: String,
+    #[string] id: String,
+) -> i32 {
     let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
-    let read_txn = cs.transactions.get(id.as_str()).unwrap();
+    let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
     let table = read_txn.open_table(ARRAYS_TABLE).unwrap();
 
     let count = table
@@ -193,7 +197,6 @@ fn op_cloudstate_object_root_get(
     };
     let result = table.get(key).unwrap();
     let result = result.map(|s| s.value().id);
-    println!("op_cloudstate_object_root_get, result: {:?}", result);
     Ok(result)
 }
 
@@ -239,7 +242,6 @@ fn op_commit_transaction(state: &mut OpState, #[string] id: String) -> Result<()
     write_txn.commit().unwrap();
     Ok(())
 }
-
 
 pub struct ReDBCloudstate {
     pub db: Database,

@@ -43,24 +43,6 @@ function isPrimitive(value) {
   );
 }
 
-SuperJSON.registerCustom(
-  {
-    isApplicable: (v) => v instanceof CloudstateObjectReference,
-    serialize: (v) => v.objectId,
-    deserialize: (v) => new CloudstateObjectReference(v),
-  },
-  "cloudstate-object-reference"
-);
-
-SuperJSON.registerCustom(
-  {
-    isApplicable: (v) => v instanceof CloudstateMapReference,
-    serialize: (v) => v.objectId,
-    deserialize: (v) => new CloudstateMapReference(v),
-  },
-  "cloudstate-map-reference"
-);
-
 globalThis.Cloudstate = class Cloudstate {
   /**
    * Maps references of objects to their ids, this works because object equality is based on reference
@@ -87,6 +69,7 @@ class CloudstateTransaction {
    */
   objects = new Map();
   mapChanges = new Map();
+  arrays = new Map();
 
   constructor(namespace, transactionId) {
     if (typeof namespace !== "string") {
@@ -129,14 +112,12 @@ class CloudstateTransaction {
         const result = mapGet.apply(map, [key]);
         if (result) return result;
 
-        console.log("mapGet", key);
         const object = Deno.core.ops.op_cloudstate_map_get(
           this.transactionId,
           this.namespace,
           value.objectId,
           key
         );
-        // const object = SuperJSON.parse(data);
         mapSet.apply(map, [key, object]);
         return object;
       };
@@ -256,8 +237,8 @@ class CloudstateTransaction {
         }
       }
 
-      if (object instanceof Array) {
-        object.forEach((item, i) => {
+      if (flatObject instanceof Array) {
+        flatObject.forEach((item, i) => {
           Deno.core.ops.op_cloudstate_array_set(
             this.transactionId,
             this.namespace,
@@ -283,17 +264,34 @@ class CloudstateTransaction {
       {
         get: (_target, key) => {
           if (key === "length") {
-            return Deno.core.ops.op_cloudstate_array_length(id);
+            return Deno.core.ops.op_cloudstate_array_length(
+              this.transactionId,
+              id
+            );
           }
 
           const result = Deno.core.ops.op_cloudstate_array_get(
             this.transactionId,
             this.namespace,
             id,
-            key
+            parseInt(key)
           );
 
-          return result;
+          if (result instanceof CloudstateObjectReference) {
+            const object = Deno.core.ops.op_cloudstate_object_get(
+              this.transactionId,
+              this.namespace,
+              result.objectId
+            );
+
+            Object.entries(object).forEach(([key, value]) => {
+              this.hydrate(object, key, value);
+            });
+
+            return object;
+          } else {
+            return result;
+          }
         },
         set: (_target, key, value) => {
           if (typeof key !== "number") return;
