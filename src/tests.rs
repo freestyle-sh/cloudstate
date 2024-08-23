@@ -1,9 +1,11 @@
 use crate::{
     execution::run_script,
     extensions::cloudstate::{CloudstateObjectData, CloudstatePrimitiveData, ReDBCloudstate},
+    gc::mark_and_sweep,
     print::print_database,
+    tables,
 };
-use redb::{backends::InMemoryBackend, Database};
+use redb::{backends::InMemoryBackend, Database, ReadableTable};
 use std::collections::HashMap;
 
 #[test]
@@ -98,4 +100,59 @@ fn test_nested_objects() {
     .unwrap();
 
     print_database(&cs.db);
+}
+
+#[test]
+fn gc_test() {
+    let db = Database::builder()
+        .create_with_backend(InMemoryBackend::default())
+        .unwrap();
+    let cloudstate = ReDBCloudstate {
+        db: db,
+        transactions: HashMap::new(),
+    };
+
+    let (cloudstate, _) = run_script("tests/gc_test.js", cloudstate).unwrap();
+
+    let db = cloudstate.db;
+    let read = db.begin_read();
+    let read = match read {
+        Ok(read) => read,
+        Err(e) => panic!("Error reading database: {}", e),
+    };
+    {
+        let objects_table = match read.open_table(tables::OBJECTS_TABLE) {
+            Ok(table) => table,
+            Err(e) => panic!("Error opening objects table: {}", e),
+        };
+        let mut count = 0;
+        for item in objects_table.iter().unwrap() {
+            if let Ok((_key, _value)) = item {
+                count += 1;
+            }
+        }
+        assert_eq!(count, 5);
+    }
+    read.close().unwrap();
+
+    // Run the garbage collector
+    mark_and_sweep(&db).unwrap();
+
+
+    let read = db.begin_read().unwrap();
+
+    {
+        let objects_table = match read.open_table(tables::OBJECTS_TABLE) {
+            Ok(table) => table,
+            Err(e) => panic!("Error opening objects table: {}", e),
+        };
+        let mut count = 0;
+        for item in objects_table.iter().unwrap() {
+            if let Ok((_key, _value)) = item {
+                count += 1;
+            }
+        }
+        assert_eq!(count, 3);
+    }
+    read.close().unwrap();
 }
