@@ -537,7 +537,7 @@ pub struct CloudstateMapFieldValue {
     pub data: CloudstatePrimitiveData,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct CloudstateArrayItemKey {
     pub namespace: String,
     pub id: String,
