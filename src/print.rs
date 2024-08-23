@@ -1,5 +1,6 @@
-use crate::extensions::cloudstate::OBJECTS_TABLE;
 use redb::ReadableTable;
+
+use crate::tables::OBJECTS_TABLE;
 
 pub fn print_database(db: &redb::Database) {
     let txn = db.begin_read().unwrap();

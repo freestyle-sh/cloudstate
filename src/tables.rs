@@ -1,8 +1,9 @@
 use crate::{
     bincode::Bincode,
     extensions::cloudstate::{
-        CloudstateMapFieldKey, CloudstateMapFieldValue, CloudstateObjectKey, CloudstateObjectValue,
-        CloudstateRootKey, CloudstateRootValue,
+        CloudstateArrayItemKey, CloudstateArrayItemValue, CloudstateMapFieldKey,
+        CloudstateMapFieldValue, CloudstateObjectKey, CloudstateObjectValue, CloudstateRootKey,
+        CloudstateRootValue,
     },
 };
 
