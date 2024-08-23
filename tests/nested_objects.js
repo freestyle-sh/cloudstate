@@ -28,6 +28,8 @@
 
   object.counter.count += 1;
 
+  transaction.setObject(object);
+
   transaction.commit();
 }
 
@@ -39,8 +41,10 @@
   const object = transaction.getRoot("test-root");
 
   if (!object) throw new Error("object should exist");
-  if (object.counter.count !== 1)
+
+  if (object.counter.count !== 1) {
     throw new Error("object.counter.count should be 1");
+  }
 
   transaction.commit();
 }
