@@ -3,6 +3,7 @@ use deno_core::{
     resolve_import, ModuleLoadResponse, ModuleLoader, ModuleSource, ModuleSourceCode,
     ModuleSpecifier, ModuleType, ResolutionKind,
 };
+use deno_web::TimersPermission;
 // use serde::{Deserialize, Serialize};
 use std::fs;
 
@@ -59,21 +60,31 @@ impl ModuleLoader for CloudstateModuleLoader {
 //     }
 // }
 
+struct Permissions {}
+
+impl TimersPermission for Permissions {
+    fn allow_hrtime(&mut self) -> bool {
+        false
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, rc::Rc};
+    use std::{collections::HashMap, rc::Rc, sync::Arc};
 
     use cloudstate_runtime::{
         extensions::{bootstrap::bootstrap, cloudstate::cloudstate},
         print::print_database,
     };
     use deno_core::JsRuntime;
+    use deno_web::BlobStore;
     use redb::backends::InMemoryBackend;
 
     use super::*;
 
     #[test]
     fn test() {
+        let blob_storage = Arc::new(BlobStore::default());
         let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
             module_loader: Some(Rc::new(CloudstateModuleLoader {
                 lib: "src/lib.js".to_string(),
@@ -83,6 +94,8 @@ mod tests {
                 deno_webidl::deno_webidl::init_ops_and_esm(),
                 deno_url::deno_url::init_ops_and_esm(),
                 deno_console::deno_console::init_ops_and_esm(),
+                deno_web::deno_web::init_ops_and_esm::<Permissions>(blob_storage, None),
+                deno_crypto::deno_crypto::init_ops_and_esm(None),
                 bootstrap::init_ops_and_esm(),
                 cloudstate::init_ops_and_esm(),
             ],

@@ -1,19 +1,21 @@
 export class TodoListCS {
   static id = "todo-list";
 
-  items = new Map();
+  items = [];
 
   addItem(text) {
     const item = new TodoItemCS(text);
-    this.items.set(item.id, item);
+    // this.items.set(item.id, item);
+    this.items.push(item);
 
     return item.info();
   }
 
   getItems() {
-    return Array.from(this.items.values())
-      .map((item) => item.info())
-      .toReversed();
+    // return Array.from(this.items.values())
+    //   .map((item) => item.info())
+    //   .toReversed();
+    return this.items.map((item) => item.info());
   }
 }
 

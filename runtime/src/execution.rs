@@ -1,9 +1,19 @@
 use deno_core::*;
+use deno_web::{BlobStore, TimersPermission};
 use std::path::Path;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::extensions::bootstrap::bootstrap;
 use crate::extensions::cloudstate::{cloudstate, ReDBCloudstate};
+
+struct Permissions {}
+
+impl TimersPermission for Permissions {
+    fn allow_hrtime(&mut self) -> bool {
+        false
+    }
+}
 
 pub fn run_script(
     path: &str,
@@ -12,12 +22,15 @@ pub fn run_script(
     let js_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(path);
     let main_module = ModuleSpecifier::from_file_path(js_path).unwrap();
 
+    let blob_storage = Arc::new(BlobStore::default());
     let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
         module_loader: Some(Rc::new(FsModuleLoader)),
         extensions: vec![
             deno_webidl::deno_webidl::init_ops_and_esm(),
             deno_url::deno_url::init_ops_and_esm(),
             deno_console::deno_console::init_ops_and_esm(),
+            deno_web::deno_web::init_ops_and_esm::<Permissions>(blob_storage, None),
+            deno_crypto::deno_crypto::init_ops_and_esm(None),
             bootstrap::init_ops_and_esm(),
             cloudstate::init_ops_and_esm(),
         ],
