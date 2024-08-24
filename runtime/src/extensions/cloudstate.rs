@@ -248,7 +248,6 @@ pub struct ReDBCloudstate {
     pub transactions: HashMap<String, WriteTransaction>,
 }
 
-
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CloudstateRootKey {
     pub namespace: String,
@@ -274,6 +273,7 @@ pub struct CloudstateObjectValue {
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct CloudstateObjectData {
     pub fields: HashMap<String, CloudstatePrimitiveData>,
+    pub constructor_name: Option<String>,
 }
 
 impl ToV8<'_> for CloudstateObjectData {
@@ -287,6 +287,15 @@ impl ToV8<'_> for CloudstateObjectData {
             let value = value.clone().to_v8(scope).unwrap();
             object.set(scope, key, value);
         }
+
+        if let Some(constructor_name) = &self.constructor_name {
+            // todo: we shouldn't be passing data through abnormal channels like this
+            let constructor_name_key =
+                v8::String::new(scope, "__cloudstate__constructorName").unwrap();
+            let constructor_name = v8::String::new(scope, constructor_name).unwrap();
+            object.set(scope, constructor_name_key.into(), constructor_name.into());
+        }
+
         Ok(v8::Local::<v8::Value>::from(object))
     }
 
@@ -318,8 +327,17 @@ impl FromV8<'_> for CloudstateObjectData {
             fields.insert(key.to_rust_string_lossy(scope), value);
         }
 
-        let constructor_key = v8::String::new(scope, "constructorName").unwrap();
-        Ok(CloudstateObjectData { fields })
+        Ok(CloudstateObjectData {
+            fields,
+            constructor_name: match object
+                .get_constructor_name()
+                .to_rust_string_lossy(scope)
+                .as_str()
+            {
+                "Object" => None,
+                constructor_name => Some(constructor_name.to_string()),
+            },
+        })
     }
 
     type Error = JsError;
@@ -345,7 +363,6 @@ pub enum CloudstatePrimitiveData {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct ObjectReference {
     pub id: String,
-    pub constructor_name: Option<String>,
 }
 
 impl ToV8<'_> for CloudstatePrimitiveData {
@@ -392,24 +409,10 @@ impl ToV8<'_> for CloudstatePrimitiveData {
                     .get(scope, prototype_key)
                     .unwrap();
 
-                let constructor_name_key = v8::String::new(scope, "constructorName").unwrap();
-
                 let object = v8::Object::new(scope);
                 object.set_prototype(scope, prototype).unwrap();
                 let key = v8::String::new(scope, "objectId").unwrap().into();
                 let object_value = v8::String::new(scope, &value.id).unwrap().into();
-
-                let constructor_name = &value.constructor_name;
-                let constructor_name = if let Some(constructor_name) = constructor_name {
-                    v8::String::new(scope, constructor_name).unwrap().into()
-                } else {
-                    None
-                };
-                if let Some(constructor_name) = constructor_name {
-                    object
-                        .set(scope, constructor_name_key.into(), constructor_name.into())
-                        .unwrap();
-                }
 
                 object.set(scope, key, object_value);
 
@@ -543,7 +546,6 @@ impl FromV8<'_> for CloudstatePrimitiveData {
                             )
                             .unwrap()
                             .to_rust_string_lossy(scope),
-                            constructor_name: constructor_name,
                         });
 
                     return Ok(object_reference);

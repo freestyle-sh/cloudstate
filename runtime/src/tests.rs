@@ -125,6 +125,23 @@ fn test_custom_classes() {
 }
 
 #[test]
+fn test_push_to_arrays() {
+    let (cs, result) = run_script(
+        "tests/push_to_arrays.js",
+        ReDBCloudstate {
+            db: Database::builder()
+                .create_with_backend(InMemoryBackend::default())
+                .unwrap(),
+            transactions: HashMap::new(),
+        },
+    )
+    .unwrap();
+
+    print_database(&cs.db);
+    result.unwrap();
+}
+
+#[test]
 fn test_gc_objects() {
     let db = Database::builder()
         .create_with_backend(InMemoryBackend::default())
@@ -270,7 +287,6 @@ pub fn test_gc_array() {
         assert_eq!(count, 9);
     }
 
-    
     read.close().unwrap();
 
     // Run the garbage collector

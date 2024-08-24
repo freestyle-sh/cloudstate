@@ -44,6 +44,10 @@ class Counter {
 
   object.counter.increment();
 
+  if (!(object.counter instanceof Counter)) {
+    throw new Error("object.counter should be an instance of Counter");
+  }
+
   if (object.counter.count !== 1) {
     throw new Error("object.counter.count should be 1");
   }

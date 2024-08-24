@@ -175,6 +175,17 @@ class CloudstateTransaction {
       id
     );
 
+    if (object.__cloudstate__constructorName) {
+      console.log("hydrated", object.__cloudstate__constructorName);
+      Object.setPrototypeOf(
+        object,
+        this.customClasses.find(
+          (klass) => klass.name === object.__cloudstate__constructorName
+        ).prototype
+      );
+      delete object.__cloudstate__constructorName;
+    }
+
     if (!object) return undefined;
 
     for (const [key, value] of Object.entries(object)) {
@@ -314,20 +325,6 @@ class CloudstateTransaction {
             Object.entries(object).forEach(([key, value]) => {
               this.hydrate(object, key, value);
             });
-
-            if (result.constructorName) {
-              const constructor = this.customClasses.find(
-                (klass) => klass.name === result.constructorName
-              );
-
-              if (!constructor) {
-                throw new Error(
-                  `Custom class ${result.constructorName} not found`
-                );
-              }
-
-              Object.setPrototypeOf(object, constructor.prototype);
-            }
 
             return object;
           } else {
