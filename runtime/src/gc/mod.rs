@@ -1,7 +1,9 @@
 use std::collections::BTreeSet;
 
-use crate::extensions::cloudstate::{CloudstateMapFieldKey, CloudstatePrimitiveData};
-use crate::tables::MAPS_TABLE;
+use crate::extensions::cloudstate::{
+    CloudstateArrayItemKey, CloudstateMapFieldKey, CloudstatePrimitiveData,
+};
+use crate::tables::{ARRAYS_TABLE, MAPS_TABLE};
 use crate::{
     extensions::cloudstate::CloudstateObjectKey,
     tables::{OBJECTS_TABLE, ROOTS_TABLE},
@@ -13,7 +15,15 @@ pub fn mark_and_sweep(db: &Database) -> anyhow::Result<()> {
     let tx = db.begin_read()?;
     let reachable = mark(tx)?;
 
-    let tx = db.begin_write()?;
+    let tx = match db.begin_write() {
+        Ok(out) => out,
+        Err(e) => {
+            println!("Error creating write transaction");
+
+            panic!("Error creating write transaction: {}", e)
+        }
+    };
+    
     let _ = sweep(tx, &reachable);
     Ok(())
 }
@@ -21,7 +31,11 @@ pub fn mark_and_sweep(db: &Database) -> anyhow::Result<()> {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum Pointer {
     Object(CloudstateObjectKey),
-    Map(CloudstateMapFieldKey),
+    Map(CloudstateObjectKey),
+    Array(CloudstateObjectKey),
+    // These are only deletable but not sweepable
+    MapField(CloudstateMapFieldKey),
+    ArrayItem(CloudstateArrayItemKey),
 }
 
 /// Comsumes the transaction and returns a set of reachable objects
@@ -55,8 +69,15 @@ fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
             Err(_e) => None,
         };
 
+        let arr_table = match tx.open_table(ARRAYS_TABLE) {
+            Ok(table) => Some(table),
+            Err(_e) => None,
+        };
+
         let mut reachable: BTreeSet<Pointer> = BTreeSet::new();
+
         let mut stack: Vec<Pointer> = Vec::with_capacity(roots.len());
+
         stack.extend(roots.iter().map(|root| Pointer::Object(root.clone())));
 
         while let Some(pointer) = stack.pop() {
@@ -74,9 +95,8 @@ fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
                             None => continue,
                         };
 
-                        for (key, value) in object.value().data.fields {
+                        for (_key, value) in object.value().data.fields {
                             match value {
-                                // CloudstatePrimitiveData::URL(i)
                                 CloudstatePrimitiveData::ObjectReference(obj_ref) => {
                                     stack.push(Pointer::Object(CloudstateObjectKey {
                                         id: obj_ref.id,
@@ -84,47 +104,100 @@ fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
                                     }));
                                 }
                                 CloudstatePrimitiveData::MapReference(map_ref) => {
-                                    stack.push(Pointer::Map(CloudstateMapFieldKey {
+                                    stack.push(Pointer::Map(CloudstateObjectKey {
                                         id: map_ref,
-                                        field: key,
+                                        namespace: object_key.namespace.clone(),
+                                    }));
+                                }
+                                CloudstatePrimitiveData::ArrayReference(arr_ref) => {
+                                    stack.push(Pointer::Array(CloudstateObjectKey {
+                                        id: arr_ref,
                                         namespace: object_key.namespace.clone(),
                                     }));
                                 }
                                 _ => {
-
                                     /* These don't have references so they don't need anything */
                                 }
                             }
                         }
                     }
                 }
-                Pointer::Map(key) => {
+                Pointer::Map(map_reference) => {
                     if let Some(ref map_table) = map_table {
-                        let map = match map_table.get(&key)? {
-                            Some(map) => map,
-                            None => continue,
-                        };
-                        match map.value().data {
-                            CloudstatePrimitiveData::ObjectReference(reference) => {
-                                stack.push(Pointer::Object(CloudstateObjectKey {
-                                    id: reference.id,
-                                    namespace: key.namespace.clone(),
-                                }));
+                        for item in map_table.iter()? {
+                            if let Ok((key, value)) = item {
+                                let key = key.value();
+                                let value = value.value();
+                                if key.id == map_reference.id
+                                    && key.namespace == map_reference.namespace
+                                {
+                                    match value.data {
+                                        CloudstatePrimitiveData::ObjectReference(obj_ref) => {
+                                            stack.push(Pointer::Object(CloudstateObjectKey {
+                                                id: obj_ref.id,
+                                                namespace: map_reference.namespace.clone(),
+                                            }));
+                                        }
+                                        CloudstatePrimitiveData::MapReference(map_ref_internal) => {
+                                            stack.push(Pointer::Map(CloudstateObjectKey {
+                                                id: map_ref_internal,
+                                                namespace: map_reference.namespace.clone(),
+                                            }));
+                                        }
+                                        CloudstatePrimitiveData::ArrayReference(arr_ref) => {
+                                            stack.push(Pointer::Array(CloudstateObjectKey {
+                                                id: arr_ref,
+                                                namespace: map_reference.namespace.clone(),
+                                            }));
+                                        }
+                                        _ => {
+                                            /* These don't have references so they don't need anything */
+                                        }
+                                    }
+                                }
                             }
-                            CloudstatePrimitiveData::MapReference(reference) => {
-                                stack.push(Pointer::Map(CloudstateMapFieldKey {
-                                    id: reference,
-                                    field: key.field.clone(),
-                                    namespace: key.namespace.clone(),
-                                }));
-                            }
-                            CloudstatePrimitiveData::ArrayReference(_) => todo!(),
-                            _ => { /*Irrelevant for marking */ }
                         }
-                    } else {
-                        // This should never happen, but it def could 💀
                     }
                 }
+                Pointer::Array(arr_ref) => {
+                    if let Some(ref arr_table) = arr_table {
+                        for item in arr_table.iter()? {
+                            if let Ok((key, value)) = item {
+                                let key = key.value();
+                                let value = value.value();
+
+                                if key.id == arr_ref.id && key.namespace == arr_ref.namespace {
+                                    match value.data {
+                                        CloudstatePrimitiveData::ObjectReference(obj_ref) => {
+                                            stack.push(Pointer::Object(CloudstateObjectKey {
+                                                id: obj_ref.id,
+                                                namespace: arr_ref.namespace.clone(),
+                                            }));
+                                        }
+                                        CloudstatePrimitiveData::MapReference(map_ref) => {
+                                            stack.push(Pointer::Map(CloudstateObjectKey {
+                                                id: map_ref,
+                                                namespace: arr_ref.namespace.clone(),
+                                            }));
+                                        }
+                                        CloudstatePrimitiveData::ArrayReference(
+                                            arr_ref_internal,
+                                        ) => {
+                                            stack.push(Pointer::Array(CloudstateObjectKey {
+                                                id: arr_ref_internal,
+                                                namespace: arr_ref.namespace.clone(),
+                                            }));
+                                        }
+                                        _ => {
+                                            /* These don't have references so they don't need anything */
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                _ => { /* These don't have references so they don't need anything */ }
             }
         }
         reachable
@@ -139,11 +212,16 @@ fn sweep(tx: WriteTransaction, reachable: &BTreeSet<Pointer>) -> anyhow::Result<
     {
         let mut objects_table = match tx.open_table(OBJECTS_TABLE) {
             Ok(table) => table,
-            Err(e) => return Err(anyhow!("test")),
+            Err(e) => return Err(anyhow!(e)),
         };
         let mut maps_table = match tx.open_table(MAPS_TABLE) {
             Ok(table) => table,
-            Err(e) => return Err(anyhow!("test")),
+            Err(e) => return Err(anyhow!(e)),
+        };
+
+        let mut arrays_table = match tx.open_table(ARRAYS_TABLE) {
+            Ok(table) => table,
+            Err(e) => return Err(anyhow!(e)),
         };
 
         let mut to_delete: Vec<Pointer> = Vec::new();
@@ -160,21 +238,47 @@ fn sweep(tx: WriteTransaction, reachable: &BTreeSet<Pointer>) -> anyhow::Result<
         for item in maps_table.iter()? {
             if let Ok((key, _value)) = item {
                 let key = key.value();
-                if !reachable.contains(&Pointer::Map(key.clone())) {
-                    to_delete.push(Pointer::Map(key));
+
+                if !reachable.contains(&Pointer::Map(CloudstateObjectKey {
+                    id: key.id.clone(),
+                    namespace: key.namespace.clone(),
+                })) {
+                    to_delete.push(Pointer::MapField(key));
+                }
+            }
+        }
+
+        for item in arrays_table.iter()? {
+            if let Ok((key, _value)) = item {
+                let key = key.value();
+
+                if !reachable.contains(&Pointer::Array(CloudstateObjectKey {
+                    id: key.id.clone(),
+                    namespace: key.namespace.clone(),
+                })) {
+                    to_delete.push(Pointer::ArrayItem(key));
                 }
             }
         }
 
         for pointer in to_delete {
             // delete key
-            let _: Result<(), ()> = match pointer {
+            let _: anyhow::Result<()> = match pointer {
                 Pointer::Object(key) => {
                     let _ = objects_table.remove(&key)?;
                     Ok(())
                 }
-                Pointer::Map(key) => {
-                    let _ = maps_table.remove(&key)?;
+
+                Pointer::MapField(field) => {
+                    let _ = maps_table.remove(&field)?;
+                    Ok(())
+                }
+                Pointer::ArrayItem(field) => {
+                    let _ = arrays_table.remove(&field)?;
+                    Ok(())
+                }
+                _ => {
+                    // Array and Map don't exist without their reference or their items, so they don't need to be garbage collected
                     Ok(())
                 }
             };
