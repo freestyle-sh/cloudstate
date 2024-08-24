@@ -271,7 +271,9 @@ pub fn test_gc_array() {
     read.close().unwrap();
 
     // Run the garbage collector
+    println!("Running GC");
     mark_and_sweep(&db).unwrap();
+    println!("GC Done");
 
     let read = db.begin_read();
     let read = match read {

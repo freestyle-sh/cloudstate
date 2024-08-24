@@ -7,7 +7,6 @@
     value2: [6, 7, 8, 9],
   };
 
-
   const transaction = cloudstate.createTransaction();
 
   transaction.setObject(root);
@@ -35,7 +34,8 @@
 
   if (root.value.length !== 5) throw new Error("root.value.length should be 5");
 
-  if (root.value2.length !== 4) throw new Error("root.value2.length should be 4");
+  if (root.value2.length !== 4)
+    throw new Error("root.value2.length should be 4");
 
   transaction.commit();
 }
@@ -50,9 +50,15 @@
 
   if (!root) throw new Error("root should exist");
 
-  console.log("root ARR TYPE", root.value instanceof Array, root.value[0]);
-
+  delete root.value;
+  
+  console.log("A1");
+  transaction.setObject(root);
+  console.log("A2");
+  transaction.setRoot("test-root", root);
+  console.log("A3");
   transaction.commit();
+  console.log("A4");
 }
 
 {
@@ -62,11 +68,13 @@
 
   const root = transaction.getRoot("test-root");
 
+  console.log("NEW ROOT", root);
+
   if (!root) throw new Error("root should exist");
 
   if (!root.value) throw new Error("root.value should exist");
 
   if (!root.value2) throw new Error("root.value2 should exist");
-  
+
   transaction.commit();
 }
