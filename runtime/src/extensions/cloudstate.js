@@ -161,18 +161,18 @@ class CloudstateTransaction {
   }
 
   commit() {
-    console.log("Committing objects");
-    // console.log(Array.from(this.objects.keys()));
-    for (const value of this.objects.values()) {
-      console.log("Committing object", value);
-      this.setObject(value);
-      // if (value instanceof Array) {
-      // } else {
-      //   console.log("Committing object", value);
-      // this.setObject(value);
-      // }
-    }
-    console.log("Committing done");
+    // console.log("Committing objects");
+    // // console.log(Array.from(this.objects.keys()));
+    // for (const value of this.objects.values()) {
+    //   console.log("Committing object", value);
+    //   this.setObject(value);
+    //   // if (value instanceof Array) {
+    //   // } else {
+    //   //   console.log("Committing object", value);
+    //   // this.setObject(value);
+    //   // }
+    // }
+    // console.log("Committing done");
     Deno.core.ops.op_commit_transaction(this.transactionId);
   }
 
