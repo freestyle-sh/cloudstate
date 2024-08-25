@@ -71,6 +71,7 @@ class CloudstateTransaction {
    */
   objects = new Map();
   mapChanges = new Map();
+  arrayChanges = new Map();
   arrays = new Map();
   customClasses = [];
 
@@ -160,6 +161,18 @@ class CloudstateTransaction {
   }
 
   commit() {
+    console.log("Committing objects");
+    // console.log(Array.from(this.objects.keys()));
+    for (const value of this.objects.values()) {
+      console.log("Committing object", value);
+      this.setObject(value);
+      // if (value instanceof Array) {
+      // } else {
+      //   console.log("Committing object", value);
+      // this.setObject(value);
+      // }
+    }
+    console.log("Committing done");
     Deno.core.ops.op_commit_transaction(this.transactionId);
   }
 
@@ -176,7 +189,6 @@ class CloudstateTransaction {
     );
 
     if (object.__cloudstate__constructorName) {
-      console.log("hydrated", object.__cloudstate__constructorName);
       Object.setPrototypeOf(
         object,
         this.customClasses.find(
@@ -204,6 +216,7 @@ class CloudstateTransaction {
     const stack = [object];
     const visited = new Set();
 
+    let rootObject = undefined;
     while (stack.length > 0) {
       const object = stack.pop();
 
@@ -234,10 +247,6 @@ class CloudstateTransaction {
         if (isPrimitive(value)) {
           flatObject[key] = value;
         } else if (typeof value === "object") {
-          // if (![Object, Array, Map].includes(value.constructor)) {
-          //   throw new Error(`${value.constructor.name} cannot be serialized`);
-          // }
-
           let id = this.objectIds.get(value);
           if (!id) {
             id = uuidv4();
@@ -286,9 +295,14 @@ class CloudstateTransaction {
           );
         });
       } else {
-        this.#exportObject(object, flatObject);
+        const id = this.#exportObject(object, flatObject);
+        if (!rootObject) {
+          rootObject = id;
+        }
       }
     }
+
+    return rootObject;
   }
 
   getArray(id) {
@@ -301,32 +315,54 @@ class CloudstateTransaction {
       {},
       {
         get: (_target, key) => {
-          if (key === "length") {
-            return Deno.core.ops.op_cloudstate_array_length(
-              this.transactionId,
-              id
-            );
+          let index = parseInt(key);
+          if (isNaN(index)) {
+            switch (key) {
+              case "length":
+                return Deno.core.ops.op_cloudstate_array_length(
+                  this.transactionId,
+                  id
+                );
+              case "constructor":
+                return Array;
+              case "push":
+                return (...args) => {
+                  let length = Deno.core.ops.op_cloudstate_array_length(
+                    this.transactionId,
+                    id
+                  );
+
+                  for (const arg of args) {
+                    const value = isPrimitive(arg)
+                      ? arg
+                      : new CloudstateObjectReference(this.setObject(arg));
+
+                    Deno.core.ops.op_cloudstate_array_set(
+                      this.transactionId,
+                      this.namespace,
+                      id,
+                      length,
+                      // todo: support nested arrays
+                      value
+                    );
+                    length++;
+                  }
+                  return length;
+                };
+              default:
+                throw new Error(`Array.${key} is not supported`);
+            }
           }
 
           const result = Deno.core.ops.op_cloudstate_array_get(
             this.transactionId,
             this.namespace,
             id,
-            parseInt(key)
+            index
           );
 
           if (result instanceof CloudstateObjectReference) {
-            const object = Deno.core.ops.op_cloudstate_object_get(
-              this.transactionId,
-              this.namespace,
-              result.objectId
-            );
-
-            Object.entries(object).forEach(([key, value]) => {
-              this.hydrate(object, key, value);
-            });
-
-            return object;
+            return this.getObject(result.objectId);
           } else {
             return result;
           }
@@ -339,7 +375,10 @@ class CloudstateTransaction {
             this.namespace,
             id,
             key,
-            value
+            // todo: support nested arrays
+            isPrimitive(arg)
+              ? arg
+              : new CloudstateObjectReference(this.setObject(arg))
           );
         },
       }
@@ -348,6 +387,7 @@ class CloudstateTransaction {
     Object.setPrototypeOf(array, Array.prototype);
 
     this.arrays.set(id, array);
+    this.objectIds.set(array, id);
 
     return array;
   }
