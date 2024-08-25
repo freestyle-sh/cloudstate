@@ -12,10 +12,7 @@ import * as classes from "./lib.js";
     if (klass.id) {
       const object = transaction.getRoot(klass.id);
       if (!object) {
-        console.log("Constructing static class", className);
-        console.log("Creating root", klass.id);
         const root = new klass();
-        transaction.setObject(root);
         transaction.setRoot(klass.id, root);
       }
     }
@@ -32,25 +29,22 @@ import * as classes from "./lib.js";
   const transaction = cloudstate.createTransaction();
 
   const object = transaction.getRoot("todo-list");
-  // console.log(object);
-  // object.addItem("test");
-
-  // transaction.setObject(object);
+  object.addItem("test");
   transaction.commit();
 }
 
-// {
-//   const cloudstate = new Cloudstate("default", {
-//     customClasses: Object.keys(classes).map((key) => classes[key]),
-//   });
+{
+  const cloudstate = new Cloudstate("default", {
+    customClasses: Object.keys(classes).map((key) => classes[key]),
+  });
 
-//   const transaction = cloudstate.createTransaction();
+  const transaction = cloudstate.createTransaction();
 
-//   const object = transaction.getRoot("todo-list");
+  const object = transaction.getRoot("todo-list");
 
-//   if (!object.getItems()[0].text === "test") {
-//     throw new Error("Item was not added to todo list");
-//   }
+  if (!object.getItems()[0].text === "test") {
+    throw new Error("Item was not added to todo list");
+  }
 
-//   transaction.commit();
-// }
+  transaction.commit();
+}

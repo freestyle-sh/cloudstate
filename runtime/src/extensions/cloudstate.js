@@ -357,6 +357,15 @@ class CloudstateTransaction {
                   return result;
                 };
               }
+              case "map": {
+                return (fn) => {
+                  let arr = [];
+                  for (let i = 0; i < array.length; i++) {
+                    arr.push(fn(array[i], i));
+                  }
+                  return arr;
+                };
+              }
               default: {
                 throw new Error(`Array.${key} is not supported`);
               }
