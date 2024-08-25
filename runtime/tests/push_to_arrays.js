@@ -50,8 +50,6 @@
 
   console.log("existing id should be here");
   transaction.setObject(object);
-  console.log("existing id should be here");
-  transaction.setObject(object);
 
   transaction.commit();
 }

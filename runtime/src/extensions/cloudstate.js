@@ -163,9 +163,9 @@ class CloudstateTransaction {
   commit() {
     console.log("Committing objects");
     // console.log(Array.from(this.objects.keys()));
-    // for (const value of this.objects.values()) {
-    //   this.setObject(value);
-    // }
+    for (const value of this.objects.values()) {
+      this.setObject(value);
+    }
     // console.log("Committing done");
     Deno.core.ops.op_commit_transaction(this.transactionId);
   }
@@ -265,15 +265,6 @@ class CloudstateTransaction {
                 : value.constructor.name
             );
           }
-
-          Object.defineProperty(object, key, {
-            get: () => this.getObject(id),
-            set: (v) => {
-              Object.defineProperty(object, key, {
-                value: v,
-              });
-            },
-          });
 
           if (!visited.has(value)) {
             visited.add(value);
