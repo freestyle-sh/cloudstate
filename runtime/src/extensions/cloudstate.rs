@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::i32;
 use url::Url;
-use v8::{Data, GetPropertyNamesArgs};
+use v8::GetPropertyNamesArgs;
 
 #[op2]
 fn op_cloudstate_object_set(

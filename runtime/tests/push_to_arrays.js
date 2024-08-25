@@ -48,6 +48,9 @@
     throw new Error("object.counters[0].count should be 1");
   }
 
+  console.log("existing id should be here");
+  transaction.setObject(object);
+  console.log("existing id should be here");
   transaction.setObject(object);
 
   transaction.commit();
