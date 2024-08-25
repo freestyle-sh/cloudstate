@@ -215,6 +215,7 @@ class CloudstateTransaction {
       const object = stack.pop();
 
       if (object instanceof Map) {
+        console.log("object is a map");
         const changes = this.mapChanges.get(object) || object;
         for (const [key, value] of changes.entries()) {
           if (isPrimitive(value)) {

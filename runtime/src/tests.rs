@@ -142,6 +142,23 @@ fn test_push_to_arrays() {
 }
 
 #[test]
+fn test_set_object_twice() {
+    let (cs, result) = run_script(
+        "tests/set_object_twice.js",
+        ReDBCloudstate {
+            db: Database::builder()
+                .create_with_backend(InMemoryBackend::default())
+                .unwrap(),
+            transactions: HashMap::new(),
+        },
+    )
+    .unwrap();
+
+    print_database(&cs.db);
+    result.unwrap();
+}
+
+#[test]
 fn test_gc_objects() {
     let db = Database::builder()
         .create_with_backend(InMemoryBackend::default())
