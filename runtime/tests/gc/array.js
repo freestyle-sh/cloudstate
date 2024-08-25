@@ -13,33 +13,45 @@ const cloudstate = new Cloudstate("test-namespace");
 
   const transaction = cloudstate.createTransaction();
 
-  transaction.setObject(root);
-
   transaction.setRoot("test-root", root);
 
   transaction.commit();
   
-  console.log("A");
+}
 
-  const transaction2 = cloudstate.createTransaction();
+{
 
+  const transaction = cloudstate.createTransaction();
 
-  const root2 = transaction2.getRoot("test-root");
+  const root = transaction.getRoot("test-root");
 
+  if (!root) throw new Error("root should exist");
 
-  console.log("B", root2.nested.value[3]);
+  if (!root.nested) throw new Error("root.nested should exist");
 
-  // transaction2.setRoot("test-root", root2);
-  try {
-    transaction2.setObject(root2);
+  if (!root.nested.value) throw new Error("root.nested.value should exist");
 
-  } catch (error) {
-    console.log("ERRO asfsafasfßR", error);
-  }
+  if (!root.nested.value2) throw new Error("root.nested.value2 should exist");
 
-  console.log("C");
+  if (root.nested.value.length !== 4) throw new Error("root.nested.value should have length 4");
 
-  transaction2.commit();
+  if (root.nested.value2.length !== 5) throw new Error("root.nested.value2 should have length 5");
+
+  transaction.commit();
+}
+
+{
+  // delete the nested1
+
+  const transaction = cloudstate.createTransaction();
+
+  const root = transaction.getRoot("test-root");
+
+  if (!root) throw new Error("root should exist");
+
+  delete root.nested.value;
+  transaction.commit();
+
 
 }
 

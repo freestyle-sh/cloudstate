@@ -310,7 +310,6 @@ pub fn test_gc_array() {
                 count += 1;
             }
         }
-        println!("Count: {}", count);
-        assert_eq!(count, 0);
+        assert_eq!(count, 5);
     }
 }
