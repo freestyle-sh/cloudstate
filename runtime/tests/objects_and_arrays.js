@@ -3,7 +3,7 @@
 
   const transaction = cloudstate.createTransaction();
 
-  const object = transaction.getRoot("objects-test-root") || {
+  const object = {
     counters: [
       {
         count: 0,
@@ -13,7 +13,6 @@
 
   object.counters[0].count += 1;
 
-  transaction.setObject(object);
   transaction.setRoot("objects-test-root", object);
   transaction.commit();
 }

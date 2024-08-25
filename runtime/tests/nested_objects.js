@@ -9,7 +9,6 @@
     },
   };
 
-  transaction.setObject(object);
   transaction.setRoot("test-root", object);
 
   transaction.commit();
@@ -27,8 +26,6 @@
     throw new Error("object.counter.count should be 0");
 
   object.counter.count += 1;
-
-  transaction.setObject(object);
 
   transaction.commit();
 }

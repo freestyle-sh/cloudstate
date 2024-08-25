@@ -164,7 +164,7 @@ class CloudstateTransaction {
     console.log("Committing objects");
     // console.log(Array.from(this.objects.keys()));
     for (const value of this.objects.values()) {
-      this.setObject(value);
+      this.#setObject(value);
     }
     // console.log("Committing done");
     Deno.core.ops.op_commit_transaction(this.transactionId);
@@ -204,7 +204,7 @@ class CloudstateTransaction {
     return object;
   }
 
-  setObject(object) {
+  #setObject(object) {
     if (typeof object !== "object") throw new Error("object must be an object");
 
     const stack = [object];
@@ -329,7 +329,7 @@ class CloudstateTransaction {
                   for (const arg of args) {
                     const value = isPrimitive(arg)
                       ? arg
-                      : new CloudstateObjectReference(this.setObject(arg));
+                      : new CloudstateObjectReference(this.#setObject(arg));
 
                     Deno.core.ops.op_cloudstate_array_set(
                       this.transactionId,
@@ -387,7 +387,7 @@ class CloudstateTransaction {
             // todo: support nested arrays
             isPrimitive(value)
               ? value
-              : new CloudstateObjectReference(this.setObject(value))
+              : new CloudstateObjectReference(this.#setObject(value))
           );
         },
       }
@@ -431,25 +431,15 @@ class CloudstateTransaction {
     if (typeof alias !== "string") throw new Error("alias must be a string");
     if (typeof object !== "object") throw new Error("object must be an object");
 
-    const existingId = this.objectIds.get(object);
-    if (!existingId) {
-      throw new Error("object is not registered");
-    }
+    const id = this.#setObject(object);
 
     Deno.core.ops.op_cloudstate_object_root_set(
       this.transactionId,
       this.namespace,
       alias,
-      existingId
+      id
     );
   }
-
-  // // alternative behavior for setRoot
-  // setRoot(alias, object) {
-  //   const id = this.setObject(object);
-  //   Deno.core.ops.op_cloudstate_object_root_set(this.namespace, alias, id);
-  //   return id;
-  // }
 
   getRoot(alias) {
     if (typeof alias !== "string") throw new Error("alias must be a string");

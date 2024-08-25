@@ -3,11 +3,10 @@
 
   const transaction = cloudstate.createTransaction();
 
-  const object = transaction.getRoot("objects-test-root") || {
+  const object = {
     counters: [],
   };
 
-  transaction.setObject(object);
   transaction.setRoot("objects-test-root", object);
   transaction.commit();
 }
@@ -47,9 +46,6 @@
   if (object.counters[0].count !== 1) {
     throw new Error("object.counters[0].count should be 1");
   }
-
-  console.log("existing id should be here");
-  transaction.setObject(object);
 
   transaction.commit();
 }
