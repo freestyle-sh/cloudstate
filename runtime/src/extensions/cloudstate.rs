@@ -6,8 +6,10 @@ use deno_core::*;
 use redb::ReadableTable;
 use redb::{Database, WriteTransaction};
 use serde::{Deserialize, Serialize};
+use tokio::sync::RwLock;
 use std::collections::HashMap;
 use std::i32;
+use std::sync::Arc;
 use url::Url;
 use v8::GetPropertyNamesArgs;
 
@@ -229,8 +231,11 @@ fn op_cloudstate_object_root_set(
 #[op2(fast)]
 #[string]
 fn op_create_transaction(state: &mut OpState, #[string] id: String) -> Result<(), Error> {
-    let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
+    println!("Creating transaction");
+    let cs = state.try_borrow_mut::<Arc<RwLock<ReDBCloudstate>>>().unwrap();
+    println!("Opening write transaction");
     let write_txn = cs.db.begin_write().unwrap();
+    // cs.transactions.ins
     cs.transactions.insert(id, write_txn);
     Ok(())
 }

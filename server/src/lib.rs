@@ -6,12 +6,13 @@ use axum::{
 };
 use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
 use deno_core::{
-    resolve_import, ModuleLoadResponse, ModuleLoader, ModuleSource, ModuleSourceCode,
-    ModuleSpecifier, ModuleType, ResolutionKind,
+   resolve_import, ModuleLoadResponse, ModuleLoader, ModuleSource,
+    ModuleSourceCode, ModuleSpecifier, ModuleType, ResolutionKind,
 };
 use deno_web::TimersPermission;
 use redb::Database;
 use serde::{Deserialize, Serialize};
+use tokio::sync::RwLock;
 use std::fs;
 use std::{collections::HashMap, rc::Rc, sync::Arc};
 
@@ -81,7 +82,7 @@ impl CloudstateServer {
 
 #[derive(Clone)]
 struct AppState {
-    cloudstate: Arc<ReDBCloudstate>,
+    cloudstate: Arc<RwLock<ReDBCloudstate>>,
     classes: String,
 }
 
@@ -128,7 +129,7 @@ impl TimersPermission for Permissions {
     }
 }
 
-pub async fn execute_script(script: &str, classes_script: &str, cs: Arc<ReDBCloudstate>) {
+pub async fn execute_script(script: &str, classes_script: &str, cs: Arc<RwLock<ReDBCloudstate>>) {
     let script_string = script.to_string();
     let classes_script_string = classes_script.to_string();
     tokio::task::spawn_blocking(move || {
@@ -139,7 +140,7 @@ pub async fn execute_script(script: &str, classes_script: &str, cs: Arc<ReDBClou
 }
 
 #[tokio::main]
-pub async fn execute_script_internal(script: &str, classes_script: &str, cs: Arc<ReDBCloudstate>) {
+pub async fn execute_script_internal(script: &str, classes_script: &str, cs: Arc<RwLock<ReDBCloudstate>>) {
     let blob_storage = Arc::new(BlobStore::default());
     let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
         module_loader: Some(Rc::new(CloudstateModuleLoader {
