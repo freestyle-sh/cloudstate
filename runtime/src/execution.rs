@@ -69,11 +69,11 @@ pub fn run_script(
             deno_web::deno_web::init_ops_and_esm::<Permissions>(blob_storage, None),
             deno_crypto::deno_crypto::init_ops_and_esm(None),
             bootstrap::init_ops_and_esm(),
-            cloudstate::init_ops_and_esm(),
             deno_fetch::deno_fetch::init_ops_and_esm::<CloudstateFetchPermissions>(
                 Default::default(),
             ),
             deno_net::deno_net::init_ops_and_esm::<CloudstateNetPermissions>(None, None),
+            cloudstate::init_ops_and_esm(),
         ],
         ..Default::default()
     });

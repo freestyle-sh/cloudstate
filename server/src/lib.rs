@@ -1,31 +1,29 @@
 use axum::{
-    extract::{Extension, Path, State},
+    extract::{Path, State},
     response::Html,
-    routing::{get, post},
+    routing::post,
     Json, Router,
 };
 use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
-use deno_core::{
-    futures::future::poll_fn, resolve_import, ModuleLoadResponse, ModuleLoader, ModuleSource,
-    ModuleSourceCode, ModuleSpecifier, ModuleType, ResolutionKind,
-};
-use deno_web::TimersPermission;
-use redb::Database;
-use serde::{Deserialize, Serialize};
-use std::fs;
-use std::{collections::HashMap, rc::Rc, sync::Arc};
-use tokio::sync::RwLock;
-
 use cloudstate_runtime::{
     extensions::{bootstrap::bootstrap, cloudstate::cloudstate},
     print::print_database,
 };
-use deno_core::JsRuntime;
+use deno_core::{
+    futures::future::poll_fn, resolve_import, ModuleLoadResponse, ModuleLoader, ModuleSource,
+    ModuleSourceCode, ModuleSpecifier, ModuleType, ResolutionKind,
+};
+use deno_core::{url::Url, JsRuntime};
+use deno_fetch::FetchPermissions;
+use deno_net::NetPermissions;
 use deno_web::BlobStore;
-use redb::backends::InMemoryBackend;
+use deno_web::TimersPermission;
+use serde::Deserialize;
+use std::sync::Mutex;
+use std::{rc::Rc, sync::Arc};
 
 pub struct CloudstateServer {
-    cloudstate: Arc<ReDBCloudstate>,
+    // pub cloudstate: Arc<Mutex<ReDBCloudstate>>,
     pub router: Router,
 }
 
@@ -52,7 +50,7 @@ impl ModuleLoader for CloudstateModuleLoader {
         &self,
         specifier: &str,
         referrer: &str,
-        kind: ResolutionKind,
+        _kind: ResolutionKind,
     ) -> Result<ModuleSpecifier, anyhow::Error> {
         Ok(resolve_import(specifier, referrer)?)
     }
@@ -62,7 +60,7 @@ impl CloudstateServer {
     pub async fn new(cloudstate: ReDBCloudstate, classes: &str) -> Self {
         // tracing_subscriber::fmt::init();
 
-        let cloudstate = Arc::new(cloudstate);
+        let cloudstate = Arc::new(Mutex::new(cloudstate));
 
         execute_script(include_str!("./initialize.js"), classes, cloudstate.clone()).await;
 
@@ -73,16 +71,13 @@ impl CloudstateServer {
                 classes: classes.to_string(),
             });
 
-        CloudstateServer {
-            cloudstate: cloudstate,
-            router: app,
-        }
+        CloudstateServer { router: app }
     }
 }
 
 #[derive(Clone)]
 struct AppState {
-    cloudstate: Arc<RwLock<ReDBCloudstate>>,
+    cloudstate: Arc<Mutex<ReDBCloudstate>>,
     classes: String,
 }
 
@@ -92,8 +87,7 @@ struct MethodParams {
 }
 
 async fn method_request(
-    Path(id): Path<String>,
-    Path(method): Path<String>,
+    Path((id, method)): Path<(String, String)>,
     State(state): State<AppState>,
     Json(params): Json<MethodParams>,
 ) -> axum::response::Html<String> {
@@ -101,16 +95,8 @@ async fn method_request(
         // todo: fix injection vulnerability
         format!(
             "
-        import * as classes from './lib.js';
-        const cloudstate = new Cloudstate('default', {{
-            customClasses: Object.keys(classes).map((key) => classes[key]),
-        }});
-    
-        const transaction = cloudstate.createTransaction();
-        const object =transaction.getRoot('{id}');
-        object.{method}();
-        transaction.commit();
-    ",
+        const object = getRoot('{id}');
+        object.{method}();",
         )
         .as_str(),
         &state.classes,
@@ -118,18 +104,70 @@ async fn method_request(
     )
     .await;
 
+    println!("completed script");
+
     Html("<html><body>test</body></html>".to_string())
 }
 
-struct Permissions {}
+struct CloudstateTimerPermissions {}
 
-impl TimersPermission for Permissions {
+impl TimersPermission for CloudstateTimerPermissions {
     fn allow_hrtime(&mut self) -> bool {
         false
     }
 }
 
-pub async fn execute_script(script: &str, classes_script: &str, cs: Arc<RwLock<ReDBCloudstate>>) {
+struct CloudstateFetchPermissions {}
+
+impl FetchPermissions for CloudstateFetchPermissions {
+    fn check_net_url(
+        &mut self,
+        _url: &Url,
+        _api_name: &str,
+    ) -> Result<(), deno_core::error::AnyError> {
+        println!("checking net url fetch permission");
+        Ok(())
+    }
+    fn check_read(
+        &mut self,
+        _p: &std::path::Path,
+        _api_name: &str,
+    ) -> Result<(), deno_core::error::AnyError> {
+        println!("checking read fetch permission");
+        Ok(())
+    }
+}
+
+struct CloudstateNetPermissions {}
+
+impl NetPermissions for CloudstateNetPermissions {
+    fn check_net<T: AsRef<str>>(
+        &mut self,
+        _host: &(T, Option<u16>),
+        _api_name: &str,
+    ) -> Result<(), deno_core::error::AnyError> {
+        println!("checking net");
+        Ok(())
+    }
+    fn check_read(
+        &mut self,
+        _p: &std::path::Path,
+        _api_name: &str,
+    ) -> Result<(), deno_core::error::AnyError> {
+        println!("checking read");
+        Ok(())
+    }
+    fn check_write(
+        &mut self,
+        _p: &std::path::Path,
+        _api_name: &str,
+    ) -> Result<(), deno_core::error::AnyError> {
+        println!("checking write");
+        Ok(())
+    }
+}
+
+pub async fn execute_script(script: &str, classes_script: &str, cs: Arc<Mutex<ReDBCloudstate>>) {
     let script_string = script.to_string();
     let classes_script_string = classes_script.to_string();
     tokio::task::spawn_blocking(move || {
@@ -143,7 +181,7 @@ pub async fn execute_script(script: &str, classes_script: &str, cs: Arc<RwLock<R
 pub async fn execute_script_internal(
     script: &str,
     classes_script: &str,
-    cs: Arc<RwLock<ReDBCloudstate>>,
+    cs: Arc<Mutex<ReDBCloudstate>>,
 ) {
     let blob_storage = Arc::new(BlobStore::default());
     let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
@@ -154,13 +192,18 @@ pub async fn execute_script_internal(
             deno_webidl::deno_webidl::init_ops_and_esm(),
             deno_url::deno_url::init_ops_and_esm(),
             deno_console::deno_console::init_ops_and_esm(),
-            deno_web::deno_web::init_ops_and_esm::<Permissions>(blob_storage, None),
+            deno_web::deno_web::init_ops_and_esm::<CloudstateTimerPermissions>(blob_storage, None),
             deno_crypto::deno_crypto::init_ops_and_esm(None),
             bootstrap::init_ops_and_esm(),
+            deno_fetch::deno_fetch::init_ops_and_esm::<CloudstateFetchPermissions>(
+                Default::default(),
+            ),
+            deno_net::deno_net::init_ops_and_esm::<CloudstateNetPermissions>(None, None),
             cloudstate::init_ops_and_esm(),
         ],
         ..Default::default()
     });
+    println!("initialized js runtime");
 
     js_runtime.op_state().borrow_mut().put(cs);
 
@@ -179,26 +222,27 @@ pub async fn execute_script_internal(
         let evaluation = js_runtime.mod_evaluate(mod_id);
         // let result = js_runtime.run_event_loop(Default::default()).await;
 
-        let result = poll_fn(|cx| self.poll_event_loop(cx, poll_options)).await;
+        println!("starting polling");
+        let result = poll_fn(|cx| {
+            let _ = js_runtime.execute_script("<handle>", "globalThis.commit();");
+            js_runtime.poll_event_loop(cx, Default::default())
+        })
+        .await;
 
         let _ = evaluation.await;
         (js_runtime, result)
     };
 
-    // let (mut js_runtime, result) = tokio::runtime::Builder::new_current_thread()
-    //     .enable_all()
-    //     .build()
-    //     .unwrap()
-    //     .block_on(future);
-
     let (mut js_runtime, result) = future.await;
+    println!("completed polling");
 
     let cs = js_runtime
         .op_state()
         .borrow_mut()
-        .take::<Arc<ReDBCloudstate>>();
+        .take::<Arc<Mutex<ReDBCloudstate>>>();
 
-    print_database(&cs.db);
+    // let cs = &cs.lock().unwrap();
+    // print_database(&cs.db);
 
     result.unwrap();
 }

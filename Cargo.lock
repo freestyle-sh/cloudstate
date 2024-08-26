@@ -2552,6 +2552,7 @@ dependencies = [
  "deno_console",
  "deno_core",
  "deno_crypto",
+ "deno_fetch",
  "deno_net",
  "deno_url",
  "deno_web",

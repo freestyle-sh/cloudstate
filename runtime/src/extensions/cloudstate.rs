@@ -8,6 +8,8 @@ use redb::{Database, WriteTransaction};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::i32;
+use std::sync::Arc;
+use std::sync::Mutex;
 use url::Url;
 use v8::GetPropertyNamesArgs;
 
@@ -19,7 +21,11 @@ fn op_cloudstate_object_set(
     #[string] id: String,
     #[from_v8] value: CloudstateObjectData,
 ) -> Result<(), Error> {
-    let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+    let mut cs = cs.lock().unwrap();
+
     let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
 
     let mut table = write_txn.open_table(OBJECTS_TABLE).unwrap();
@@ -44,7 +50,11 @@ fn op_cloudstate_object_get(
     #[string] namespace: String,
     #[string] id: String,
 ) -> Result<CloudstateObjectData, Error> {
-    let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+    let mut cs = cs.lock().unwrap();
+
     let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
     let table = read_txn.open_table(OBJECTS_TABLE).unwrap();
 
@@ -68,7 +78,11 @@ fn op_cloudstate_map_set(
     #[string] field: String,
     #[from_v8] value: CloudstatePrimitiveData,
 ) -> Result<(), Error> {
-    let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+    let mut cs = cs.lock().unwrap();
+
     let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
 
     let mut table = write_txn.open_table(MAPS_TABLE).unwrap();
@@ -94,7 +108,11 @@ fn op_cloudstate_map_get(
     #[string] id: String,
     #[string] field: String,
 ) -> CloudstatePrimitiveData {
-    let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+    let mut cs = cs.lock().unwrap();
+
     let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
     let table = read_txn.open_table(MAPS_TABLE).unwrap();
 
@@ -119,7 +137,11 @@ fn op_cloudstate_array_set(
     index: i32,
     #[from_v8] value: CloudstatePrimitiveData,
 ) -> Result<(), Error> {
-    let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+    let mut cs = cs.lock().unwrap();
+
     let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
 
     let mut table = write_txn.open_table(ARRAYS_TABLE).unwrap();
@@ -142,7 +164,11 @@ fn op_cloudstate_array_length(
     #[string] transaction_id: String,
     #[string] id: String,
 ) -> i32 {
-    let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+    let mut cs = cs.lock().unwrap();
+
     let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
     let table = read_txn.open_table(ARRAYS_TABLE).unwrap();
 
@@ -164,7 +190,11 @@ fn op_cloudstate_array_get(
     #[string] id: String,
     index: i32,
 ) -> CloudstatePrimitiveData {
-    let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+    let mut cs = cs.lock().unwrap();
+
     let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
     let table = read_txn.open_table(ARRAYS_TABLE).unwrap();
 
@@ -188,7 +218,11 @@ fn op_cloudstate_object_root_get(
     #[string] namespace: String,
     #[string] alias: String,
 ) -> Result<Option<String>, Error> {
-    let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+    let mut cs = cs.lock().unwrap();
+
     let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
     let table = read_txn.open_table(ROOTS_TABLE).unwrap();
     let key = CloudstateRootKey {
@@ -208,12 +242,12 @@ fn op_cloudstate_object_root_set(
     #[string] alias: String,
     #[string] id: String,
 ) -> Result<(), Error> {
-    let write_txn = state
-        .try_borrow_mut::<ReDBCloudstate>()
-        .unwrap()
-        .transactions
-        .get_mut(&transaction_id)
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
         .unwrap();
+    let mut cs = cs.lock().unwrap();
+
+    let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
 
     let mut table = write_txn.open_table(ROOTS_TABLE).unwrap();
 
@@ -230,7 +264,11 @@ fn op_cloudstate_object_root_set(
 #[string]
 fn op_create_transaction(state: &mut OpState, #[string] id: String) -> Result<(), Error> {
     println!("Creating transaction");
-    let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+    let mut cs = cs.lock().unwrap();
+
     println!("Opening write transaction");
     let write_txn = cs.db.begin_write().unwrap();
     // cs.transactions.ins
@@ -240,7 +278,10 @@ fn op_create_transaction(state: &mut OpState, #[string] id: String) -> Result<()
 
 #[op2(fast)]
 fn op_commit_transaction(state: &mut OpState, #[string] id: String) -> Result<(), Error> {
-    let cs = state.try_borrow_mut::<ReDBCloudstate>().unwrap();
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+    let mut cs = cs.lock().unwrap();
     let write_txn = cs.transactions.remove(&id).unwrap();
     write_txn.commit().unwrap();
     Ok(())

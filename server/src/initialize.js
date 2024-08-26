@@ -1,19 +1,15 @@
 import * as classes from "./lib.js";
-const cloudstate = new Cloudstate("default", {
-  customClasses: Object.values(classes),
-});
-
-const transaction = cloudstate.createTransaction();
+globalThis.cloudstate.customClasses = Object.keys(classes).map(
+  (key) => classes[key]
+);
 
 for (const className of Object.keys(classes)) {
   const klass = classes[className];
   if (klass.id) {
-    const object = transaction.getRoot(klass.id);
+    const object = getRoot(klass.id);
     if (!object) {
       const root = new klass();
-      transaction.setRoot(klass.id, root);
+      setRoot(klass.id, root);
     }
   }
 }
-
-transaction.commit();
