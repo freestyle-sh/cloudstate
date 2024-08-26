@@ -1,16 +1,32 @@
+use axum::{
+    extract::{Extension, Path, State},
+    response::Html,
+    routing::{get, post},
+    Json, Router,
+};
 use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
 use deno_core::{
     resolve_import, ModuleLoadResponse, ModuleLoader, ModuleSource, ModuleSourceCode,
     ModuleSpecifier, ModuleType, ResolutionKind,
 };
 use deno_web::TimersPermission;
-// use serde::{Deserialize, Serialize};
+use redb::Database;
+use serde::{Deserialize, Serialize};
 use std::fs;
+use std::{collections::HashMap, rc::Rc, sync::Arc};
 
-// struct CloudstateServer {
-//     cloudstate: ReDBCloudstate,
-//     router: Router,
-// }
+use cloudstate_runtime::{
+    extensions::{bootstrap::bootstrap, cloudstate::cloudstate},
+    print::print_database,
+};
+use deno_core::JsRuntime;
+use deno_web::BlobStore;
+use redb::backends::InMemoryBackend;
+
+pub struct CloudstateServer {
+    cloudstate: Arc<ReDBCloudstate>,
+    pub router: Router,
+}
 
 struct CloudstateModuleLoader {
     lib: String,
@@ -24,10 +40,9 @@ impl ModuleLoader for CloudstateModuleLoader {
         _is_dyn_import: bool,
         _requested_module_type: deno_core::RequestedModuleType,
     ) -> deno_core::ModuleLoadResponse {
-        let lib = fs::read_to_string("src/lib.js").unwrap();
         ModuleLoadResponse::Sync(Ok(ModuleSource::new(
             ModuleType::JavaScript,
-            ModuleSourceCode::String(lib.into()),
+            ModuleSourceCode::String(self.lib.clone().into()),
             module_specifier,
             None,
         )))
@@ -42,23 +57,67 @@ impl ModuleLoader for CloudstateModuleLoader {
     }
 }
 
-// impl CloudstateServer {
-//     pub fn new(cloudstate: ReDBCloudstate) -> Self {
-//         // tracing_subscriber::fmt::init();
+impl CloudstateServer {
+    pub async fn new(cloudstate: ReDBCloudstate, classes: &str) -> Self {
+        // tracing_subscriber::fmt::init();
 
-//         let shared_state = Arc::new(cloudstate);
+        let cloudstate = Arc::new(cloudstate);
 
-//         let app = Router::new().route(
-//             "/cloudstate/instances/:id/:method",
-//             post({
-//                 let shared_state = Arc::clone(&shared_state);
-//                 move |body| {
+        execute_script(include_str!("./initialize.js"), cloudstate.clone()).await;
 
-//                 }
-//             }),
-//         );
-//     }
-// }
+        let app = Router::new()
+            .route("/cloudstate/instances/:id/:method", post(method_request))
+            .with_state(AppState {
+                cloudstate: cloudstate.clone(),
+                classes: classes.to_string(),
+            });
+
+        CloudstateServer {
+            cloudstate: cloudstate,
+            router: app,
+        }
+    }
+}
+
+#[derive(Clone)]
+struct AppState {
+    cloudstate: Arc<ReDBCloudstate>,
+    classes: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct MethodParams {
+    params: Vec<serde_json::Value>,
+}
+
+async fn method_request(
+    Path(id): Path<String>,
+    Path(method): Path<String>,
+    State(state): State<AppState>,
+    Json(params): Json<MethodParams>,
+) -> axum::response::Html<String> {
+    let _ = execute_script(
+        // todo: fix injection vulnerability
+        format!(
+            "
+        import * as classes from './lib.js';
+        const cloudstate = new Cloudstate('default', {{
+            customClasses: Object.keys(classes).map((key) => classes[key]),
+        }});
+    
+        const transaction = cloudstate.createTransaction();
+        const object =transaction.getRoot('{id}');
+        object.{method}();
+        transaction.commit();
+    ",
+        )
+        .as_str(),
+        state.cloudstate,
+    )
+    .await;
+
+    Html("<html><body>test</body></html>".to_string())
+}
 
 struct Permissions {}
 
@@ -68,78 +127,58 @@ impl TimersPermission for Permissions {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use std::{collections::HashMap, rc::Rc, sync::Arc};
+pub async fn execute_script(script: &str, cs: Arc<ReDBCloudstate>) {
+    let blob_storage = Arc::new(BlobStore::default());
+    let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
+        module_loader: Some(Rc::new(CloudstateModuleLoader {
+            lib: "src/lib.js".to_string(),
+        })),
+        extensions: vec![
+            deno_webidl::deno_webidl::init_ops_and_esm(),
+            deno_url::deno_url::init_ops_and_esm(),
+            deno_console::deno_console::init_ops_and_esm(),
+            deno_web::deno_web::init_ops_and_esm::<Permissions>(blob_storage, None),
+            deno_crypto::deno_crypto::init_ops_and_esm(None),
+            bootstrap::init_ops_and_esm(),
+            cloudstate::init_ops_and_esm(),
+        ],
+        ..Default::default()
+    });
 
-    use cloudstate_runtime::{
-        extensions::{bootstrap::bootstrap, cloudstate::cloudstate},
-        print::print_database,
+    js_runtime.op_state().borrow_mut().put(cs);
+
+    let main_module = ModuleSpecifier::from_file_path(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/main.js"),
+    )
+    .unwrap();
+
+    let script = script.to_string();
+    let future = async move {
+        let mod_id = js_runtime
+            .load_main_es_module_from_code(&main_module, script)
+            .await
+            .unwrap();
+
+        let evaluation = js_runtime.mod_evaluate(mod_id);
+        let result = js_runtime.run_event_loop(Default::default()).await;
+        let _ = evaluation.await;
+        (js_runtime, result)
     };
-    use deno_core::JsRuntime;
-    use deno_web::BlobStore;
-    use redb::backends::InMemoryBackend;
 
-    use super::*;
+    // let (mut js_runtime, result) = tokio::runtime::Builder::new_current_thread()
+    //     .enable_all()
+    //     .build()
+    //     .unwrap()
+    //     .block_on(future);
 
-    #[test]
-    fn test() {
-        let blob_storage = Arc::new(BlobStore::default());
-        let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
-            module_loader: Some(Rc::new(CloudstateModuleLoader {
-                lib: "src/lib.js".to_string(),
-            })),
-            // module_loader: None,
-            extensions: vec![
-                deno_webidl::deno_webidl::init_ops_and_esm(),
-                deno_url::deno_url::init_ops_and_esm(),
-                deno_console::deno_console::init_ops_and_esm(),
-                deno_web::deno_web::init_ops_and_esm::<Permissions>(blob_storage, None),
-                deno_crypto::deno_crypto::init_ops_and_esm(None),
-                bootstrap::init_ops_and_esm(),
-                cloudstate::init_ops_and_esm(),
-            ],
-            ..Default::default()
-        });
+    let (mut js_runtime, result) = future.await;
 
-        let cs = ReDBCloudstate {
-            db: redb::Database::builder()
-                .create_with_backend(InMemoryBackend::default())
-                .unwrap(),
-            transactions: HashMap::new(),
-        };
+    let cs = js_runtime
+        .op_state()
+        .borrow_mut()
+        .take::<Arc<ReDBCloudstate>>();
 
-        js_runtime.op_state().borrow_mut().put(cs);
+    print_database(&cs.db);
 
-        let main_module = ModuleSpecifier::from_file_path(
-            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/server.js"),
-        )
-        .unwrap();
-
-        let module_code = fs::read_to_string("src/server.js").unwrap();
-
-        let future = async move {
-            let mod_id = js_runtime
-                .load_main_es_module_from_code(&main_module, module_code)
-                .await
-                .unwrap();
-
-            let evaluation = js_runtime.mod_evaluate(mod_id);
-            let result = js_runtime.run_event_loop(Default::default()).await;
-            let _ = evaluation.await;
-            (js_runtime, result)
-        };
-
-        let (mut js_runtime, result) = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .unwrap()
-            .block_on(future);
-
-        let cs = js_runtime.op_state().borrow_mut().take::<ReDBCloudstate>();
-
-        print_database(&cs.db);
-
-        result.unwrap();
-    }
+    result.unwrap();
 }

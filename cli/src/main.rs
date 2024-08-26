@@ -1,19 +1,11 @@
-use clap::{Parser, ValueHint};
+use clap::ValueHint;
+use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
+use redb::{backends::InMemoryBackend, Database};
+use server::CloudstateServer;
+use std::{collections::HashMap, fs};
 
-/// Simple program to greet a person
-#[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
-struct Args {
-    /// Name of the person to greet
-    #[arg(short, long)]
-    name: String,
-
-    /// Number of times to greet
-    #[arg(short, long, default_value_t = 1)]
-    count: u8,
-}
-
-fn main() {
+#[tokio::main]
+async fn main() {
     let filename_arg = clap::Arg::new("filename")
         .short('f')
         .long("filename")
@@ -61,6 +53,22 @@ fn main() {
         Some(("serve", serve_matches)) => {
             let filename = serve_matches.get_one::<String>("filename").unwrap();
             let watch = serve_matches.get_one::<bool>("watch");
+
+            let classes = fs::read_to_string(filename).unwrap();
+
+            let server = CloudstateServer::new(
+                ReDBCloudstate {
+                    db: Database::builder()
+                        .create_with_backend(InMemoryBackend::default())
+                        .unwrap(),
+                    transactions: HashMap::new(),
+                },
+                &classes,
+            )
+            .await;
+
+            let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+            axum::serve(listener, server.router).await.unwrap();
 
             println!("Serving file: {:?}", filename);
             println!("Watching: {:?}", watch);
