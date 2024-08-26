@@ -94,23 +94,23 @@ async fn method_request(
     let method = serde_json::to_string(&method).unwrap();
     println!("id: {:?}", id);
     println!("method: {:?}", method);
+    let params = serde_json::to_string(&params.params).unwrap();
+    println!("params: {:?}", params);
 
-    let result = execute_script(
-        // todo: fix injection vulnerability
-        format!(
-            "
-        import * as classes from './lib.js';
-        globalThis.cloudstate.customClasses = Object.keys(classes).map((key) => classes[key]);
+    // todo: fix injection vulnerability
+    let script = format!(
+        "
+    import * as classes from './lib.js';
+    globalThis.cloudstate.customClasses = Object.keys(classes).map((key) => classes[key]);
 
-        const object = getRoot({id});
-        globalThis.result = object[{method}]();
-        ",
-        )
-        .as_str(),
-        &state.classes,
-        state.cloudstate,
-    )
-    .await;
+    const object = getRoot({id});
+    globalThis.result = object[{method}](...JSON.parse('{params}'));
+    ",
+    );
+
+    println!("executing script: {:#?}", script);
+
+    let result = execute_script(&script.as_str(), &state.classes, state.cloudstate).await;
 
     println!("completed script");
 
