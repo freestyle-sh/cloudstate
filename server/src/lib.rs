@@ -91,6 +91,10 @@ async fn method_request(
     State(state): State<AppState>,
     Json(params): Json<MethodParams>,
 ) -> axum::response::Html<String> {
+    // turn into valid, sanitized, json string
+    let id = serde_json::to_string(&id).unwrap();
+    let method = serde_json::to_string(&method).unwrap();
+    
     let _ = execute_script(
         // todo: fix injection vulnerability
         format!(
@@ -98,8 +102,8 @@ async fn method_request(
         import * as classes from './lib.js';
         globalThis.cloudstate.customClasses = Object.keys(classes).map((key) => classes[key]);
 
-        const object = getRoot('{id}');
-        object.{method}();",
+        const object = getRoot(\"{id}\");
+        object[\"{method}\"]();",
         )
         .as_str(),
         &state.classes,
