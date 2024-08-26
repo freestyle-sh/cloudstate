@@ -5,5 +5,6 @@ export class TestCS {
   increment() {
     this.count += 1;
     console.log(this.count);
+    return this.count;
   }
 }

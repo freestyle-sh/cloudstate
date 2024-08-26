@@ -4,11 +4,9 @@ use axum::{
     routing::post,
     Json, Router,
 };
-use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
-use cloudstate_runtime::{
-    extensions::{bootstrap::bootstrap, cloudstate::cloudstate},
-    print::print_database,
-};
+use cloudstate_runtime::extensions::{bootstrap::bootstrap, cloudstate::cloudstate};
+use cloudstate_runtime::{extensions::cloudstate::ReDBCloudstate, v8_string_key};
+use deno_core::*;
 use deno_core::{
     futures::future::poll_fn, resolve_import, ModuleLoadResponse, ModuleLoader, ModuleSource,
     ModuleSourceCode, ModuleSpecifier, ModuleType, ResolutionKind,
@@ -19,7 +17,7 @@ use deno_net::NetPermissions;
 use deno_web::BlobStore;
 use deno_web::TimersPermission;
 use serde::Deserialize;
-use std::sync::Mutex;
+use std::{borrow::BorrowMut, cell::RefCell, sync::Mutex};
 use std::{rc::Rc, sync::Arc};
 
 pub struct CloudstateServer {
@@ -90,8 +88,8 @@ async fn method_request(
     Path((id, method)): Path<(String, String)>,
     State(state): State<AppState>,
     Json(params): Json<MethodParams>,
-) -> axum::response::Html<String> {
-    let _ = execute_script(
+) -> axum::response::Json<String> {
+    let result = execute_script(
         // todo: fix injection vulnerability
         format!(
             "
@@ -99,7 +97,7 @@ async fn method_request(
         globalThis.cloudstate.customClasses = Object.keys(classes).map((key) => classes[key]);
 
         const object = getRoot('{id}');
-        object.{method}();",
+        globalThis.result = object.{method}();",
         )
         .as_str(),
         &state.classes,
@@ -109,7 +107,7 @@ async fn method_request(
 
     println!("completed script");
 
-    Html("<html><body>test</body></html>".to_string())
+    Json(result)
 }
 
 struct CloudstateTimerPermissions {}
@@ -170,14 +168,18 @@ impl NetPermissions for CloudstateNetPermissions {
     }
 }
 
-pub async fn execute_script(script: &str, classes_script: &str, cs: Arc<Mutex<ReDBCloudstate>>) {
+pub async fn execute_script(
+    script: &str,
+    classes_script: &str,
+    cs: Arc<Mutex<ReDBCloudstate>>,
+) -> String {
     let script_string = script.to_string();
     let classes_script_string = classes_script.to_string();
     tokio::task::spawn_blocking(move || {
-        execute_script_internal(&script_string, &classes_script_string, cs);
+        execute_script_internal(&script_string, &classes_script_string, cs)
     })
     .await
-    .unwrap();
+    .unwrap()
 }
 
 #[tokio::main]
@@ -185,7 +187,7 @@ pub async fn execute_script_internal(
     script: &str,
     classes_script: &str,
     cs: Arc<Mutex<ReDBCloudstate>>,
-) {
+) -> String {
     let blob_storage = Arc::new(BlobStore::default());
     let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
         module_loader: Some(Rc::new(CloudstateModuleLoader {
@@ -208,7 +210,7 @@ pub async fn execute_script_internal(
     });
     println!("initialized js runtime");
 
-    js_runtime.op_state().borrow_mut().put(cs);
+    RefCell::borrow_mut(&js_runtime.op_state()).put(cs);
 
     let main_module = ModuleSpecifier::from_file_path(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/main.js"),
@@ -239,13 +241,19 @@ pub async fn execute_script_internal(
     let (mut js_runtime, result) = future.await;
     println!("completed polling");
 
-    let cs = js_runtime
-        .op_state()
-        .borrow_mut()
-        .take::<Arc<Mutex<ReDBCloudstate>>>();
+    let cs = RefCell::borrow_mut(&js_runtime.op_state()).take::<Arc<Mutex<ReDBCloudstate>>>();
 
     // let cs = &cs.lock().unwrap();
     // print_database(&cs.db);
 
-    result.unwrap();
+    let mut js_runtime = js_runtime.handle_scope();
+    let scope = js_runtime.borrow_mut();
+    let context = scope.get_current_context();
+
+    let global = context.global(scope);
+    let key = v8_string_key!(scope, "result");
+    let local_value = global.get(scope, key).unwrap();
+    let json_value = v8::json::stringify(scope, local_value).unwrap();
+    let json_str = json_value.to_rust_string_lossy(scope);
+    json_str
 }
