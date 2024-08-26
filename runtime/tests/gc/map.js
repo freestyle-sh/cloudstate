@@ -1,6 +1,5 @@
 {
   // Test that the garbage collector works correctly
-  const cloudstate = new Cloudstate("test-namespace");
 
   const root = {};
 
@@ -13,22 +12,18 @@
 
   root.nested1 = nested1;
 
-  const transaction = cloudstate.createTransaction();
 
-  transaction.setObject(root);
 
-  transaction.setRoot("test-root", root);
+  setRoot("test-root", root);
 
-  transaction.commit();
+  commit();
 }
 
 {
   // confirm that the object is still there
-  const cloudstate = new Cloudstate("test-namespace");
 
-  const transaction = cloudstate.createTransaction();
 
-  const root = transaction.getRoot("test-root");
+  const root = getRoot("test-root");
 
   if (!root) throw new Error("root should exist");
 
@@ -42,16 +37,14 @@
   if (!root.nested1.value.get("a"))
     throw new Error("root.nested1.value.get('a') should exist");
 
-  transaction.commit();
+  commit();
 }
 
 {
   // delete the nested1
-  const cloudstate = new Cloudstate("test-namespace");
 
-  const transaction = cloudstate.createTransaction();
 
-  const root = transaction.getRoot("test-root");
+  const root = getRoot("test-root");
 
   if (!root) throw new Error("root should exist");
 
@@ -61,15 +54,11 @@
   transaction.setObject(root);
   transaction.setRoot("test-root", root);
 
-  transaction.commit();
+  commit();
 }
 
 {
-  const cloudstate = new Cloudstate("test-namespace");
-
-  const transaction = cloudstate.createTransaction();
-
-  const root = transaction.getRoot("test-root");
+  const root = getRoot("test-root");
 
   if (!root) throw new Error("root should exist");
 
@@ -78,5 +67,5 @@
   if (root.nested1.value)
     throw new Error("root.nested1.value should not exist");
 
-  transaction.commit();
+  commit();
 }

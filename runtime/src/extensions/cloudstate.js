@@ -215,7 +215,6 @@ class CloudstateTransaction {
       const object = stack.pop();
 
       if (object instanceof Map) {
-        console.log("object is a map");
         const changes = this.mapChanges.get(object) || object;
         for (const [key, value] of changes.entries()) {
           if (isPrimitive(value)) {
@@ -236,11 +235,8 @@ class CloudstateTransaction {
       Object.setPrototypeOf(flatObject, object.constructor.prototype);
 
       console.log("flattening object");
-      console.log(object);
-      Object.entries(object);
-      console.log("Object.entries done");
       for (let [key, value] of Object.entries(object)) {
-        console.log("flattening object", key);
+        // console.log("flattening object", key);
         if (isArray) key = parseInt(key);
         if (value === undefined) continue;
 

@@ -1,20 +1,18 @@
 const base = [1, 2, 3, "a", "b", "c"];
 {
-  const cloudstate = new Cloudstate("test-namespace");
 
-  const transaction = cloudstate.createTransaction();
   const object = {
     value: [...base],
   };
 
-  transaction.setRoot("test-root", object);
-  transaction.commit();
-}
-{
-  // test for of loop
-  const transaction = cloudstate.createTransaction();
+  setRoot("test-root", object);
+  commit();
 
-  const root = transaction.getRoot("test-root");
+}
+
+
+{
+  const root = getRoot("test-root");
 
   if (!root) throw new Error("root should exist");
 
@@ -35,4 +33,6 @@ const base = [1, 2, 3, "a", "b", "c"];
   if (i !== value.length) {
     throw new Error("value iterator does not match");
   }
+
+  commit();
 }

@@ -32,6 +32,18 @@ import * as eventSource from "ext:deno_fetch/27_eventsource.js";
 
 import * as crypto from "ext:deno_crypto/00_crypto.js";
 
+import * as console from "ext:deno_console/01_console.js";
+
+Object.defineProperty(globalThis, "console", {
+  value: new console.Console((msg, level) =>
+    globalThis.Deno.core.print(msg, level > 1)
+  ),
+  enumerable: false,
+  configurable: true,
+  writable: true,
+});
+
+
 Object.defineProperty(globalThis, "URL", {
   value: url.URL,
   enumerable: false,
