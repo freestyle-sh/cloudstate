@@ -1,7 +1,4 @@
 {
-  const cloudstate = new Cloudstate("test-namespace");
-
-  const transaction = cloudstate.createTransaction();
 
   const object = {
     counters: [
@@ -13,16 +10,12 @@
 
   object.counters[0].count += 1;
 
-  transaction.setRoot("objects-test-root", object);
-  transaction.commit();
+  setRoot("objects-test-root", object);
+  commit();
 }
 
 {
-  const cloudstate = new Cloudstate("test-namespace");
-
-  const transaction = cloudstate.createTransaction();
-
-  const object = transaction.getRoot("objects-test-root");
+  const object = getRoot("objects-test-root");
 
   if (!object) throw new Error("object should exist");
 
@@ -34,5 +27,5 @@
     throw new Error("object.counters[0].count should be 1");
   }
 
-  transaction.commit();
+  commit();
 }

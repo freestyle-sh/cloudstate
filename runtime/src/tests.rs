@@ -1,6 +1,6 @@
 use crate::{
     execution::run_script, extensions::cloudstate::ReDBCloudstate, gc::mark_and_sweep,
-    print::print_database, tables,
+    print::{self, print_database}, tables,
 };
 use redb::{backends::InMemoryBackend, Database, ReadableTable};
 use std::collections::HashMap;
@@ -101,8 +101,7 @@ fn test_bigint() {
         },
     )
     .unwrap();
-
-    print_database(&cs.db);
+    println!("Database after test:");
     result.unwrap();
 }
 
@@ -192,8 +191,11 @@ fn test_gc_objects() {
 
     read.close().unwrap();
 
+    println!("Running GC");
     // Run the garbage collector
     mark_and_sweep(&db).unwrap();
+
+    println!("GC Done");
 
     let read = db.begin_read().unwrap();
 

@@ -1,23 +1,17 @@
 const baseDate = new Date();
 {
-  const cloudstate = new Cloudstate("test-namespace");
-
-  const transaction = cloudstate.createTransaction();
-
   const object = {
     date: baseDate,
   };
 
-  transaction.setRoot("test-root", object);
+  setRoot("test-root", object);
 
-  transaction.commit();
 }
+
+commit();
+
 {
-  const cloudstate = new Cloudstate("test-namespace");
-
-  const transaction = cloudstate.createTransaction();
-
-  const object = transaction.getRoot("test-root");
+  const object = getRoot("test-root");
 
   if (!object) throw new Error("object should exist");
   if (!object.date) throw new Error("object.date should exist");

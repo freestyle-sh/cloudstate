@@ -1,21 +1,15 @@
 const basebigInt = BigInt("1234567890123456789012345678901234567890");
 {
-  const cloudstate = new Cloudstate("test-namespace");
 
-  const transaction = cloudstate.createTransaction();
-  const object = transaction.getRoot("test-root") || {
+  const object =  {
     big: basebigInt,
   };
-  transaction.setRoot("test-root", object);
-
-  transaction.commit();
+  setRoot("test-root", object);
+  commit();
 }
+
 {
-  const cloudstate = new Cloudstate("test-namespace");
-
-  const transaction = cloudstate.createTransaction();
-
-  const object = transaction.getRoot("test-root");
+  const object = getRoot("test-root");
 
   if (!object) throw new Error("object should exist");
   if (!object.big) throw new Error("object.big should exist");

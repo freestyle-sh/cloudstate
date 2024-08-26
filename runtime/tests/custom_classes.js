@@ -10,29 +10,22 @@ class Counter {
   }
 }
 
-{
-  const cloudstate = new Cloudstate("test-namespace", {
-    customClasses: [Counter],
-  });
+globalThis.cloudstate.customClasses = [Counter];
 
-  const transaction = cloudstate.createTransaction();
+{
 
   const object = {
     counter: new Counter(),
   };
 
-  transaction.setRoot("test-root", object);
-  transaction.commit();
+  setRoot("test-root", object);
 }
 
+commit();
+
+
 {
-  const cloudstate = new Cloudstate("test-namespace", {
-    customClasses: [Counter],
-  });
-
-  const transaction = cloudstate.createTransaction();
-
-  const object = transaction.getRoot("test-root");
+  const object = getRoot("test-root");
 
   if (!object) throw new Error("object should exist");
 
@@ -49,18 +42,13 @@ class Counter {
   if (object.counter.count !== 1) {
     throw new Error("object.counter.count should be 1");
   }
+  commit();
 
-  transaction.commit();
 }
 
+
 {
-  const cloudstate = new Cloudstate("test-namespace", {
-    customClasses: [Counter],
-  });
-
-  const transaction = cloudstate.createTransaction();
-
-  const object = transaction.getRoot("test-root");
+  const object = getRoot("test-root");
 
   if (!object) throw new Error("object should exist");
 
@@ -68,5 +56,5 @@ class Counter {
     throw new Error("object.counter.count should be 1");
   }
 
-  transaction.commit();
+  commit()
 }
