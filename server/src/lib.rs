@@ -128,6 +128,16 @@ impl TimersPermission for Permissions {
 }
 
 pub async fn execute_script(script: &str, cs: Arc<ReDBCloudstate>) {
+    let script_string = script.to_string();
+    tokio::task::spawn_blocking(move || {
+        execute_script_internal(&script_string, cs);
+    })
+    .await
+    .unwrap();
+}
+
+#[tokio::main]
+pub async fn execute_script_internal(script: &str, cs: Arc<ReDBCloudstate>) {
     let blob_storage = Arc::new(BlobStore::default());
     let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
         module_loader: Some(Rc::new(CloudstateModuleLoader {
