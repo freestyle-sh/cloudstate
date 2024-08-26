@@ -532,7 +532,7 @@ impl FromV8<'_> for CloudstatePrimitiveData {
                     let constructor_name_key = v8::String::new(scope, "constructorName").unwrap();
 
                     let constructor_name = object.get(scope, constructor_name_key.into()).unwrap();
-                    let constructor_name = if constructor_name.is_undefined() {
+                    if constructor_name.is_undefined() {
                         None
                     } else {
                         Some(

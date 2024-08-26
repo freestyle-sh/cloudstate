@@ -1,4 +1,3 @@
-console.log("running simple objects test");
 {
   const object = {
     count: 1,
