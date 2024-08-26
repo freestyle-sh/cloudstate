@@ -256,7 +256,6 @@ fn test_gc_maps() {
 
 #[test]
 pub fn test_gc_array() {
-    println!("Running test_gc_array");
     let db = Database::builder()
         .create_with_backend(InMemoryBackend::default())
         .unwrap();
@@ -312,4 +311,19 @@ pub fn test_gc_array() {
         }
         assert_eq!(count, 5);
     }
+}
+
+#[test]
+fn test_array_iterator() {
+    let db = Database::builder()
+        .create_with_backend(InMemoryBackend::default())
+        .unwrap();
+    let cloudstate = ReDBCloudstate {
+        db,
+        transactions: HashMap::new(),
+    };
+
+    let (_cloudstate, _) = run_script("tests/array_iterator.js", cloudstate).unwrap();
+
+
 }

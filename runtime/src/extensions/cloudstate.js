@@ -308,8 +308,21 @@ class CloudstateTransaction {
       {
         get: (_target, key) => {
           let index = parseInt(key);
+
           if (isNaN(index)) {
             switch (key) {
+              case [Symbol.iterator]: {
+                
+                return function* () {
+                  let length = Deno.core.ops.op_cloudstate_array_length(
+                    this.transactionId,
+                    id
+                  );
+                  for (let i = 0; i < length; i++) {
+                    yield array[i];
+                  }
+                }
+              }
               case "length": {
                 return Deno.core.ops.op_cloudstate_array_length(
                   this.transactionId,
