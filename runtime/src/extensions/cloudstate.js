@@ -493,8 +493,12 @@ function setRoot(...args) {
 }
 
 function commit() {
-  globalThis.transaction.commit();
-  globalThis.transaction = globalThis.cloudstate.createTransaction();
+  if (globalThis.transaction) {
+    globalThis.transaction.commit();
+    globalThis.transaction = globalThis.cloudstate.createTransaction();
+  } else {
+    console.error("No transaction to commit");
+  }
 }
 
 globalThis.getRoot = getRoot;

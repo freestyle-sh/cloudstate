@@ -315,7 +315,7 @@ pub fn test_gc_array() {
     let read = db.begin_read();
     let read = match read {
         Ok(read) => read,
-        Err(e) => return,
+        Err(_e) => return,
     };
     {
         let array_table = match read.open_table(tables::ARRAYS_TABLE) {

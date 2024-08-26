@@ -3,14 +3,12 @@ use deno_fetch::FetchPermissions;
 use deno_net::NetPermissions;
 use deno_web::{BlobStore, TimersPermission};
 use futures::future::poll_fn;
-use std::cell::RefCell;
 use std::path::Path;
 use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::extensions::bootstrap::bootstrap;
 use crate::extensions::cloudstate::{cloudstate, ReDBCloudstate};
-use crate::print;
 
 struct Permissions {}
 
@@ -23,11 +21,11 @@ impl TimersPermission for Permissions {
 struct CloudstateFetchPermissions {}
 
 impl FetchPermissions for CloudstateFetchPermissions {
-    fn check_net_url(&mut self, _url: &url::Url, api_name: &str) -> Result<(), error::AnyError> {
+    fn check_net_url(&mut self, _url: &url::Url, _api_name: &str) -> Result<(), error::AnyError> {
         println!("checking net url fetch permission");
         Ok(())
     }
-    fn check_read(&mut self, _p: &Path, api_name: &str) -> Result<(), error::AnyError> {
+    fn check_read(&mut self, _p: &Path, _api_name: &str) -> Result<(), error::AnyError> {
         println!("checking read fetch permission");
         Ok(())
     }
@@ -81,6 +79,10 @@ pub fn run_script(
     });
 
     js_runtime.op_state().borrow_mut().put(cloudstate);
+    js_runtime
+        .op_state()
+        .borrow_mut()
+        .put(CloudstateFetchPermissions {});
 
     let future = async move {
         let mod_id = js_runtime.load_main_es_module(&main_module).await.unwrap();

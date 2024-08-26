@@ -4,5 +4,16 @@
   };
 
   const res = await fetch("http://example.com/");
-  //   object.value = await res.text();
+  object.value = await res.text();
+  setRoot("test-root", object);
+}
+
+commit();
+
+{
+  const object = getRoot("test-root");
+  if (!object) throw new Error("object should exist");
+  if (!object.value.includes("Example Domain")) {
+    throw new Error("object.value should include 'Example Domain'");
+  }
 }
