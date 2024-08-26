@@ -95,6 +95,9 @@ async fn method_request(
         // todo: fix injection vulnerability
         format!(
             "
+        import * as classes from './lib.js';
+        globalThis.cloudstate.customClasses = Object.keys(classes).map((key) => classes[key]);
+
         const object = getRoot('{id}');
         object.{method}();",
         )
