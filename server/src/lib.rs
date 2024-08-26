@@ -6,15 +6,15 @@ use axum::{
 };
 use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
 use deno_core::{
-   resolve_import, ModuleLoadResponse, ModuleLoader, ModuleSource,
+    futures::future::poll_fn, resolve_import, ModuleLoadResponse, ModuleLoader, ModuleSource,
     ModuleSourceCode, ModuleSpecifier, ModuleType, ResolutionKind,
 };
 use deno_web::TimersPermission;
 use redb::Database;
 use serde::{Deserialize, Serialize};
-use tokio::sync::RwLock;
 use std::fs;
 use std::{collections::HashMap, rc::Rc, sync::Arc};
+use tokio::sync::RwLock;
 
 use cloudstate_runtime::{
     extensions::{bootstrap::bootstrap, cloudstate::cloudstate},
@@ -140,7 +140,11 @@ pub async fn execute_script(script: &str, classes_script: &str, cs: Arc<RwLock<R
 }
 
 #[tokio::main]
-pub async fn execute_script_internal(script: &str, classes_script: &str, cs: Arc<RwLock<ReDBCloudstate>>) {
+pub async fn execute_script_internal(
+    script: &str,
+    classes_script: &str,
+    cs: Arc<RwLock<ReDBCloudstate>>,
+) {
     let blob_storage = Arc::new(BlobStore::default());
     let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
         module_loader: Some(Rc::new(CloudstateModuleLoader {
@@ -173,7 +177,10 @@ pub async fn execute_script_internal(script: &str, classes_script: &str, cs: Arc
             .unwrap();
 
         let evaluation = js_runtime.mod_evaluate(mod_id);
-        let result = js_runtime.run_event_loop(Default::default()).await;
+        // let result = js_runtime.run_event_loop(Default::default()).await;
+
+        let result = poll_fn(|cx| self.poll_event_loop(cx, poll_options)).await;
+
         let _ = evaluation.await;
         (js_runtime, result)
     };

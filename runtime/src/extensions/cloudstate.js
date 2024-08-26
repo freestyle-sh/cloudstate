@@ -312,7 +312,6 @@ class CloudstateTransaction {
           if (isNaN(index)) {
             switch (key) {
               case [Symbol.iterator]: {
-                
                 return function* () {
                   let length = Deno.core.ops.op_cloudstate_array_length(
                     this.transactionId,
@@ -321,7 +320,7 @@ class CloudstateTransaction {
                   for (let i = 0; i < length; i++) {
                     yield array[i];
                   }
-                }
+                };
               }
               case "length": {
                 return Deno.core.ops.op_cloudstate_array_length(
@@ -477,3 +476,31 @@ class CloudstateTransaction {
     return this.getObject(id);
   }
 }
+
+// globalThis.CloudstateTransaction = CloudstateTransaction;
+// globalThis.transaction = new CloudstateTransaction("namespace", "transaction");
+globalThis.cloudstate = new Cloudstate("namespace", {});
+// globalThis.transaction = globalThis.cloudstate.createTransaction();
+
+function getRoot(...args) {
+  if (!globalThis.transaction) {
+    globalThis.transaction = globalThis.cloudstate.createTransaction();
+  }
+  return globalThis.transaction.getRoot(...args);
+}
+
+function setRoot(...args) {
+  if (!globalThis.transaction) {
+    globalThis.transaction = globalThis.cloudstate.createTransaction();
+  }
+  return globalThis.transaction.setRoot(...args);
+}
+
+function commit() {
+  globalThis.transaction.commit();
+  globalThis.transaction = globalThis.cloudstate.createTransaction();
+}
+
+globalThis.getRoot = getRoot;
+globalThis.setRoot = setRoot;
+globalThis.commit = commit;

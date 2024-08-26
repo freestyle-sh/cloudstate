@@ -56,6 +56,23 @@ fn test_simple_objects() {
 }
 
 #[test]
+fn test_fetch() {
+    let (cs, result) = run_script(
+        "tests/fetch.js",
+        ReDBCloudstate {
+            db: Database::builder()
+                .create_with_backend(InMemoryBackend::default())
+                .unwrap(),
+            transactions: HashMap::new(),
+        },
+    )
+    .unwrap();
+
+    print_database(&cs.db);
+    result.unwrap();
+}
+
+#[test]
 fn test_date() {
     let (cs, result) = run_script(
         "tests/dates.js",
@@ -324,6 +341,4 @@ fn test_array_iterator() {
     };
 
     let (_cloudstate, _) = run_script("tests/array_iterator.js", cloudstate).unwrap();
-
-
 }
