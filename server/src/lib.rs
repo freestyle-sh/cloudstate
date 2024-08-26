@@ -63,7 +63,7 @@ impl CloudstateServer {
 
         let cloudstate = Arc::new(cloudstate);
 
-        execute_script(include_str!("./initialize.js"), cloudstate.clone()).await;
+        execute_script(include_str!("./initialize.js"), classes, cloudstate.clone()).await;
 
         let app = Router::new()
             .route("/cloudstate/instances/:id/:method", post(method_request))
@@ -112,6 +112,7 @@ async fn method_request(
     ",
         )
         .as_str(),
+        &state.classes,
         state.cloudstate,
     )
     .await;
@@ -127,21 +128,22 @@ impl TimersPermission for Permissions {
     }
 }
 
-pub async fn execute_script(script: &str, cs: Arc<ReDBCloudstate>) {
+pub async fn execute_script(script: &str, classes_script: &str, cs: Arc<ReDBCloudstate>) {
     let script_string = script.to_string();
+    let classes_script_string = classes_script.to_string();
     tokio::task::spawn_blocking(move || {
-        execute_script_internal(&script_string, cs);
+        execute_script_internal(&script_string, &classes_script_string, cs);
     })
     .await
     .unwrap();
 }
 
 #[tokio::main]
-pub async fn execute_script_internal(script: &str, cs: Arc<ReDBCloudstate>) {
+pub async fn execute_script_internal(script: &str, classes_script: &str, cs: Arc<ReDBCloudstate>) {
     let blob_storage = Arc::new(BlobStore::default());
     let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
         module_loader: Some(Rc::new(CloudstateModuleLoader {
-            lib: "src/lib.js".to_string(),
+            lib: classes_script.to_string(),
         })),
         extensions: vec![
             deno_webidl::deno_webidl::init_ops_and_esm(),
