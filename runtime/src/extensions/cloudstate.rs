@@ -193,7 +193,7 @@ fn op_cloudstate_array_get(
     let cs = state
         .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
         .unwrap();
-    let mut cs = cs.lock().unwrap();
+    let cs = cs.lock().unwrap();
 
     let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
     let table = read_txn.open_table(ARRAYS_TABLE).unwrap();
@@ -285,6 +285,37 @@ fn op_commit_transaction(state: &mut OpState, #[string] id: String) -> Result<()
     let write_txn = cs.transactions.remove(&id).unwrap();
     write_txn.commit().unwrap();
     Ok(())
+}
+
+//TODO: Lazy iterator?
+#[op2]
+#[to_v8]
+fn op_map_values(
+    state: &mut OpState,
+    #[string] id: String,
+) -> Result<CloudstatePrimitiveDataVec, Error> {
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+
+    let cs = cs.lock().unwrap();
+
+    let read_txn = cs.transactions.get(id.as_str()).unwrap();
+
+    let table = read_txn.open_table(MAPS_TABLE).unwrap();
+
+    let mut values = vec![];
+
+    for entry in table.iter().unwrap() {
+        let (key, value) = entry.unwrap();
+        if key.value().id == id {
+            values.push(value.value().data);
+        }
+    }
+
+    
+
+    Ok(values.into())
 }
 
 pub struct ReDBCloudstate {
@@ -407,6 +438,29 @@ pub enum CloudstatePrimitiveData {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct ObjectReference {
     pub id: String,
+}
+
+struct CloudstatePrimitiveDataVec {
+    data: Vec<CloudstatePrimitiveData>,
+}
+
+impl From<Vec<CloudstatePrimitiveData>> for CloudstatePrimitiveDataVec {
+    fn from(data: Vec<CloudstatePrimitiveData>) -> Self {
+        CloudstatePrimitiveDataVec { data }
+    }
+}
+
+impl ToV8<'_> for CloudstatePrimitiveDataVec {
+    type Error = JsError;
+
+    fn to_v8<'a>(
+        self,
+        scope: &mut v8::HandleScope<'a>,
+    ) -> Result<v8::Local<'a, v8::Value>, Self::Error> {
+        Ok(v8::Local::<v8::Value>::from(
+            v8::String::new(scope, "CloudstatePrimitiveData").unwrap(),
+        ))
+    }
 }
 
 impl ToV8<'_> for CloudstatePrimitiveData {

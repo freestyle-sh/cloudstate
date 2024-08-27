@@ -344,3 +344,16 @@ fn test_array_iterator() {
 
     let (_cloudstate, _) = run_script("tests/array_iterator.js", cloudstate).unwrap();
 }
+
+#[test]
+fn test_map_values_iterator() {
+    let db = Database::builder()
+        .create_with_backend(InMemoryBackend::default())
+        .unwrap();
+    let cloudstate = ReDBCloudstate {
+        db,
+        transactions: HashMap::new(),
+    };
+
+    let (_cloudstate, _) = run_script("tests/map_values.js", cloudstate).unwrap();
+}

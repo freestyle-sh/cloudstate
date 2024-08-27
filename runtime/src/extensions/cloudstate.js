@@ -128,7 +128,9 @@ class CloudstateTransaction {
       const changeMap = new Map();
       this.mapChanges.set(map, changeMap);
       this.objectIds.set(map, value.objectId);
-
+      map["values"] = () => {
+        return Deno.core.ops.op_map_values(value.objectId);
+      }
       map.get = (key) => {
         const result = mapGet.apply(map, [key]);
         if (result) return result;
