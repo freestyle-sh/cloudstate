@@ -131,11 +131,12 @@ fn watch_file(
 
 async fn run_server(server: Arc<Mutex<CloudstateServer>>, listener: TcpListener) {
     let handle = |req: Request| async move {
-        let response = handler(server.clone(), req);
+        let response = std::thread::spawn(move || handler(server.clone(), req))
+            .join()
+            .unwrap();
         response
     };
-    let svr = axum::Router::new().route(
-        "/*",
+    let svr = axum::Router::new().fallback(
         get(handle.clone())
             .post(handle.clone())
             .delete(handle.clone())

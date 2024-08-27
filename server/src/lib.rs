@@ -110,7 +110,7 @@ async fn method_request(
     let result = execute_script(&script.as_str(), &state.classes, state.cloudstate).await;
 
     println!("completed script");
-    // println("result: {:?}", result);
+    println!("result: {:?}", result);
 
     Json(serde_json::from_str(&result).unwrap())
 }
