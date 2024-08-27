@@ -1,14 +1,14 @@
 use clap::ValueHint;
 use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
+use notify::{EventHandler, Watcher};
 use redb::{backends::InMemoryBackend, Database};
 use server::CloudstateServer;
-use std::{collections::HashMap, fs};
+use tokio::net::TcpListener;
+use std::{collections::HashMap, fs, path::Path};
 
 #[tokio::main]
 async fn main() {
     let filename_arg = clap::Arg::new("filename")
-        .short('f')
-        .long("filename")
         .help("The filename to serve")
         .value_hint(ValueHint::FilePath)
         .required(true);
@@ -47,6 +47,17 @@ async fn main() {
             let filename = run_matches.get_one::<String>("filename").unwrap();
             let watch = run_matches.get_one::<bool>("watch");
 
+            let run_func = |event: notify::Event| {
+                println!("File changed: {:?}", event);
+            };
+            // let run_func = |event: notify::Event| {
+
+            // };
+
+            if *watch.unwrap_or(&false) {
+                watch_file(Path::new(filename), run_func);
+            }
+
             println!("Running file: {:?}", filename);
             println!("Watching: {:?}", watch);
         }
@@ -55,26 +66,50 @@ async fn main() {
             let watch = serve_matches.get_one::<bool>("watch");
 
             let classes = fs::read_to_string(filename).unwrap();
-
-            let server = CloudstateServer::new(
-                ReDBCloudstate {
-                    db: Database::builder()
-                        .create_with_backend(InMemoryBackend::default())
-                        .unwrap(),
-                    transactions: HashMap::new(),
-                },
-                &classes,
-            )
-            .await;
-
             let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-            axum::serve(listener, server.router).await.unwrap();
+
+            let _ = run_server(&classes, listener).await;
+            
 
             println!("Serving file: {:?}", filename);
-            println!("Watching: {:?}", watch);
+            if *watch.unwrap_or(&false) {
+                watch_file(Path::new(filename), |_|{
+
+                });
+            }
         }
         _ => {
             println!("No subcommand found");
         }
     }
+}
+
+fn watch_file(path: &Path, func: fn(notify::Event) -> ()) {
+    notify::recommended_watcher(move |evt: Result<notify::Event, notify::Error>| {
+        let unwrapped = evt.expect("Error watching filesystem");
+
+        func(unwrapped);
+    })
+    .unwrap()
+    .watch(path, notify::RecursiveMode::NonRecursive)
+    .unwrap();
+}
+
+async fn run_server(classes: &str, listener: TcpListener){
+    let server = CloudstateServer::new(
+        ReDBCloudstate {
+            db: Database::builder()
+                .create_with_backend(InMemoryBackend::default())
+                .unwrap(),
+            transactions: HashMap::new(),
+        },
+        classes,
+    )
+    .await;
+   let out= axum::serve(listener, server.router);
+
+   out.await.unwrap();
+
+
+
 }

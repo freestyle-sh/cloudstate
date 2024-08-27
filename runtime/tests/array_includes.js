@@ -1,16 +1,14 @@
 const base = ["a", "b", "c", "d", "e", "f"];
 {
-
   const object = {
     value: [...base],
   };
 
   setRoot("test-root", object);
+
   commit();
-
 }
-
-
+// check includes
 {
   const root = getRoot("test-root");
 
@@ -18,21 +16,15 @@ const base = ["a", "b", "c", "d", "e", "f"];
 
   if (!root.value) throw new Error("root.value should exist");
 
-  if (root.value.length !== base.length )
+  if (root.value.length !== base.length)
     throw new Error(`root.value should have length ${base.length}`);
 
-  let i = 0;
-  for (const v of root.value) {
-    
-    if (v !== base[i]) {
-      throw new Error(`value mismatch at index ${i}: ${v} !== ${base[i]}`);
-    }
-    i++;
-  }
+  if (!root.value.includes("a"))
+    throw new Error(`root.value should include "a"`);
 
-  if (i !== base.length) {
-    throw new Error("value iterator does not match");
-  }
+  if (!root.value.includes("f"))
+    throw new Error(`root.value should include "f"`);
 
-  commit();
+  if (root.value.includes("z"))
+    throw new Error(`root.value should not include "z"`);
 }

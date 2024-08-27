@@ -1,4 +1,7 @@
 const base = ["a", "b", "c", "d", "e", "f"];
+
+
+
 {
 
   const object = {
@@ -10,7 +13,6 @@ const base = ["a", "b", "c", "d", "e", "f"];
 
 }
 
-
 {
   const root = getRoot("test-root");
 
@@ -21,18 +23,10 @@ const base = ["a", "b", "c", "d", "e", "f"];
   if (root.value.length !== base.length )
     throw new Error(`root.value should have length ${base.length}`);
 
-  let i = 0;
-  for (const v of root.value) {
-    
-    if (v !== base[i]) {
-      throw new Error(`value mismatch at index ${i}: ${v} !== ${base[i]}`);
+// check at for each item
+    for (let i = 0; i < root.value.length; i++) {
+      if (root.value.at(i) !== base[i]) {
+        throw new Error(`value mismatch at index ${i}: ${root.value.at(i)} !== ${base[i]}`);
+      }
     }
-    i++;
-  }
-
-  if (i !== base.length) {
-    throw new Error("value iterator does not match");
-  }
-
-  commit();
 }

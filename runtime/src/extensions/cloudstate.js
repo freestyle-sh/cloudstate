@@ -128,6 +128,29 @@ class CloudstateTransaction {
       const changeMap = new Map();
       this.mapChanges.set(map, changeMap);
       this.objectIds.set(map, value.objectId);
+      map["values"] = () => {
+        return Deno.core.ops
+          .op_map_values(this.transactionId, value.objectId)
+          .values();
+      };
+      map["keys"] = () => {
+        return Deno.core.ops
+          .op_map_keys(this.transactionId, value.objectId)
+          .values();
+      };
+
+      map["entries"] = () => {
+        return Deno.core.ops
+          .op_map_entries(this.transactionId, value.objectId)
+          .values();
+      };
+
+      map["forEach"] = (fn) => {
+        const entries = map.entries();
+        for (const entry of entries) {
+          fn(entry[1], entry[0], map);
+        }
+      };
 
       map.get = (key) => {
         const result = mapGet.apply(map, [key]);
@@ -146,6 +169,15 @@ class CloudstateTransaction {
         mapSet.apply(map, [key, value]);
         changeMap.set(key, value);
       };
+
+      Object.defineProperty(map, "size", {
+        get: () => {
+          return Deno.core.ops.op_cloudstate_map_size(
+            this.transactionId,
+            value.objectId
+          );
+        },
+      });
 
       Object.defineProperty(object, key, {
         get: () => {
@@ -298,26 +330,26 @@ class CloudstateTransaction {
 
     const existingArray = this.arrays.get(id);
     if (existingArray) return existingArray;
-
+    const transactionId = this.transactionId;
     const array = new Proxy(
       {},
       {
         get: (_target, key) => {
+          if (key === Symbol.iterator) {
+            return function* () {
+              let length = Deno.core.ops.op_cloudstate_array_length(
+                transactionId,
+                id
+              );
+              for (let i = 0; i < length; i++) {
+                yield array[i];
+              }
+            };
+          }
           let index = parseInt(key);
 
           if (isNaN(index)) {
             switch (key) {
-              case [Symbol.iterator]: {
-                return function* () {
-                  let length = Deno.core.ops.op_cloudstate_array_length(
-                    this.transactionId,
-                    id
-                  );
-                  for (let i = 0; i < length; i++) {
-                    yield array[i];
-                  }
-                };
-              }
               case "length": {
                 return Deno.core.ops.op_cloudstate_array_length(
                   this.transactionId,
@@ -326,6 +358,11 @@ class CloudstateTransaction {
               }
               case "constructor": {
                 return Array;
+              }
+              case "at": {
+                return (index) => {
+                  return array[index];
+                };
               }
               case "push": {
                 return (...args) => {
@@ -352,6 +389,26 @@ class CloudstateTransaction {
                   return length;
                 };
               }
+              case "every": {
+                return (fn) => {
+                  let index = 0;
+                  for (const item of array) {
+                    if (!fn(item, index, array)) return false;
+                    index++;
+                  }
+                  return true;
+                };
+              }
+              case "join": {
+                return (separator) => {
+                  let str = "";
+                  for (let i = 0; i < array.length; i++) {
+                    str += array[i];
+                    if (i < array.length - 1) str += separator;
+                  }
+                  return str;
+                };
+              }
               case "toJSON": {
                 return () => {
                   const length = Deno.core.ops.op_cloudstate_array_length(
@@ -363,6 +420,18 @@ class CloudstateTransaction {
                     result.push(array[i]);
                   }
                   return result;
+                };
+              }
+              case "includes": {
+                return (value) => {
+                  const length = Deno.core.ops.op_cloudstate_array_length(
+                    this.transactionId,
+                    id
+                  );
+                  for (let i = 0; i < length; i++) {
+                    if (array[i] === value) return true;
+                  }
+                  return false;
                 };
               }
               case "map": {

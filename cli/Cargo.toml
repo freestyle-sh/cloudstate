@@ -10,3 +10,4 @@ server = { path = "../server" }
 cloudstate = { path = "../runtime" }
 tokio = "1.39.3"
 axum = "0.7.5"
+notify = "6.1.1"
