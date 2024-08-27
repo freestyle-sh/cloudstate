@@ -70,7 +70,7 @@ async fn main() {
             let filename = serve_matches.get_one::<String>("filename").unwrap().clone();
             let watch = serve_matches.get_one::<bool>("watch").unwrap();
 
-            let classes = fs::read_to_string(&filename).unwrap();
+            let classes = fs::read_to_string(&filename).unwrap_or("".to_string());
             let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
             let cloudstate = Arc::new(Mutex::new(ReDBCloudstate {
                 db: Database::builder()
@@ -125,7 +125,10 @@ async fn main() {
                     .unwrap();
 
                 watcher
-                    .watch(Path::new(&filename), notify::RecursiveMode::Recursive)
+                    .watch(
+                        Path::new(&filename).parent().unwrap(),
+                        notify::RecursiveMode::Recursive,
+                    )
                     .unwrap();
 
                 // I know this else block is weird but it doesn't work without it
