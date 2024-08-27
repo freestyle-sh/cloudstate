@@ -1,6 +1,9 @@
 use crate::{
-    execution::run_script, extensions::cloudstate::ReDBCloudstate, gc::mark_and_sweep,
-    print::{self, print_database}, tables,
+    execution::run_script,
+    extensions::cloudstate::ReDBCloudstate,
+    gc::mark_and_sweep,
+    print::{self, print_database},
+    tables,
 };
 use redb::{backends::InMemoryBackend, Database, ReadableTable};
 use std::collections::HashMap;
@@ -17,7 +20,24 @@ fn test_objects_and_arrays() {
         },
     )
     .unwrap();
-    print_database(&cs.db);
+    print_database(&cs.lock().unwrap().db);
+    result.unwrap();
+}
+
+#[test]
+fn test_multiple_references() {
+    let (cs, result) = run_script(
+        "tests/multiple_references.js",
+        ReDBCloudstate {
+            db: Database::builder()
+                .create_with_backend(InMemoryBackend::default())
+                .unwrap(),
+            transactions: HashMap::new(),
+        },
+    )
+    .unwrap();
+
+    print_database(&cs.lock().unwrap().db);
     result.unwrap();
 }
 
@@ -34,7 +54,26 @@ fn test_maps() {
     )
     .unwrap();
 
-    print_database(&cs.db);
+    print_database(&cs.lock().unwrap().db);
+
+    result.unwrap();
+}
+
+#[test]
+fn test_nested_arrays() {
+    let (cs, result) = run_script(
+        "tests/nested_arrays.js",
+        ReDBCloudstate {
+            db: Database::builder()
+                .create_with_backend(InMemoryBackend::default())
+                .unwrap(),
+            transactions: HashMap::new(),
+        },
+    )
+    .unwrap();
+
+    print_database(&cs.lock().unwrap().db);
+
     result.unwrap();
 }
 
@@ -51,7 +90,8 @@ fn test_simple_objects() {
     )
     .unwrap();
 
-    print_database(&cs.db);
+    print_database(&cs.lock().unwrap().db);
+
     result.unwrap();
 }
 
@@ -68,7 +108,8 @@ fn test_fetch() {
     )
     .unwrap();
 
-    print_database(&cs.db);
+    print_database(&cs.lock().unwrap().db);
+
     result.unwrap();
 }
 
@@ -85,7 +126,8 @@ fn test_date() {
     )
     .unwrap();
 
-    print_database(&cs.db);
+    print_database(&cs.lock().unwrap().db);
+
     result.unwrap();
 }
 
@@ -101,7 +143,8 @@ fn test_bigint() {
         },
     )
     .unwrap();
-    println!("Database after test:");
+    print_database(&cs.lock().unwrap().db);
+
     result.unwrap();
 }
 
@@ -118,7 +161,8 @@ fn test_nested_objects() {
     )
     .unwrap();
 
-    print_database(&cs.db);
+    print_database(&cs.lock().unwrap().db);
+
     result.unwrap();
 }
 
@@ -135,7 +179,7 @@ fn test_custom_classes() {
     )
     .unwrap();
 
-    print_database(&cs.db);
+    print_database(&cs.lock().unwrap().db);
 
     result.unwrap();
 }
@@ -153,7 +197,8 @@ fn test_push_to_arrays() {
     )
     .unwrap();
 
-    print_database(&cs.db);
+    print_database(&cs.lock().unwrap().db);
+
     result.unwrap();
 }
 
@@ -169,7 +214,7 @@ fn test_gc_objects() {
 
     let (cloudstate, _) = run_script("tests/gc/base.js", cloudstate).unwrap();
 
-    let db = cloudstate.db;
+    let db = &cloudstate.lock().unwrap().db;
     let read = db.begin_read();
     let read = match read {
         Ok(read) => read,
@@ -229,7 +274,7 @@ fn test_gc_maps() {
 
     let (cloudstate, _) = run_script("tests/gc/map.js", cloudstate).unwrap();
 
-    let db = cloudstate.db;
+    let db = &cloudstate.lock().unwrap().db;
     let read = db.begin_read();
     let read = match read {
         Ok(read) => read,
@@ -285,7 +330,7 @@ pub fn test_gc_array() {
 
     let (cloudstate, _) = run_script("tests/gc/array.js", cloudstate).unwrap();
 
-    let db = cloudstate.db;
+    let db = &cloudstate.lock().unwrap().db;
     let read = db.begin_read();
     let read = match read {
         Ok(read) => read,
