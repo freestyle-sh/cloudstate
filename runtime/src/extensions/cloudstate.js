@@ -389,6 +389,26 @@ class CloudstateTransaction {
                   return length;
                 };
               }
+              case "every": {
+                return (fn) => {
+                  let index = 0;
+                  for (const item of array) {
+                    if (!fn(item, index, array)) return false;
+                    index++;
+                  }
+                  return true;
+                };
+              }
+              case "join": {
+                return (separator) => {
+                  let str = "";
+                  for (let i = 0; i < array.length; i++) {
+                    str += array[i];
+                    if (i < array.length - 1) str += separator;
+                  }
+                  return str;
+                };
+              }
               case "toJSON": {
                 return () => {
                   const length = Deno.core.ops.op_cloudstate_array_length(

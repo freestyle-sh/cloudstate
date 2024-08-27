@@ -474,3 +474,31 @@ fn test_array_includes() {
     let (_cloudstate, res) = run_script("tests/array_includes.js", cloudstate).unwrap();
     res.unwrap();
 }
+
+#[test]
+fn test_array_every() {
+    let db = Database::builder()
+        .create_with_backend(InMemoryBackend::default())
+        .unwrap();
+    let cloudstate = ReDBCloudstate {
+        db,
+        transactions: HashMap::new(),
+    };
+
+    let (_cloudstate, res) = run_script("tests/array_every.js", cloudstate).unwrap();
+    res.unwrap();
+}
+
+#[test]
+fn test_array_join() {
+    let db = Database::builder()
+        .create_with_backend(InMemoryBackend::default())
+        .unwrap();
+    let cloudstate = ReDBCloudstate {
+        db,
+        transactions: HashMap::new(),
+    };
+
+    let (_cloudstate, res) = run_script("tests/array_join.js", cloudstate).unwrap();
+    res.unwrap();
+}
