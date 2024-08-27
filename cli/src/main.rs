@@ -90,17 +90,34 @@ async fn main() {
             if *watch {
                 let pre_cloned_filename: String = filename.clone();
 
-                let mut watcher = notify::recommended_watcher(move |_| {
-                    Runtime::new().unwrap().block_on(async {
-                        if let Ok(new_classes) = fs::read_to_string(&pre_cloned_filename) {
-                            let mut server = app_state.lock().unwrap();
+                let mut watcher = notify::recommended_watcher(
+                    move |evt: Result<notify::Event, notify::Error>| {
+                        let evt = evt.unwrap();
+                        let should_reload = match evt.kind {
+                            notify::EventKind::Any => false,
+                            notify::EventKind::Access(_) => false,
+                            notify::EventKind::Create(_) => true,
+                            notify::EventKind::Modify(_) => true,
+                            notify::EventKind::Remove(_) => false,
+                            notify::EventKind::Other => false,
+                        };
+                        if should_reload {
+                            println!("Reloading file");
 
-                            *server = CloudstateServer::new(cloudstate.clone(), &new_classes).await;
+                            Runtime::new().unwrap().block_on(async {
+                                if let Ok(new_classes) = fs::read_to_string(&pre_cloned_filename) {
+                                    let mut server = app_state.lock().unwrap();
 
-                            drop(server);
+                                    *server =
+                                        CloudstateServer::new(cloudstate.clone(), &new_classes)
+                                            .await;
+
+                                    drop(server);
+                                }
+                            })
                         }
-                    })
-                })
+                    },
+                )
                 .unwrap();
 
                 watcher
