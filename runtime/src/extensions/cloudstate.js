@@ -144,6 +144,14 @@ class CloudstateTransaction {
           .op_map_entries(this.transactionId, value.objectId)
           .values();
       };
+   
+      map['forEach'] = (fn) => {
+        const entries = map.entries();
+        for (const entry of entries) {
+          fn(entry[1], entry[0], map);
+        }
+        
+      }
 
       map.get = (key) => {
         const result = mapGet.apply(map, [key]);
