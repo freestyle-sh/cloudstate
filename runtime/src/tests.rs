@@ -387,7 +387,8 @@ fn test_array_iterator() {
         transactions: HashMap::new(),
     };
 
-    let (_cloudstate, _) = run_script("tests/array_iterator.js", cloudstate).unwrap();
+    let (_cloudstate, res) = run_script("tests/array_iterator.js", cloudstate).unwrap();
+    res.unwrap()
 }
 
 #[test]
@@ -400,5 +401,34 @@ fn test_map_values_iterator() {
         transactions: HashMap::new(),
     };
 
-    let (_cloudstate, _) = run_script("tests/map_values.js", cloudstate).unwrap();
+    let (_cloudstate, res) = run_script("tests/map_values.js", cloudstate).unwrap();
+    res.unwrap()
+}
+
+#[test]
+fn test_map_keys_iterator() {
+    let db = Database::builder()
+        .create_with_backend(InMemoryBackend::default())
+        .unwrap();
+    let cloudstate = ReDBCloudstate {
+        db,
+        transactions: HashMap::new(),
+    };
+
+    let (_cloudstate, res) = run_script("tests/map_keys.js", cloudstate).unwrap();
+    res.unwrap();
+}
+
+#[test]
+fn test_map_entries_iterator() {
+    let db = Database::builder()
+        .create_with_backend(InMemoryBackend::default())
+        .unwrap();
+    let cloudstate = ReDBCloudstate {
+        db,
+        transactions: HashMap::new(),
+    };
+
+    let (_cloudstate, res) = run_script("tests/map_entries.js", cloudstate).unwrap();
+    res.unwrap();
 }

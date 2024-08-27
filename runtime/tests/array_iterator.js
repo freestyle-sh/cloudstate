@@ -1,4 +1,4 @@
-const base = [1, 2, 3, "a", "b", "c"];
+const base = ["a", "b", "c", "d", "e", "f"];
 {
 
   const object = {
@@ -18,19 +18,19 @@ const base = [1, 2, 3, "a", "b", "c"];
 
   if (!root.value) throw new Error("root.value should exist");
 
-  if (root.value.length !== 4)
-    throw new Error("root.value should have length 4");
+  if (root.value.length !== base.length )
+    throw new Error(`root.value should have length ${base.length}`);
 
-  let value = [...base];
   let i = 0;
   for (const v of root.value) {
-    if (v !== value[i]) {
-      throw new Error("value does not match");
+    
+    if (v !== base[i]) {
+      throw new Error(`value mismatch at index ${i}: ${v} !== ${base[i]}`);
     }
+    i++;
   }
 
-  console.log("post for of loop");
-  if (i !== value.length) {
+  if (i !== base.length) {
     throw new Error("value iterator does not match");
   }
 

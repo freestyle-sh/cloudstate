@@ -7,7 +7,7 @@ const base = new Map([
     ["f", "c"],
 ])
 // base.size = 4;
-const base_values = [...base.values()];
+const base_values = [...base.keys()];
 {
 
   const object = {
@@ -28,7 +28,7 @@ const base_values = [...base.values()];
     if (!root.value) throw new Error("root.value should exist");
 
     let i = 0;
-    for (const v of root.value.values()) {
+    for (const v of root.value.keys()) {
         if (v !== base_values[i]) {
             throw new Error("value does not match");
         }

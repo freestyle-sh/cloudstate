@@ -129,8 +129,22 @@ class CloudstateTransaction {
       this.mapChanges.set(map, changeMap);
       this.objectIds.set(map, value.objectId);
       map["values"] = () => {
-        return Deno.core.ops.op_map_values(value.objectId);
-      }
+        return Deno.core.ops
+          .op_map_values(this.transactionId, value.objectId)
+          .values();
+      };
+      map["keys"] = () => {
+        return Deno.core.ops
+          .op_map_keys(this.transactionId, value.objectId)
+          .values();
+      };
+
+      map["entries"] = () => {
+        return Deno.core.ops
+          .op_map_entries(this.transactionId, value.objectId)
+          .values();
+      };
+
       map.get = (key) => {
         const result = mapGet.apply(map, [key]);
         if (result) return result;
@@ -300,26 +314,26 @@ class CloudstateTransaction {
 
     const existingArray = this.arrays.get(id);
     if (existingArray) return existingArray;
-
+    const transactionId = this.transactionId;
     const array = new Proxy(
       {},
       {
         get: (_target, key) => {
+          if (key === Symbol.iterator) {
+            return function* () {
+              let length = Deno.core.ops.op_cloudstate_array_length(
+                transactionId,
+                id
+              );
+              for (let i = 0; i < length; i++) {
+                yield array[i];
+              }
+            };
+          }
           let index = parseInt(key);
 
           if (isNaN(index)) {
             switch (key) {
-              case [Symbol.iterator]: {
-                return function* () {
-                  let length = Deno.core.ops.op_cloudstate_array_length(
-                    this.transactionId,
-                    id
-                  );
-                  for (let i = 0; i < length; i++) {
-                    yield array[i];
-                  }
-                };
-              }
               case "length": {
                 return Deno.core.ops.op_cloudstate_array_length(
                   this.transactionId,

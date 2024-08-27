@@ -292,7 +292,8 @@ fn op_commit_transaction(state: &mut OpState, #[string] id: String) -> Result<()
 #[to_v8]
 fn op_map_values(
     state: &mut OpState,
-    #[string] id: String,
+    #[string] transaction_id: String,
+    #[string] map_id: String,
 ) -> Result<CloudstatePrimitiveDataVec, Error> {
     let cs = state
         .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
@@ -300,7 +301,7 @@ fn op_map_values(
 
     let cs = cs.lock().unwrap();
 
-    let read_txn = cs.transactions.get(id.as_str()).unwrap();
+    let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
 
     let table = read_txn.open_table(MAPS_TABLE).unwrap();
 
@@ -308,14 +309,75 @@ fn op_map_values(
 
     for entry in table.iter().unwrap() {
         let (key, value) = entry.unwrap();
-        if key.value().id == id {
+        if key.value().id == map_id {
             values.push(value.value().data);
         }
     }
 
-    
-
     Ok(values.into())
+}
+
+#[op2]
+#[to_v8]
+fn op_map_keys(
+    state: &mut OpState,
+    #[string] transaction_id: String,
+    #[string] map_id: String,
+) -> Result<CloudstatePrimitiveDataVec, Error> {
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+
+    let cs = cs.lock().unwrap();
+
+    let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
+
+    let table = read_txn.open_table(MAPS_TABLE).unwrap();
+
+    let mut keys = vec![];
+
+    for entry in table.iter().unwrap() {
+        let (key, _value) = entry.unwrap();
+        if key.value().id == map_id {
+            //TODO: UPDATE WHEN MAP KEYS ARE MOVED TO ANY PRIMITIVE
+            keys.push(CloudstatePrimitiveData::String(key.value().field));
+        }
+    }
+
+    Ok(keys.into())
+}
+
+#[op2]
+#[to_v8]
+fn op_map_entries(
+    state: &mut OpState,
+    #[string] transaction_id: String,
+    #[string] map_id: String,
+) -> Result<CloudstateEntriesVec, Error> {
+    println!("Getting map entries");
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+
+    let cs = cs.lock().unwrap();
+
+    let read_txn = cs.transactions.get(&transaction_id).unwrap();
+
+    let table = read_txn.open_table(MAPS_TABLE).unwrap();
+
+    let mut entries: Vec<Vec<CloudstatePrimitiveData>> = vec![];
+
+    for entry in table.iter().unwrap() {
+        let (key, value) = entry.unwrap();
+        if key.value().id == map_id {
+            entries.push(vec![
+                CloudstatePrimitiveData::String(key.value().field),
+                value.value().data,
+            ]);
+        }
+    }
+
+    Ok(CloudstateEntriesVec::from(entries))
 }
 
 pub struct ReDBCloudstate {
@@ -450,6 +512,41 @@ impl From<Vec<CloudstatePrimitiveData>> for CloudstatePrimitiveDataVec {
     }
 }
 
+struct CloudstateEntriesVec {
+    data: Vec<Vec<CloudstatePrimitiveData>>,
+}
+
+impl From<Vec<Vec<CloudstatePrimitiveData>>> for CloudstateEntriesVec {
+    fn from(data: Vec<Vec<CloudstatePrimitiveData>>) -> Self {
+        CloudstateEntriesVec { data }
+    }
+}
+
+impl ToV8<'_> for CloudstateEntriesVec {
+    fn to_v8<'a>(
+        self,
+        scope: &mut v8::HandleScope<'a>,
+    ) -> Result<v8::Local<'a, v8::Value>, JsError> {
+        let array = v8::Array::new(scope, self.data.len() as i32);
+        for (i, entry) in self.data.iter().enumerate() {
+            let key = entry[0].clone();
+            let value = entry[1].clone();
+
+            let key = key.clone().to_v8(scope).unwrap();
+            let value = value.clone().to_v8(scope).unwrap();
+
+            let entry = v8::Array::new(scope, 2);
+            entry.set_index(scope, 0, key);
+            entry.set_index(scope, 1, value);
+
+            array.set_index(scope, i as u32, entry.into());
+        }
+        Ok(array.into())
+    }
+
+    type Error = JsError;
+}
+
 impl ToV8<'_> for CloudstatePrimitiveDataVec {
     type Error = JsError;
 
@@ -457,9 +554,12 @@ impl ToV8<'_> for CloudstatePrimitiveDataVec {
         self,
         scope: &mut v8::HandleScope<'a>,
     ) -> Result<v8::Local<'a, v8::Value>, Self::Error> {
-        Ok(v8::Local::<v8::Value>::from(
-            v8::String::new(scope, "CloudstatePrimitiveData").unwrap(),
-        ))
+        let array = v8::Array::new(scope, self.data.len() as i32);
+        for (i, value) in self.data.iter().enumerate() {
+            let val = value.clone().to_v8(scope).unwrap();
+            array.set_index(scope, i as u32, val);
+        }
+        Ok(array.into())
     }
 }
 
@@ -706,6 +806,9 @@ deno_core::extension!(
     op_cloudstate_array_set,
     op_cloudstate_array_get,
     op_cloudstate_array_length,
+    op_map_values,
+    op_map_keys,
+    op_map_entries,
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],
