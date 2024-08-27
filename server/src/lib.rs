@@ -55,10 +55,10 @@ impl ModuleLoader for CloudstateModuleLoader {
 }
 
 impl CloudstateServer {
-    pub async fn new(cloudstate: ReDBCloudstate, classes: &str) -> Self {
+    pub async fn new(cloudstate: Arc<Mutex<ReDBCloudstate>>, classes: &str) -> Self {
         // tracing_subscriber::fmt::init();
 
-        let cloudstate = Arc::new(Mutex::new(cloudstate));
+       
 
         execute_script(include_str!("./initialize.js"), classes, cloudstate.clone()).await;
 
@@ -71,6 +71,8 @@ impl CloudstateServer {
 
         CloudstateServer { router: app }
     }
+
+    
 }
 
 #[derive(Clone)]
