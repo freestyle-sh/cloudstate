@@ -1,9 +1,6 @@
 use redb::ReadableTable;
 
-use crate::{
-    print,
-    tables::{ARRAYS_TABLE, OBJECTS_TABLE, ROOTS_TABLE},
-};
+use crate::tables::{ARRAYS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
 
 pub fn print_database(db: &redb::Database) {
     println!("Objects Table");

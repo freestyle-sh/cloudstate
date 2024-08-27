@@ -1,6 +1,5 @@
 use axum::{
     extract::{Path, State},
-    response::Html,
     routing::post,
     Json, Router,
 };

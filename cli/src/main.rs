@@ -1,24 +1,20 @@
 use axum::{
     body::Body,
-    extract::{Request, State},
-    handler,
-    http::StatusCode,
-    routing::{get, IntoMakeService},
-    Router,
+    extract::Request,
+    routing::get,
 };
 use tokio::runtime::Runtime; // 0.3.5
 
 use clap::ValueHint;
 use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
-use notify::{EventHandler, Watcher};
+use notify::Watcher;
 use redb::{backends::InMemoryBackend, Database};
 use server::CloudstateServer;
 use std::{
     collections::HashMap,
     fs,
-    future::{poll_fn, Future},
+    future::poll_fn,
     path::Path,
-    pin::Pin,
     sync::{Arc, Mutex},
 };
 use tokio::net::TcpListener;

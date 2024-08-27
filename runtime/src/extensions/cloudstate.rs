@@ -53,7 +53,7 @@ fn op_cloudstate_object_get(
     let cs = state
         .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
         .unwrap();
-    let mut cs = cs.lock().unwrap();
+    let cs = cs.lock().unwrap();
 
     let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
     let table = read_txn.open_table(OBJECTS_TABLE).unwrap();
@@ -111,7 +111,7 @@ fn op_cloudstate_map_get(
     let cs = state
         .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
         .unwrap();
-    let mut cs = cs.lock().unwrap();
+    let cs = cs.lock().unwrap();
 
     let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
     let table = read_txn.open_table(MAPS_TABLE).unwrap();
@@ -167,7 +167,7 @@ fn op_cloudstate_array_length(
     let cs = state
         .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
         .unwrap();
-    let mut cs = cs.lock().unwrap();
+    let cs = cs.lock().unwrap();
 
     let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
     let table = read_txn.open_table(ARRAYS_TABLE).unwrap();
@@ -246,7 +246,7 @@ fn op_cloudstate_object_root_get(
     let cs = state
         .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
         .unwrap();
-    let mut cs = cs.lock().unwrap();
+    let cs = cs.lock().unwrap();
 
     let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
     let table = read_txn.open_table(ROOTS_TABLE).unwrap();
