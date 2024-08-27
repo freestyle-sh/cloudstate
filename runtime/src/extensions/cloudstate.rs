@@ -210,6 +210,32 @@ fn op_cloudstate_array_get(
     result.unwrap()
 }
 
+#[op2(fast)]
+// #[to_v8]
+fn op_cloudstate_map_size(
+    state: &mut OpState,
+    #[string] transaction_id: String,
+    #[string] map_id: String,
+) -> Result<i32, Error> {
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+    let cs = cs.lock().unwrap();
+
+    let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
+    let table = read_txn.open_table(MAPS_TABLE).unwrap();
+
+    let count = table
+        .iter()
+        .unwrap()
+        .map(|entry| entry.unwrap())
+        .filter(|(key, _value)| key.value().id == map_id)
+        .count();
+
+    Ok(count as i32)
+}
+
+
 #[op2]
 #[string]
 fn op_cloudstate_object_root_get(
@@ -809,6 +835,7 @@ deno_core::extension!(
     op_map_values,
     op_map_keys,
     op_map_entries,
+    op_cloudstate_map_size,
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],

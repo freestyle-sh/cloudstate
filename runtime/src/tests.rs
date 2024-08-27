@@ -432,3 +432,17 @@ fn test_map_entries_iterator() {
     let (_cloudstate, res) = run_script("tests/map_entries.js", cloudstate).unwrap();
     res.unwrap();
 }
+
+#[test]
+fn test_map_size() {
+    let db = Database::builder()
+        .create_with_backend(InMemoryBackend::default())
+        .unwrap();
+    let cloudstate = ReDBCloudstate {
+        db,
+        transactions: HashMap::new(),
+    };
+
+    let (_cloudstate, res) = run_script("tests/map_size.js", cloudstate).unwrap();
+    res.unwrap();
+}

@@ -163,6 +163,15 @@ class CloudstateTransaction {
         changeMap.set(key, value);
       };
 
+      Object.defineProperty(map, "size", {
+        get: () => {
+          return Deno.core.ops.op_cloudstate_map_size(
+            this.transactionId,
+            value.objectId
+          );
+        }
+      })
+
       Object.defineProperty(object, key, {
         get: () => {
           return map;
