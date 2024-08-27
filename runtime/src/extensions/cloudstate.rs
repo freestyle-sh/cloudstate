@@ -235,7 +235,6 @@ fn op_cloudstate_map_size(
     Ok(count as i32)
 }
 
-
 #[op2]
 #[string]
 fn op_cloudstate_object_root_get(

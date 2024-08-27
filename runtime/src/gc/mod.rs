@@ -23,7 +23,7 @@ pub fn mark_and_sweep(db: &Database) -> anyhow::Result<()> {
             panic!("Error creating write transaction: {}", e)
         }
     };
-    
+
     let _ = sweep(tx, &reachable);
     Ok(())
 }

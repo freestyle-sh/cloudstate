@@ -108,7 +108,8 @@ async fn main() {
                             if let Ok(new_classes) = fs::read_to_string(&pre_cloned_filename) {
                                 let mut server = app_state.lock().unwrap();
 
-                                *server = CloudstateServer::new(cloudstate.clone(), &new_classes).await;
+                                *server =
+                                    CloudstateServer::new(cloudstate.clone(), &new_classes).await;
 
                                 drop(server);
                             }
@@ -123,11 +124,13 @@ async fn main() {
     }
 }
 
-fn watch_file(path: &Path, mut func: Box<impl FnMut(notify::Event) -> () + std::marker::Send + 'static>) {
+fn watch_file(
+    path: &Path,
+    mut func: Box<impl FnMut(notify::Event) -> () + std::marker::Send + 'static>,
+) {
     notify::recommended_watcher(move |evt: Result<notify::Event, notify::Error>| {
         let unwrapped = evt.expect("Error watching filesystem");
         func(unwrapped);
-
     })
     .unwrap()
     .watch(path, notify::RecursiveMode::NonRecursive)
