@@ -351,6 +351,7 @@ class CloudstateTransaction {
 
           if (isNaN(index)) {
             switch (key) {
+            
               case "length": {
                 return Deno.core.ops.op_cloudstate_array_length(
                   this.transactionId,
@@ -359,6 +360,11 @@ class CloudstateTransaction {
               }
               case "constructor": {
                 return Array;
+              }
+              case "at": {
+                return (index) => {
+                  return array[index];
+                };
               }
               case "push": {
                 return (...args) => {
