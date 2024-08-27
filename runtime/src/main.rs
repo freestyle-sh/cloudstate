@@ -23,6 +23,6 @@ fn main() {
     )
     .unwrap();
 
-    print_database(&cs.db);
+    print_database(&cs.lock().unwrap().db);
     result.unwrap();
 }

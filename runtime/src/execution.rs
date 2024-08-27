@@ -55,7 +55,13 @@ impl NetPermissions for CloudstateNetPermissions {
 pub fn run_script(
     path: &str,
     cloudstate: ReDBCloudstate,
-) -> Result<(ReDBCloudstate, Result<(), anyhow::Error>), anyhow::Error> {
+) -> Result<
+    (
+        Arc<std::sync::Mutex<ReDBCloudstate>>,
+        Result<(), anyhow::Error>,
+    ),
+    anyhow::Error,
+> {
     let js_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(path);
     let main_module = ModuleSpecifier::from_file_path(js_path).unwrap();
 
@@ -78,7 +84,10 @@ pub fn run_script(
         ..Default::default()
     });
 
-    js_runtime.op_state().borrow_mut().put(cloudstate);
+    js_runtime
+        .op_state()
+        .borrow_mut()
+        .put(Arc::new(std::sync::Mutex::new(cloudstate)));
     js_runtime
         .op_state()
         .borrow_mut()
@@ -122,7 +131,10 @@ pub fn run_script(
         .unwrap()
         .block_on(future);
 
-    let cloudstate = js_runtime.op_state().borrow_mut().take::<ReDBCloudstate>();
+    let cloudstate = js_runtime
+        .op_state()
+        .borrow_mut()
+        .take::<Arc<std::sync::Mutex<ReDBCloudstate>>>();
 
     return Ok((cloudstate, result));
 }
