@@ -3,7 +3,7 @@ export class TestCS {
   count = 0;
 
   increment() {
-    this.count += 1;
+    this.count += 3;
     console.log(this.count);
     return this.count;
   }

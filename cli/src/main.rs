@@ -12,6 +12,7 @@ use std::{
     future::poll_fn,
     path::Path,
     sync::{Arc, Mutex},
+    time::Duration,
 };
 use tokio::net::TcpListener;
 use tower::Service;
@@ -57,14 +58,6 @@ async fn main() {
             let filename = run_matches.get_one::<String>("filename").unwrap();
             let watch = run_matches.get_one::<bool>("watch");
 
-            // let run_func = |event: notify::Event| {
-            //     let matches_clone = matches.clone();
-            //     println!("File changed: {:?}", event);
-            // };
-            // let run_func = |event: notify::Event| {
-
-            // };
-
             if *watch.unwrap_or(&false) {
                 // watch_file(Path::new(filename), run_func);
             }
@@ -75,7 +68,7 @@ async fn main() {
         Some(("serve", serve_matches)) => {
             let serve_matches = serve_matches.clone();
             let filename = serve_matches.get_one::<String>("filename").unwrap().clone();
-            let watch = serve_matches.get_one::<bool>("watch");
+            let watch = serve_matches.get_one::<bool>("watch").unwrap();
 
             let classes = fs::read_to_string(&filename).unwrap();
             let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
@@ -89,44 +82,45 @@ async fn main() {
 
             let app_state = Arc::new(Mutex::new(server));
 
-            let _ = run_server(app_state.clone(), listener).await;
+            let cloned = Arc::clone(&app_state);
+            let other_thread = tokio::spawn(async move {
+                let _ = run_server(cloned, listener).await;
+            });
 
-            if *watch.unwrap_or(&false) {
-                let pre_cloned_filename = filename.clone();
-                watch_file(
-                    Path::new(&filename),
-                    Box::new(move |_| {
-                        Runtime::new().unwrap().block_on(async {
-                            if let Ok(new_classes) = fs::read_to_string(&pre_cloned_filename) {
-                                let mut server = app_state.lock().unwrap();
+            if *watch {
+                let pre_cloned_filename: String = filename.clone();
 
-                                *server =
-                                    CloudstateServer::new(cloudstate.clone(), &new_classes).await;
+                let mut watcher = notify::recommended_watcher(move |_| {
+                    Runtime::new().unwrap().block_on(async {
+                        if let Ok(new_classes) = fs::read_to_string(&pre_cloned_filename) {
+                            let mut server = app_state.lock().unwrap();
 
-                                drop(server);
-                            }
-                        })
-                    }),
-                );
+                            *server = CloudstateServer::new(cloudstate.clone(), &new_classes).await;
+
+                            drop(server);
+                        }
+                    })
+                })
+                .unwrap();
+
+                watcher
+                    .configure(notify::Config::default().with_poll_interval(Duration::from_secs(2)))
+                    .unwrap();
+
+                watcher
+                    .watch(Path::new(&filename), notify::RecursiveMode::Recursive)
+                    .unwrap();
+
+                // I know this else block is weird but it doesn't work without it
+                other_thread.await.unwrap()
+            } else {
+                other_thread.await.unwrap()
             }
         }
         _ => {
             println!("No subcommand found");
         }
     }
-}
-
-fn watch_file(
-    path: &Path,
-    mut func: Box<impl FnMut(notify::Event) -> () + std::marker::Send + 'static>,
-) {
-    notify::recommended_watcher(move |evt: Result<notify::Event, notify::Error>| {
-        let unwrapped = evt.expect("Error watching filesystem");
-        func(unwrapped);
-    })
-    .unwrap()
-    .watch(path, notify::RecursiveMode::NonRecursive)
-    .unwrap();
 }
 
 async fn run_server(server: Arc<Mutex<CloudstateServer>>, listener: TcpListener) {
