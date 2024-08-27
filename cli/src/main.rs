@@ -1,8 +1,4 @@
-use axum::{
-    body::Body,
-    extract::Request,
-    routing::get,
-};
+use axum::{body::Body, extract::Request, routing::get};
 use tokio::runtime::Runtime; // 0.3.5
 
 use clap::ValueHint;
@@ -139,7 +135,7 @@ async fn run_server(server: Arc<Mutex<CloudstateServer>>, listener: TcpListener)
         response
     };
     let svr = axum::Router::new().route(
-        "*",
+        "/*",
         get(handle.clone())
             .post(handle.clone())
             .delete(handle.clone())
