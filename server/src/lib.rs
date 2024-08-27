@@ -88,7 +88,7 @@ async fn method_request(
     Path((id, method)): Path<(String, String)>,
     State(state): State<AppState>,
     Json(params): Json<MethodParams>,
-) -> axum::response::Json<String> {
+) -> axum::response::Json<serde_json::Value> {
     // turn into valid, sanitized, json string
     let id = serde_json::to_string(&id).unwrap();
     let method = serde_json::to_string(&method).unwrap();
@@ -113,8 +113,9 @@ async fn method_request(
     let result = execute_script(&script.as_str(), &state.classes, state.cloudstate).await;
 
     println!("completed script");
+    // println("result: {:?}", result);
 
-    Json(result)
+    Json(serde_json::from_str(&result).unwrap())
 }
 
 struct CloudstateTimerPermissions {}
