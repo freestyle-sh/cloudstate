@@ -1,6 +1,9 @@
 use crate::{
-    execution::run_script, extensions::cloudstate::ReDBCloudstate, gc::mark_and_sweep,
-    print::{self, print_database}, tables,
+    execution::run_script,
+    extensions::cloudstate::ReDBCloudstate,
+    gc::mark_and_sweep,
+    print::{self, print_database},
+    tables,
 };
 use redb::{backends::InMemoryBackend, Database, ReadableTable};
 use std::collections::HashMap;
@@ -25,6 +28,23 @@ fn test_objects_and_arrays() {
 fn test_maps() {
     let (cs, result) = run_script(
         "tests/maps.js",
+        ReDBCloudstate {
+            db: Database::builder()
+                .create_with_backend(InMemoryBackend::default())
+                .unwrap(),
+            transactions: HashMap::new(),
+        },
+    )
+    .unwrap();
+
+    print_database(&cs.db);
+    result.unwrap();
+}
+
+#[test]
+fn test_nested_arrays() {
+    let (cs, result) = run_script(
+        "tests/nested_arrays.js",
         ReDBCloudstate {
             db: Database::builder()
                 .create_with_backend(InMemoryBackend::default())
