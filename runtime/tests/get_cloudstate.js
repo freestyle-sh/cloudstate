@@ -15,15 +15,17 @@ class CounterCS {
   };
 
   setRoot("test-root", object);
+  commit();
 }
-
-commit();
 
 {
   const counter = getCloudstate("counter");
-  console.log("counter", counter);
-  if (!counter) throw new Error("counter should exist");
-  if (counter.count !== 0) throw new Error("counter.count should be 0");
+  if (!counter) {
+    throw new Error("counter should exist");
+  }
+  if (counter.count !== 0) {
+    throw new Error("counter.count should be 0");
+  }
   if (counter instanceof CounterCS === false) {
     throw new Error("counter should be an instance of CounterCS");
   }

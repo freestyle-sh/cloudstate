@@ -1,5 +1,4 @@
 {
-
   const object = {
     counters: [
       {
@@ -16,13 +15,12 @@
 
 {
   const object = getRoot("objects-test-root");
-
-  if (!object) throw new Error("object should exist");
-
+  if (!object) {
+    throw new Error("object should exist");
+  }
   if (object.counters.length !== 1) {
     throw new Error("object.counters should have length 1");
   }
-
   if (object.counters[0].count !== 1) {
     throw new Error("object.counters[0].count should be 1");
   }

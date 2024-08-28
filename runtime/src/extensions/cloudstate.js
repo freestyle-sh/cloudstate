@@ -70,7 +70,6 @@ class CloudstateTransaction {
    ** Values: objects themselves
    */
   objects = new Map();
-  mapChanges = new Map();
   arrayChanges = new Map();
   arrays = new Map();
   customClasses = [];
@@ -128,8 +127,7 @@ class CloudstateTransaction {
       const map = new Map();
       const mapSet = map.set;
       const mapGet = map.get;
-      const changeMap = new Map();
-      this.mapChanges.set(map, changeMap);
+
       this.objectIds.set(map, value.objectId);
       map["values"] = () => {
         let map_values = Deno.core.ops.op_map_values(
@@ -212,9 +210,21 @@ class CloudstateTransaction {
         mapSet.apply(map, [key, object]);
         return object;
       };
-      map.set = (key, value) => {
-        mapSet.apply(map, [key, value]);
-        changeMap.set(key, value);
+      map.set = (key, set_value) => {
+        // todo: support nested arrays
+        const val = isPrimitive(set_value)
+          ? set_value
+          : new CloudstateObjectReference(this.#setObject(set_value));
+
+        Deno.core.ops.op_cloudstate_map_set(
+          this.transactionId,
+          this.namespace,
+          value.objectId,
+          key,
+          val
+        );
+
+        mapSet.apply(map, [key, val]);
       };
 
       Object.defineProperty(map, "size", {
