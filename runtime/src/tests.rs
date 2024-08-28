@@ -25,3 +25,4 @@ js_test!(objects_and_arrays);
 js_test!(push_to_arrays);
 js_test!(root_custom_classes);
 js_test!(simple_objects);
+js_test!(map_values_objects);
