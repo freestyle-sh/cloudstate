@@ -334,6 +334,8 @@ fn op_map_values(
 
     for entry in table.iter().unwrap() {
         let (key, value) = entry.unwrap();
+        println!("Key: {:?}", key.value());
+        println!("Value: {:?}", value.value());
         if key.value().id == map_id {
             values.push(value.value().data);
         }
