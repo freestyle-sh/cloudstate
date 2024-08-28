@@ -178,10 +178,11 @@ async fn fetch_request(
             }}
         );
 
-        const out = object['fetch'](req);
+        let out = object['fetch'](req);
 
         if (out instanceof Promise) {{
-            out = await globalThis.result;
+            console.log('fetch is a promise');
+            out = await out;
         }}
 
         if (out instanceof Response) {{

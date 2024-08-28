@@ -8,11 +8,11 @@ export class TestCS {
     return this.count;
   }
 
-  fetch() {
+  async fetch(req) {
     return new Response(
       JSON.stringify({
         count: this.count,
-        message: "Ben was here",
+        echo: (await req.json()).echo,
       }),
       {
         headers: {
