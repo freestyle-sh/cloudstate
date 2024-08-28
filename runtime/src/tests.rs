@@ -12,6 +12,7 @@ js_test!(bigints);
 js_test!(custom_classes);
 js_test!(dates);
 js_test!(fetch);
+js_test!(get_cloudstate);
 js_test!(array_from_map);
 js_test!(map_entries);
 js_test!(map_keys);

@@ -75,6 +75,9 @@ class CloudstateTransaction {
   arrays = new Map();
   customClasses = [];
 
+  /** Maps the user defined id on classes to their objects */
+  cloudstateObjects = new Map();
+
   constructor(namespace, transactionId, customClasses) {
     if (typeof namespace !== "string") {
       throw new Error("namespace must be a string");
@@ -261,7 +264,26 @@ class CloudstateTransaction {
     this.objectIds.set(object, id);
     this.objects.set(id, object);
 
+    if (object.id && this.customClasses.includes(object.constructor)) {
+      this.cloudstateObjects.set(object.id, object);
+    }
+
     return object;
+  }
+
+  getCloudstate(id) {
+    if (typeof id !== "string") throw new Error("id must be a string");
+    if (this.cloudstateObjects.has(id)) {
+      return this.cloudstateObjects.get(id);
+    } else {
+      const value = Deno.core.ops.op_cloudstate_cloudstate_get(
+        this.transactionId,
+        this.namespace,
+        id
+      );
+
+      return this.getObject(value.objectId);
+    }
   }
 
   #setObject(object) {
@@ -591,6 +613,13 @@ function getRoot(...args) {
   return globalThis.transaction.getRoot(...args);
 }
 
+function getCloudstate(...args) {
+  if (!globalThis.transaction) {
+    globalThis.transaction = globalThis.cloudstate.createTransaction();
+  }
+  return globalThis.transaction.getCloudstate(...args);
+}
+
 function setRoot(...args) {
   if (!globalThis.transaction) {
     globalThis.transaction = globalThis.cloudstate.createTransaction();
@@ -610,3 +639,4 @@ function commit() {
 globalThis.getRoot = getRoot;
 globalThis.setRoot = setRoot;
 globalThis.commit = commit;
+globalThis.getCloudstate = getCloudstate;
