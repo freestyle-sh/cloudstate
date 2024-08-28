@@ -11,6 +11,8 @@ js_test!(array_iterator);
 js_test!(array_join);
 js_test!(array_to_reversed);
 js_test!(bigints);
+js_test!(counter_class);
+js_test!(counter_manager_class);
 js_test!(custom_classes);
 js_test!(dates);
 js_test!(fetch);
