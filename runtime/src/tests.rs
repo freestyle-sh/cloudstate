@@ -9,6 +9,7 @@ js_test!(array_from_map);
 js_test!(array_includes);
 js_test!(array_iterator);
 js_test!(array_join);
+js_test!(array_to_reversed);
 js_test!(bigints);
 js_test!(custom_classes);
 js_test!(dates);

@@ -403,6 +403,21 @@ class CloudstateTransaction {
 
           if (isNaN(index)) {
             switch (key) {
+              case "toReversed": {
+                return () => {
+                  //TODO: LAZY-fy
+
+                  let length = Deno.core.ops.op_cloudstate_array_length(
+                    this.transactionId,
+                    id
+                  );
+                  let reversed = [];
+                  for (let i = length - 1; i >= 0; i--) {
+                    reversed.push(array[i]);
+                  }
+                  return reversed;
+                };
+              }
               case "length": {
                 return Deno.core.ops.op_cloudstate_array_length(
                   this.transactionId,
