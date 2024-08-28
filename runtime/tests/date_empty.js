@@ -1,5 +1,5 @@
-const baseDate = new Date();
 {
+  const baseDate = new Date();
   const object = {
     date: baseDate,
   };
