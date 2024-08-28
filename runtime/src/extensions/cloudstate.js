@@ -485,6 +485,15 @@ class CloudstateTransaction {
                   );
                 };
               }
+              case "shift": {
+                return () => {
+                  return Deno.core.ops.op_cloudstate_array_shift(
+                    this.transactionId,
+                    this.namespace,
+                    id
+                  );
+                };
+              }
               case "some": {
                 return (fn) => {
                   for (let i = 0; i < array.length; i++) {
@@ -493,6 +502,7 @@ class CloudstateTransaction {
                   return false;
                 };
               }
+
               case "reduceRight": {
                 return (fn, initialValue) => {
                   let acc = initialValue;

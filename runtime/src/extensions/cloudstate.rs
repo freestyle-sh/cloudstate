@@ -117,6 +117,54 @@ fn op_cloudstate_array_reverse(
 
 #[op2]
 #[to_v8]
+fn op_cloudstate_array_shift(
+    state: &mut OpState,
+    #[string] transaction_id: String,
+    #[string] namespace: String,
+    #[string] array_id: String,
+) -> CloudstatePrimitiveData {
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+
+    let mut cs = cs.lock().unwrap();
+
+    let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
+
+    let mut table = write_txn.open_table(ARRAYS_TABLE).unwrap();
+
+    let keys: Vec<CloudstateArrayItemKey> = table
+        .iter()
+        .unwrap()
+        .map(|entry| entry.unwrap().0.value())
+        .filter(|key| key.id == array_id && key.namespace == namespace)
+        .collect();
+
+    let mut return_value = None;
+    for key in keys {
+        let value = table.remove(&key).unwrap();
+        let value = value.unwrap().value().data;
+        if (key.index - 1) >= 0 {
+            table
+                .insert(
+                    &CloudstateArrayItemKey {
+                        namespace: key.namespace.clone(),
+                        id: key.id.clone(),
+                        index: key.index - 1,
+                    },
+                    CloudstateArrayItemValue { data: value },
+                )
+                .unwrap();
+        } else {
+            return_value = Some(value);
+        }
+    }
+
+    return_value.unwrap_or(CloudstatePrimitiveData::Undefined)
+}
+
+#[op2]
+#[to_v8]
 fn op_cloudstate_cloudstate_get(
     state: &mut OpState,
     #[string] transaction_id: String,
