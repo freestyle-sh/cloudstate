@@ -467,6 +467,25 @@ class CloudstateTransaction {
                   id
                 );
               }
+              case "reduce": {
+                return (fn, initialValue) => {
+                  let acc = initialValue;
+                  for (let i = 0; i < array.length; i++) {
+                    acc = fn(acc, array[i], i, array);
+                  }
+                  return acc;
+                };
+              }
+              case "reduceRight": {
+                return (fn, initialValue) => {
+                  let acc = initialValue;
+                  for (let i = array.length - 1; i >= 0; i--) {
+                    acc = fn(acc, array[i], i, array);
+                  }
+                  return acc;
+                };
+              }
+
               case "constructor": {
                 return Array;
               }
@@ -515,6 +534,46 @@ class CloudstateTransaction {
                     length++;
                   }
                   return length;
+                };
+              }
+              case "find": {
+                return (fn) => {
+                  for (let i = 0; i < array.length; i++) {
+                    if (fn(array[i], i, array)) return array[i];
+                  }
+                  return undefined;
+                };
+              }
+              case "findIndex": {
+                return (fn) => {
+                  for (let i = 0; i < array.length; i++) {
+                    if (fn(array[i], i, array)) return i;
+                  }
+                  return -1;
+                };
+              }
+              case "findLast": {
+                return (fn) => {
+                  for (let i = array.length - 1; i >= 0; i--) {
+                    if (fn(array[i], i, array)) return array[i];
+                  }
+                  return undefined;
+                };
+              }
+              case "findLastIndex": {
+                return (fn) => {
+                  for (let i = array.length - 1; i >= 0; i--) {
+                    if (fn(array[i], i, array)) return i;
+                  }
+                  return -1;
+                };
+              }
+              case "indexOf": {
+                return (value, fromIndex) => {
+                  for (let i = fromIndex || 0; i < array.length; i++) {
+                    if (array[i] === value) return i;
+                  }
+                  return -1;
                 };
               }
               case "every": {
