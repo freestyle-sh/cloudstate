@@ -19,6 +19,7 @@ js_test!(fetch);
 js_test!(get_cloudstate);
 js_test!(map_clear);
 js_test!(map_delete);
+js_test!(map_empty_set);
 js_test!(map_entries);
 js_test!(map_keys);
 js_test!(map_of_objects);
