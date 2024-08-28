@@ -264,6 +264,25 @@ async fn method_request(
     import * as classes from './lib.js';
     globalThis.cloudstate.customClasses = Object.keys(classes).map((key) => classes[key]);
 
+    // temporary hack to be compatible with legacy freestyle apis
+    globalThis.requestContext = {{
+        getStore: () => {{
+            return {{
+                env: {{
+                    invalidateMethod: (method) => {{
+                        fetch('http://example.com/__invalidate__', {{
+                            method: 'POST',
+                            body: JSON.stringify(method),
+                            headers: {{
+                                'Content-Type': 'application/json'
+                            }}
+                        }});
+                    }},
+                }}
+            }}
+        }}
+    }}
+
     const object = getRoot({id}) || getCloudstate({id});
     try {{
        globalThis.result = {{result: object[{method}](...JSON.parse('{params}'))}};
@@ -389,6 +408,8 @@ pub async fn execute_script_internal(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/main.js"),
     )
     .unwrap();
+
+    RefCell::borrow_mut(&js_runtime.op_state()).put(CloudstateFetchPermissions {});
 
     let script = script.to_string();
     let future = async move {

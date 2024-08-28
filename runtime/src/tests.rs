@@ -13,6 +13,7 @@ js_test!(array_to_reversed);
 js_test!(bigints);
 js_test!(custom_classes);
 js_test!(dates);
+js_test!(fetch_post);
 js_test!(fetch);
 js_test!(get_cloudstate);
 js_test!(map_clear);
