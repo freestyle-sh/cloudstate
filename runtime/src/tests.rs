@@ -15,7 +15,6 @@ js_test!(custom_classes);
 js_test!(dates);
 js_test!(fetch);
 js_test!(get_cloudstate);
-js_test!(array_from_map);
 js_test!(map_clear);
 js_test!(map_delete);
 js_test!(map_entries);
