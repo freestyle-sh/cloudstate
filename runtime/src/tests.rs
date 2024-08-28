@@ -17,7 +17,7 @@ js_test!(bigints);
 js_test!(counter_class);
 js_test!(counter_manager_class);
 js_test!(custom_classes);
-js_test!(dates);
+js_test!(date_empty);
 js_test!(fetch_post);
 js_test!(fetch);
 js_test!(get_cloudstate);
