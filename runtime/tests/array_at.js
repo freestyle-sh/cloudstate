@@ -17,7 +17,6 @@ const base = ["a", "b", "c", "d", "e", "f"];
   if (!root.value) {
     throw new Error("root.value should exist");
   }
-
   if (root.value.length !== base.length) {
     throw new Error(`root.value should have length ${base.length}`);
   }
