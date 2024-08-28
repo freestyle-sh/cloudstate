@@ -485,6 +485,14 @@ class CloudstateTransaction {
                   );
                 };
               }
+              case "some": {
+                return (fn) => {
+                  for (let i = 0; i < array.length; i++) {
+                    if (fn(array[i], i, array)) return true;
+                  }
+                  return false;
+                };
+              }
               case "reduceRight": {
                 return (fn, initialValue) => {
                   let acc = initialValue;
