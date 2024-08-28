@@ -1,5 +1,6 @@
 {
     "rust-analyzer.runnables.extraEnv": {
             "RUST_BACKTRACE": "0"
-    }
+    },
+    "editor.formatOnSave": true
 }
