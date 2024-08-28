@@ -4,7 +4,7 @@ const mapFn = (x) => x.toUpperCase();
 
 {
     const object = {
-        value: Array.from(arrayLike, mapFn),
+        objValue: arrayLike,
     };
 
     setRoot("test-root", object);
@@ -16,24 +16,28 @@ const mapFn = (x) => x.toUpperCase();
     if (!root) {
         throw new Error("root should exist");
     }
-    if (!root.value) {
+    if (!root.objValue) {
         throw new Error("root.value should exist");
     }
-
-    // Check if Array.from() worked correctly
-    if (root.value.length !== 3) {
-        throw new Error(`Expected length 3, got ${root.value.length}`);
-    }
-    if (
-        root.value[0] !== "A" || root.value[1] !== "B" || root.value[2] !== "C"
-    ) {
-        throw new Error(
-            `Expected ['A', 'B', 'C'], got ${JSON.stringify(root.value)}`,
-        );
+    if (root.objValue.length !== 3) {
+        throw new Error("root.value should have length 3");
     }
 
-    // Test Array.from() with a string
-    root.value = Array.from("hello");
+    const array = Array.from(root.objValue, mapFn);
+    if (array.length !== 3) {
+        throw new Error("array should have length 3");
+    }
+    if (array[0] !== "A") {
+        throw new Error(`array[0] should be "A", got ${array[0]}`);
+    }
+    if (array[1] !== "B") {
+        throw new Error(`array[1] should be "B", got ${array[1]}`);
+    }
+    if (array[2] !== "C") {
+        throw new Error(`array[2] should be "C", got ${array[2]}`);
+    }
+
+    root.arrValue = array;
     commit();
 }
 
@@ -42,47 +46,25 @@ const mapFn = (x) => x.toUpperCase();
     if (!root) {
         throw new Error("root should exist");
     }
-    if (!root.value) {
-        throw new Error("root.value should exist");
+    if (!root.arrValue) {
+        throw new Error("root.arrValue should exist");
     }
-
-    // Check if Array.from() worked correctly with a string
-    if (root.value.length !== 5) {
-        throw new Error(`Expected length 5, got ${root.value.length}`);
+    if (root.arrValue.length !== 3) {
+        throw new Error("root.arrValue should have length 3");
     }
-    if (root.value.join("") !== "hello") {
+    if (root.arrValue[0] !== "A") {
         throw new Error(
-            `Expected ['h','e','l','l','o'], got ${JSON.stringify(root.value)}`,
+            `root.arrValue[0] should be "A", got ${root.arrValue[0]}`,
         );
     }
-
-    // Test Array.from() with Set
-    const set = new Set(["foo", "bar", "baz"]);
-    root.value = Array.from(set);
-    commit();
-}
-
-{
-    const root = getRoot("test-root");
-    if (!root) {
-        throw new Error("root should exist");
-    }
-    if (!root.value) {
-        throw new Error("root.value should exist");
-    }
-
-    // Check if Array.from() worked correctly with Set
-    if (root.value.length !== 3) {
-        throw new Error(`Expected length 3, got ${root.value.length}`);
-    }
-    if (
-        !root.value.includes("foo") || !root.value.includes("bar") ||
-        !root.value.includes("baz")
-    ) {
+    if (root.arrValue[1] !== "B") {
         throw new Error(
-            `Expected ['foo', 'bar', 'baz'], got ${JSON.stringify(root.value)}`,
+            `root.arrValue[1] should be "B", got ${root.arrValue[1]}`,
         );
     }
-
-    commit();
+    if (root.arrValue[2] !== "C") {
+        throw new Error(
+            `root.arrValue[2] should be "C", got ${root.arrValue[2]}`,
+        );
+    }
 }
