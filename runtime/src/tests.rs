@@ -13,6 +13,8 @@ js_test!(array_of_maps);
 js_test!(array_of_mixed_objects);
 js_test!(array_of_num_objects);
 js_test!(array_of_str_objects);
+js_test!(array_reduce_right);
+js_test!(array_reduce);
 js_test!(array_to_reversed);
 js_test!(bigints);
 js_test!(counter_class);

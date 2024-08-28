@@ -41,29 +41,29 @@ await counter.increment();
 
 ### Array
 
-| Method            | Status                                        | Notes               |
-| ----------------- | --------------------------------------------- | ------------------- |
-| .at               | ✅ [Tested](/runtime/tests/array_at.js)       |                     |
-| .every            | ✅ [Tested](/runtime/tests/array_every.js)    |                     |
-| .filter           | 🙂 Not Tested                                 |                     |
-| .find             | 🙂 Not Tested                                 |                     |
-| .findIndex        | 🙂 Not Tested                                 |                     |
-| .findLastIndex    | 🙂 Not Tested                                 |                     |
-| .includes         | ✅ [Tested](/runtime/tests/array_includes.js) |                     |
-| .indexOf          | 🙂 Not Tested                                 |                     |
-| .join             | ✅ [Tested](/runtime/tests/array_join.js)     |                     |
-| .keys             | ❌ Not Supported                              |                     |
-| .length           | 🙂 Not Tested                                 |                     |
-| .map              | 🙂 Not Tested                                 |                     |
-| .pop              | 🙂 Not Tested                                 |                     |
-| .push             | 🙂 Not Tested                                 |                     |
-| .reduce           | 🙂 Not Tested                                 |                     |
-| .reduceRight      | 🙂 Not Tested                                 |                     |
-| .reverse          | 🙂 Not Tested                                 |                     |
-| .shift            | 🙂 Not Tested                                 |                     |
-| .slice            | ❌ Not Supported                              |                     |
-| .some             | 🙂 Not Tested                                 |                     |
-| .toReversed       | 🙂 Not Tested                                 | Not done lazily yet |
-| .unshift          | ❌ Not Supported                              |                     |
-| Array.from        | 🙂 Not Tested                                 |                     |
-| [Symbol.iterator] | 🙂 Not Tested                                 |                     |
+| Method            | Status                                            | Notes               |
+| ----------------- | ------------------------------------------------- | ------------------- |
+| .at               | ✅ [Tested](/runtime/tests/array_at.js)           |                     |
+| .every            | ✅ [Tested](/runtime/tests/array_every.js)        |                     |
+| .filter           | 🙂 Not Tested                                     |                     |
+| .find             | 🙂 Not Tested                                     |                     |
+| .findIndex        | 🙂 Not Tested                                     |                     |
+| .findLastIndex    | 🙂 Not Tested                                     |                     |
+| .includes         | ✅ [Tested](/runtime/tests/array_includes.js)     |                     |
+| .indexOf          | 🙂 Not Tested                                     |                     |
+| .join             | ✅ [Tested](/runtime/tests/array_join.js)         |                     |
+| .keys             | ❌ Not Supported                                  |                     |
+| .length           | 🙂 Not Tested                                     |                     |
+| .map              | 🙂 Not Tested                                     |                     |
+| .pop              | 🙂 Not Tested                                     |                     |
+| .push             | 🙂 Not Tested                                     |                     |
+| .reduce           | ✅ [Tested](/runtime/tests/array_reduce.js)       |                     |
+| .reduceRight      | ✅ [Tested](/runtime/tests/array_reduce_right.js) |                     |
+| .reverse          | 🙂 Not Tested                                     |                     |
+| .shift            | 🙂 Not Tested                                     |                     |
+| .slice            | ❌ Not Supported                                  |                     |
+| .some             | 🙂 Not Tested                                     |                     |
+| .toReversed       | 🙂 Not Tested                                     | Not done lazily yet |
+| .unshift          | ❌ Not Supported                                  |                     |
+| Array.from        | 🙂 Not Tested                                     |                     |
+| [Symbol.iterator] | 🙂 Not Tested                                     |                     |
