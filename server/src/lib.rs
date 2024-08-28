@@ -101,7 +101,11 @@ async fn method_request(
     globalThis.cloudstate.customClasses = Object.keys(classes).map((key) => classes[key]);
 
     const object = getRoot({id});
-    globalThis.result = object[{method}](...JSON.parse('{params}'));
+    try {{
+        globalThis.result = {{result: object[{method}](...JSON.parse('{params}'))}};
+    }} catch (e) {{
+        globalThis.result = {{ error: {{ message: e.message, stack: e.stack }} }};
+    }}
     ",
     );
 
