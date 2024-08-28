@@ -4,11 +4,14 @@ use tokio::runtime::Runtime; // 0.3.5
 use clap::ValueHint;
 use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
 use notify::Watcher;
-use redb::{backends::InMemoryBackend, Database};
+use redb::{
+    backends::{self},
+    Database,
+};
 use server::{execute_script, CloudstateServer};
 use std::{
     collections::HashMap,
-    fs,
+    fs::{self},
     future::poll_fn,
     path::Path,
     sync::{Arc, Mutex},
@@ -30,6 +33,12 @@ async fn main() {
         .required(false)
         .num_args(0);
 
+    let memory_only_arg = clap::Arg::new("memory-only")
+        .help("Only store data in memory")
+        .long("memory-only")
+        .required(false)
+        .num_args(0);
+
     let cmd = clap::Command::new("cloudstate")
         .bin_name("cloudstate")
         .name("cloudstate")
@@ -42,13 +51,12 @@ async fn main() {
                filename_arg.clone()
             ).arg(
                 watch_arg.clone()
-            ),
+            ).arg(memory_only_arg.clone()),
         ).subcommand(
-            clap::Command::new("serve").about("Serves a file on the cloudstate runtime").arg(
-                filename_arg.clone()
-            ).arg(
-                watch_arg.clone()
-            )
+            clap::Command::new("serve").about("Serves a file on the cloudstate runtime")
+                .arg(filename_arg.clone())
+                .arg(watch_arg.clone())
+                .arg(memory_only_arg.clone())
         );
 
     let matches = cmd.get_matches();
@@ -56,15 +64,22 @@ async fn main() {
     match matches.subcommand() {
         Some(("run", run_matches)) => {
             let filename = run_matches.get_one::<String>("filename").unwrap();
+            let memory_only = run_matches.get_one::<bool>("memory-only").unwrap();
             let script = fs::read_to_string(filename).unwrap();
+
+            let db = if memory_only.clone() {
+                Database::builder()
+                    .create_with_backend(backends::InMemoryBackend::default())
+                    .unwrap()
+            } else {
+                Database::create("./cloudstate").unwrap()
+            };
 
             execute_script(
                 &script,
                 &"",
                 Arc::new(Mutex::new(ReDBCloudstate {
-                    db: Database::builder()
-                        .create_with_backend(InMemoryBackend::default())
-                        .unwrap(),
+                    db: db,
                     transactions: HashMap::new(),
                 })),
             )
@@ -74,13 +89,20 @@ async fn main() {
             let serve_matches = serve_matches.clone();
             let filename = serve_matches.get_one::<String>("filename").unwrap().clone();
             let watch = serve_matches.get_one::<bool>("watch").unwrap();
+            let memory_only = serve_matches.get_one::<bool>("memory-only").unwrap();
+
+            let db = if memory_only.clone() {
+                Database::builder()
+                    .create_with_backend(backends::InMemoryBackend::default())
+                    .unwrap()
+            } else {
+                Database::create("./cloudstate").unwrap()
+            };
 
             let classes = fs::read_to_string(&filename).unwrap_or("".to_string());
             let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
             let cloudstate = Arc::new(Mutex::new(ReDBCloudstate {
-                db: Database::builder()
-                    .create_with_backend(InMemoryBackend::default())
-                    .unwrap(),
+                db: db,
                 transactions: HashMap::new(),
             }));
             let server = CloudstateServer::new(cloudstate.clone(), &classes).await;
