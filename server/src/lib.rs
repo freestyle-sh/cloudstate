@@ -1,6 +1,6 @@
 use axum::{
-    body::{Body, HttpBody},
-    extract::{Path, Request, State},
+    body::{self, Body, HttpBody},
+    extract::{Host, OriginalUri, Path, Request, State},
     http::Response,
     response::IntoResponse,
     routing::{get, post},
@@ -95,36 +95,49 @@ struct ResponseData {
 async fn fetch_request(
     Path(id): Path<String>,
     State(state): State<AppState>,
+    Host(host): Host,
     request: Request,
 ) -> axum::response::Response {
-    println!("FETCH REQUEST");
     let id = serde_json::to_string(&id).unwrap();
-    println!("id: {:?}", id);
-    // let params = serde_json::to_string(&params.params).unwrap();
-    // println!("params: {:?}", params);
+    let (parts, body) = request.into_parts();
+    println!("parts: {:?}", parts);
+    println!("parts URI: {:?}", parts.uri);
+    let method = serde_json::to_string(&parts.method.to_string()).unwrap();
+    let headers = parts.headers;
+    // find a way to not need the http://
+    let uri = format!("http://{}{}", host, parts.uri.path());
+    let uri = serde_json::to_string(&uri).unwrap();
+    // let uri = format!("{}{}", host, request.uri().path());
 
-    let url = request.uri().path().to_string();
-    let method = request.method().to_string();
+    // println!()
+    // println!("FETCH REQUEST");
+    // let id = serde_json::to_string(&id).unwrap();
+    // println!("id: {:?}", id);
+    // // let params = serde_json::to_string(&params.params).unwrap();
+    // // println!("params: {:?}", params);
+    // let uri = format!("{}{}", host, request.uri().path());
+    // let uri = serde_json::to_string(&uri).unwrap();
+    // println!("uri is: {:?}", uri);
+    // let method = request.method().to_string();
 
-    let headers = request
-        .headers()
+    let headers = headers
         .iter()
         .map(|(key, value)| {
             format!(
-                "'{}': '{}'",
-                key.to_string(),
-                value.to_str().unwrap_or_default().to_string()
+                "{}: {}",
+                serde_json::to_string(&key.to_string()).unwrap(),
+                serde_json::to_string(&value.to_str().unwrap_or_default().to_string()).unwrap()
             )
         })
         .collect::<Vec<String>>()
         .join(", ");
 
     let headers = format!("{{{}}}", headers);
+    // let headers = serde_json::to_string(&headers).unwrap();
 
-    // construct UInt8Array from body
+    // // construct UInt8Array from body
     let mut bytes = Vec::new();
-    let stream = request.into_body();
-    let mut stream = stream.into_data_stream();
+    let mut stream = body.into_data_stream();
     while let Ok(Some(chunk)) = stream.try_next().await {
         bytes.extend_from_slice(&chunk);
     }
@@ -137,6 +150,13 @@ async fn fetch_request(
             .collect::<Vec<String>>()
             .join(", ")
     );
+    // // body: new Uint8Array({bytes}).buffer,
+    // // headers: new Headers({headers}),
+    // let headers = headers.to_string();
+
+    //headers: new Headers({headers}),
+    // method: '{method}',
+    //{url},
     // todo: fix injection vulnerability
     let script = format!(
         "
@@ -145,10 +165,20 @@ async fn fetch_request(
 
     let bytes = new Uint8Array({bytes});
 
+    const method =  {method};
+
 
     const object = getRoot({id});
     try {{
-        const out = object['fetch']();
+        const req = new Request({uri},
+            {{
+                method,
+                headers: new Headers({headers}),
+                body: ['GET', 'HEAD'].includes(method) ? undefined : bytes.buffer
+            }}
+        );
+
+        const out = object['fetch'](req);
 
         if (out instanceof Promise) {{
             out = await globalThis.result;
