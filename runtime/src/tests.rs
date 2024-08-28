@@ -5,6 +5,8 @@ mod gc_tests;
 
 js_test!(array_at);
 js_test!(array_every);
+js_test!(array_from);
+js_test!(array_filter);
 js_test!(array_from_map);
 js_test!(array_includes);
 js_test!(array_iterator);
