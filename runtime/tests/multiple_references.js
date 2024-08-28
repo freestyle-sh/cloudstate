@@ -9,6 +9,7 @@
   };
 
   setRoot("test-root", object);
+  commit();
 }
 
 {
