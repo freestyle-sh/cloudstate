@@ -167,7 +167,14 @@ class CloudstateTransaction {
           })
           .values();
       };
-
+      map["delete"] = (key) => {
+        return Deno.core.ops.op_map_delete(
+          this.transactionId,
+          this.namespace,
+          value.objectId,
+          key
+        );
+      };
       map["forEach"] = (fn) => {
         const entries = map.entries();
         for (const entry of entries) {
