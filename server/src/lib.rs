@@ -23,6 +23,9 @@ use serde::Deserialize;
 use std::{borrow::BorrowMut, cell::RefCell, sync::Mutex};
 use std::{rc::Rc, sync::Arc};
 
+#[cfg(test)]
+mod tests;
+
 pub struct CloudstateServer {
     // pub cloudstate: Arc<Mutex<ReDBCloudstate>>,
     pub router: Router,
@@ -374,7 +377,7 @@ pub async fn execute_script(
     .unwrap()
 }
 
-#[tokio::main(flavor = "current_thread")]
+#[tokio::main]
 pub async fn execute_script_internal(
     script: &str,
     classes_script: &str,
