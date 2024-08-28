@@ -19,10 +19,12 @@ const base_values = [...base.entries()];
 
 {
   const root = getRoot("test-root");
-
-  if (!root) throw new Error("root should exist");
-
-  if (!root.value) throw new Error("root.value should exist");
+  if (!root) {
+    throw new Error("root should exist");
+  }
+  if (!root.value) {
+    throw new Error("root.value should exist");
+  }
 
   let i = 0;
   // const values =
@@ -32,10 +34,10 @@ const base_values = [...base.entries()];
     console.log("ERR", e);
   }
   for (const v of root.value.entries()) {
-    //todo: DEEP EQUAL
+    //TODO: DEEP EQUAL
     if (v[0] !== base_values[i][0] || v[1] !== base_values[i][1]) {
       throw new Error(
-        `value mismatch at index ${i}: ${v} !== ${base_values[i]}`
+        `value mismatch at index ${i}: ${v} !== ${base_values[i]}`,
       );
     }
     i++;

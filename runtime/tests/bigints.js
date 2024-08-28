@@ -1,18 +1,22 @@
 const basebigInt = BigInt("1234567890123456789012345678901234567890");
 {
-
-  const object =  {
+  const object = {
     big: basebigInt,
   };
+
   setRoot("test-root", object);
   commit();
 }
 
 {
   const object = getRoot("test-root");
-
-  if (!object) throw new Error("object should exist");
-  if (!object.big) throw new Error("object.big should exist");
-  if (typeof object.big !== "bigint")
+  if (!object) {
+    throw new Error("object should exist");
+  }
+  if (!object.big) {
+    throw new Error("object.big should exist");
+  }
+  if (typeof object.big !== "bigint") {
     throw new Error("object.big should be a bigint");
+  }
 }

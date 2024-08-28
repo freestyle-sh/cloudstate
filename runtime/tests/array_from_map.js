@@ -5,15 +5,15 @@ const baseMap = new Map([
   ["d", "delta"],
   ["e", "echo"],
 ]);
+
 {
   const object = {
     value: baseMap,
   };
 
   setRoot("test-root", object);
+  commit();
 }
-
-commit();
 
 {
   const object = getRoot("test-root");
@@ -22,19 +22,16 @@ commit();
 
   commit();
 }
+
 {
   const object = getRoot("test-root");
-
   const values = object.value.values();
-
   const arr = Array.from(values);
-
-  console.log("New array", arr);
   if (arr.length !== Array.from(baseMap.values()).length) {
     throw new Error(
       `Should have been arr.length = ${
         Array.from(baseMap.values()).length
-      }, got ${arr.length}`
+      }, got ${arr.length}`,
     );
   }
 }
