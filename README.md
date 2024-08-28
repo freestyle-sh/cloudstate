@@ -4,7 +4,7 @@
  <a href="https://docs.freestyle.dev/getting-started/intro">Get Started</a> · <a href="https://docs.freestyle.dev">Docs</a> · <a href="https://discord.gg/YTRprVkdnz">Discord</a>
 </p>
 <p align="center">
-<b>Cloudstate</b> is a combined JavaScript Runtime and Database Engine that allows JavaScript developers to persist their data with just JavaScript.
+<b>Cloudstate</b> is a combined JavaScript Runtime and Database Engine that allows developers to persist their data with just JavaScript.
 </p>
 
 <p align="center">
