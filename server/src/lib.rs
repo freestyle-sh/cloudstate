@@ -1,6 +1,6 @@
 use axum::{
     extract::{Path, State},
-    routing::post,
+    routing::{get, post},
     Json, Router,
 };
 use cloudstate_runtime::extensions::{bootstrap::bootstrap, cloudstate::cloudstate};
@@ -58,8 +58,15 @@ impl CloudstateServer {
         // tracing_subscriber::fmt::init();
 
         execute_script(include_str!("./initialize.js"), classes, cloudstate.clone()).await;
-
         let app = Router::new()
+            .route(
+                "/cloudstate/instances/:id",
+                get(fetch_request)
+                    .post(fetch_request)
+                    .patch(fetch_request)
+                    .put(fetch_request)
+                    .delete(fetch_request),
+            )
             .route("/cloudstate/instances/:id/:method", post(method_request))
             .with_state(AppState {
                 cloudstate: cloudstate.clone(),
@@ -68,6 +75,41 @@ impl CloudstateServer {
 
         CloudstateServer { router: app }
     }
+}
+
+async fn fetch_request(
+    Path(id): Path<String>,
+    State(state): State<AppState>,
+    Json(params): Json<MethodParams>,
+) -> axum::response::Json<serde_json::Value> {
+    let id = serde_json::to_string(&id).unwrap();
+    println!("id: {:?}", id);
+    let params = serde_json::to_string(&params.params).unwrap();
+    println!("params: {:?}", params);
+
+    // todo: fix injection vulnerability
+    let script = format!(
+        "
+    import * as classes from './lib.js';
+    globalThis.cloudstate.customClasses = Object.keys(classes).map((key) => classes[key]);
+
+    const object = getRoot({id});
+    try {{
+        globalThis.result = {{result: object['fetch'](...JSON.parse('{params}'))}};
+    }} catch (e) {{
+        globalThis.result = {{ error: {{ message: e.message, stack: e.stack }} }};
+    }}
+    ",
+    );
+
+    println!("executing script: {:#?}", script);
+
+    let result = execute_script(&script.as_str(), &state.classes, state.cloudstate).await;
+
+    println!("completed script");
+    println!("result: {:?}", result);
+
+    Json(serde_json::from_str(&result).unwrap())
 }
 
 #[derive(Clone)]
