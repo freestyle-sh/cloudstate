@@ -435,6 +435,17 @@ class CloudstateTransaction {
 
           if (isNaN(index)) {
             switch (key) {
+              case "filter": {
+                return (fn) => {
+                  let arr = [];
+                  for (let i = 0; i < array.length; i++) {
+                    if (fn(array[i], i, array)) {
+                      arr.push(array[i]);
+                    }
+                  }
+                  return arr;
+                };
+              }
               case "toReversed": {
                 return () => {
                   //TODO: LAZY-fy
