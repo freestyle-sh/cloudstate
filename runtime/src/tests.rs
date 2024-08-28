@@ -5,6 +5,7 @@ mod gc_tests;
 
 js_test!(array_at);
 js_test!(array_every);
+js_test!(array_from_map);
 js_test!(array_includes);
 js_test!(array_iterator);
 js_test!(array_join);
@@ -12,7 +13,6 @@ js_test!(bigints);
 js_test!(custom_classes);
 js_test!(dates);
 js_test!(fetch);
-js_test!(array_from_map);
 js_test!(map_entries);
 js_test!(map_keys);
 js_test!(map_of_objects);
