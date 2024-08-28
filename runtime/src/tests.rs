@@ -13,6 +13,7 @@ js_test!(bigints);
 js_test!(custom_classes);
 js_test!(dates);
 js_test!(fetch);
+js_test!(map_clear);
 js_test!(map_delete);
 js_test!(map_entries);
 js_test!(map_keys);

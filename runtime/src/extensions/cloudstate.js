@@ -175,6 +175,15 @@ class CloudstateTransaction {
           key
         );
       };
+
+      map["clear"] = () => {
+        return Deno.core.ops.op_map_clear(
+          this.transactionId,
+          this.namespace,
+          value.objectId
+        );
+      };
+
       map["forEach"] = (fn) => {
         const entries = map.entries();
         for (const entry of entries) {
