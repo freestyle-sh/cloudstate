@@ -21,3 +21,5 @@ for (const className of Object.keys(classes)) {
     }
   }
 }
+
+commit();
