@@ -36,8 +36,10 @@ const base_values = [...base.values()];
 
   let i = 0;
   for (const v of root.value.values()) {
-    if (v !== base_values[i]) {
-      throw new Error("value does not match");
+    if (v.a !== base_values[i].a || v.b !== base_values[i].b) {
+      throw new Error(
+        `Expected ${JSON.stringify(base_values[i])}, got ${JSON.stringify(v)}`
+      );
     }
     i++;
   }

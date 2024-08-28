@@ -24,5 +24,11 @@ commit();
 
   const a = object.map.get("a");
   if (!a) throw new Error("object.map.get('a') should exist");
-  if (a.count !== 0) throw new Error("object.map.get('a').count should be 0");
+
+  if (a.count !== 0)
+    throw new Error(
+      `object.map.get('a').count should be 0, got ${a.count}, ${JSON.stringify(
+        a
+      )}`
+    );
 }
