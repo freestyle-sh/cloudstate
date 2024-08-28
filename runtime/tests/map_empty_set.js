@@ -1,6 +1,5 @@
-const base = new Map();
-
 {
+    const base = new Map();
     const object = {
         value: base,
     };
