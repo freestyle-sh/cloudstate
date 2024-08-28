@@ -125,20 +125,54 @@ class CloudstateTransaction {
     }
 
     if (value instanceof CloudstateBlobReference) {
-      Object.defineProperty(object, key, {
+      const blob = new Blob();
+
+      blob["text"] = async () => {
+        return Deno.core.ops.op_cloudstate_blob_text(
+          this.transactionId,
+          value.blobId
+        );
+      };
+
+      blob["arrayBuffer"] = async () => {
+        return Deno.core.ops.op_cloudstate_blob_array_buffer(
+          this.transactionId,
+          value.blobId
+        );
+      };
+
+      blob["bytes"] = async () => {
+        return Deno.core.ops.op_cloudstate_blob_bytes(
+          this.transactionId,
+          value.blobId
+        );
+      };
+
+      Object.defineProperty(blob, "size", {
         get: () => {
-          return Deno.core.ops.op_cloudstate_blob_get(
+          return Deno.core.ops.op_cloudstate_blob_size(
             this.transactionId,
             value.blobId
           );
         },
-        set: (v) => {
-          Deno.core.ops.op_cloudstate_blob_set(
+      });
+
+      Object.defineProperty(blob, "type", {
+        get: () => {
+          // TODO: MAKE TYPE
+          return Deno.core.ops.op_cloudstate_blob_get_type(
             this.transactionId,
-            value.blobId,
-            v
+            value.blobId
           );
-        });
+        },
+      });
+
+      // Object.defineProperty(object, key, {
+      //   {
+      //     value: blob,
+      //   }
+
+      // });
     }
 
     if (value instanceof CloudstateArrayReference) {
