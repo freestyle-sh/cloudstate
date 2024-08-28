@@ -70,7 +70,6 @@ class CloudstateTransaction {
    ** Values: objects themselves
    */
   objects = new Map();
-  mapChanges = new Map();
   arrayChanges = new Map();
   arrays = new Map();
   customClasses = [];
@@ -128,8 +127,7 @@ class CloudstateTransaction {
       const map = new Map();
       const mapSet = map.set;
       const mapGet = map.get;
-      const changeMap = new Map();
-      this.mapChanges.set(map, changeMap);
+
       this.objectIds.set(map, value.objectId);
       map["values"] = () => {
         let map_values = Deno.core.ops.op_map_values(
