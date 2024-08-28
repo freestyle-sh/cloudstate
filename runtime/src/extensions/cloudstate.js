@@ -475,6 +475,23 @@ class CloudstateTransaction {
                   return array[index];
                 };
               }
+              case "pop": {
+                return () => {
+                  let length = Deno.core.ops.op_cloudstate_array_length(
+                    this.transactionId,
+                    id
+                  );
+                  if (length === 0) return undefined;
+
+                  const value = array[length - 1];
+                  Deno.core.ops.op_cloudstate_array_pop(
+                    this.transactionId,
+                    this.namespace,
+                    id
+                  );
+                  return value;
+                };
+              }
               case "push": {
                 return (...args) => {
                   let length = Deno.core.ops.op_cloudstate_array_length(
