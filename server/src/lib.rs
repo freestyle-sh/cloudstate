@@ -1,5 +1,8 @@
 use axum::{
-    extract::{Path, State},
+    body::{Body, HttpBody},
+    extract::{Path, Request, State},
+    http::Response,
+    response::IntoResponse,
     routing::{get, post},
     Json, Router,
 };
@@ -15,6 +18,7 @@ use deno_fetch::FetchPermissions;
 use deno_net::NetPermissions;
 use deno_web::BlobStore;
 use deno_web::TimersPermission;
+use futures::TryStreamExt;
 use serde::Deserialize;
 use std::{borrow::BorrowMut, cell::RefCell, sync::Mutex};
 use std::{rc::Rc, sync::Arc};
@@ -77,25 +81,91 @@ impl CloudstateServer {
     }
 }
 
+#[derive(Deserialize, Debug)]
+struct ScriptResponseResult {
+    pub result: ResponseData,
+}
+
+#[derive(Deserialize, Debug)]
+struct ResponseData {
+    pub bytes: Vec<u8>,
+    pub headers: Vec<(String, String)>,
+}
+
 async fn fetch_request(
     Path(id): Path<String>,
     State(state): State<AppState>,
-    Json(params): Json<MethodParams>,
-) -> axum::response::Json<serde_json::Value> {
+    request: Request,
+) -> axum::response::Response {
+    println!("FETCH REQUEST");
     let id = serde_json::to_string(&id).unwrap();
     println!("id: {:?}", id);
-    let params = serde_json::to_string(&params.params).unwrap();
-    println!("params: {:?}", params);
+    // let params = serde_json::to_string(&params.params).unwrap();
+    // println!("params: {:?}", params);
 
+    let url = request.uri().path().to_string();
+    let method = request.method().to_string();
+
+    let headers = request
+        .headers()
+        .iter()
+        .map(|(key, value)| {
+            format!(
+                "'{}': '{}'",
+                key.to_string(),
+                value.to_str().unwrap_or_default().to_string()
+            )
+        })
+        .collect::<Vec<String>>()
+        .join(", ");
+
+    let headers = format!("{{{}}}", headers);
+
+    // construct UInt8Array from body
+    let mut bytes = Vec::new();
+    let stream = request.into_body();
+    let mut stream = stream.into_data_stream();
+    while let Ok(Some(chunk)) = stream.try_next().await {
+        bytes.extend_from_slice(&chunk);
+    }
+
+    let bytes = format!(
+        "[{}]",
+        bytes
+            .iter()
+            .map(|b| b.to_string())
+            .collect::<Vec<String>>()
+            .join(", ")
+    );
     // todo: fix injection vulnerability
     let script = format!(
         "
     import * as classes from './lib.js';
     globalThis.cloudstate.customClasses = Object.keys(classes).map((key) => classes[key]);
 
+    let bytes = new Uint8Array({bytes});
+
+
     const object = getRoot({id});
     try {{
-        globalThis.result = {{result: object['fetch'](...JSON.parse('{params}'))}};
+        const out = object['fetch']();
+
+        if (out instanceof Promise) {{
+            out = await globalThis.result;
+        }}
+
+        if (out instanceof Response) {{
+            const body = await out.bytes();
+            const headers = [...out.headers.entries()];
+
+            // uint8array to array
+            let bytes = Array.from(body);
+
+
+
+            globalThis.result = {{ result: {{ bytes, headers }} }};
+        }}
+
     }} catch (e) {{
         globalThis.result = {{ error: {{ message: e.message, stack: e.stack }} }};
     }}
@@ -107,9 +177,30 @@ async fn fetch_request(
     let result = execute_script(&script.as_str(), &state.classes, state.cloudstate).await;
 
     println!("completed script");
-    println!("result: {:?}", result);
+    println!("script result: {:?}", result);
 
-    Json(serde_json::from_str(&result).unwrap())
+    let json = serde_json::from_str::<ScriptResponseResult>(&result).unwrap();
+
+    println!("json: {:?}", json);
+
+    let mut builder = Response::builder();
+    for (key, value) in json.result.headers {
+        builder = builder.header(key, value);
+    }
+
+    let body = Body::from(json.result.bytes);
+    let builder = builder.body(body).unwrap();
+
+    builder
+    // (
+    //     json.headers
+    //         .iter()
+    //         .map(|(key, value)| (key.as_str(), value.as_str()))
+    //         .collect(),
+    //     json.bytes,
+    // );
+
+    // Json(serde_json::from_str(&result).unwrap())
 }
 
 #[derive(Clone)]
@@ -144,7 +235,7 @@ async fn method_request(
 
     const object = getRoot({id});
     try {{
-        globalThis.result = {{result: object[{method}](...JSON.parse('{params}'))}};
+       globalThis.result = {{result: object[{method}](...JSON.parse('{params}'))}};
     }} catch (e) {{
         globalThis.result = {{ error: {{ message: e.message, stack: e.stack }} }};
     }}
@@ -292,11 +383,6 @@ pub async fn execute_script_internal(
     let (mut js_runtime, result) = future.await;
     println!("completed polling");
 
-    let cs = RefCell::borrow_mut(&js_runtime.op_state()).take::<Arc<Mutex<ReDBCloudstate>>>();
-
-    // let cs = &cs.lock().unwrap();
-    // print_database(&cs.db);
-
     let mut js_runtime = js_runtime.handle_scope();
     let scope = js_runtime.borrow_mut();
     let context = scope.get_current_context();
@@ -304,6 +390,7 @@ pub async fn execute_script_internal(
     let global = context.global(scope);
     let key = v8_string_key!(scope, "result");
     let local_value = global.get(scope, key).unwrap();
+
     let json_value = v8::json::stringify(scope, local_value).unwrap();
     let json_str = json_value.to_rust_string_lossy(scope);
     json_str

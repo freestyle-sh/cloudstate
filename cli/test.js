@@ -3,9 +3,23 @@ export class TestCS {
   count = 0;
 
   increment() {
-    this.count += 1;
+    this.count += 2;
     console.log(this.count);
     return this.count;
+  }
+
+  fetch() {
+    return new Response(
+      JSON.stringify({
+        count: this.count,
+        message: "Ben was here",
+      }),
+      {
+        headers: {
+          "content-type": "application/json",
+        },
+      }
+    );
   }
 }
 
