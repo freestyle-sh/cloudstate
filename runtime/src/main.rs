@@ -13,7 +13,7 @@ mod tables;
 
 fn main() {
     let (cs, result) = run_script(
-        "tests/fetch.js",
+        "tests/get_cloudstate.js",
         ReDBCloudstate {
             db: Database::builder()
                 .create_with_backend(InMemoryBackend::default())

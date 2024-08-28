@@ -233,7 +233,7 @@ async fn method_request(
     import * as classes from './lib.js';
     globalThis.cloudstate.customClasses = Object.keys(classes).map((key) => classes[key]);
 
-    const object = getRoot({id});
+    const object = getRoot({id}) || getCloudstate({id});
     try {{
        globalThis.result = {{result: object[{method}](...JSON.parse('{params}'))}};
     }} catch (e) {{

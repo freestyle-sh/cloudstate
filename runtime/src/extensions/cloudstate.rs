@@ -70,6 +70,46 @@ fn op_cloudstate_object_get(
 }
 
 #[op2]
+#[to_v8]
+fn op_cloudstate_cloudstate_get(
+    state: &mut OpState,
+    #[string] transaction_id: String,
+    #[string] namespace: String,
+    #[string] id: String,
+) -> CloudstatePrimitiveData {
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+    let cs = cs.lock().unwrap();
+
+    let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
+    let table = read_txn.open_table(OBJECTS_TABLE).unwrap();
+
+    let result = table.iter().unwrap().find(|value| {
+        value
+            .as_ref()
+            .unwrap()
+            .1
+            .value()
+            .data
+            .fields
+            .get(&"id".to_string())
+            .map_or_else(
+                || false,
+                |id_value| id_value == &CloudstatePrimitiveData::String(id.clone()),
+            )
+    });
+
+    result
+        .map(|result| {
+            CloudstatePrimitiveData::ObjectReference(ObjectReference {
+                id: result.unwrap().0.value().id.clone(),
+            })
+        })
+        .unwrap()
+}
+
+#[op2]
 fn op_cloudstate_map_set(
     state: &mut OpState,
     #[string] transaction_id: String,
@@ -896,6 +936,7 @@ deno_core::extension!(
     op_map_keys,
     op_map_entries,
     op_cloudstate_map_size,
+    op_cloudstate_cloudstate_get,
     op_map_delete,
     op_map_clear
   ],
