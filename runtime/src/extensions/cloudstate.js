@@ -558,6 +558,8 @@ class CloudstateTransaction {
 
           if (result instanceof CloudstateObjectReference) {
             return this.getObject(result.objectId);
+          } else if (result instanceof CloudstateArrayReference) {
+            return this.getArray(result.objectId);
           } else {
             return result;
           }
@@ -573,6 +575,8 @@ class CloudstateTransaction {
             // todo: support nested arrays
             isPrimitive(value)
               ? value
+              : value instanceof Array
+              ? new CloudstateArrayReference(this.#setObject(value))
               : new CloudstateObjectReference(this.#setObject(value))
           );
         },
