@@ -936,7 +936,7 @@ deno_core::extension!(
     op_map_keys,
     op_map_entries,
     op_cloudstate_map_size,
-    op_cloudstate_cloudstate_get
+    op_cloudstate_cloudstate_get,
     op_map_delete,
     op_map_clear
   ],
