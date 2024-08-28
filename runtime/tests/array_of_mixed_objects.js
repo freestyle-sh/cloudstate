@@ -21,13 +21,11 @@ function checkObjectValueEquivalences({ obj1, obj2, test_ctx }) {
                 `${test_ctx} key ${keyToCheck} not found in obj2 keys`,
             );
         }
-    }
-    for (const key of keys1) {
-        if (obj1[key] !== obj2[key]) {
+        if (obj1[keyToCheck] !== obj2[keyToCheck]) {
             throw new Error(
-                `${test_ctx} different values for key ${key} (${
-                    obj1[key]
-                } !== ${obj2[key]})`,
+                `${test_ctx} different values for key ${keyToCheck} (${
+                    obj1[keyToCheck]
+                } !== ${obj2[keyToCheck]})`,
             );
         }
     }
@@ -151,6 +149,10 @@ const newObject = { a: "8", c: 9 };
     if (!root.value) {
         throw new Error("root.value should exist");
     }
+    if (root.value.length !== 2) {
+        throw new Error("root.value should have length 2");
+    }
+
     root.value = [];
     commit();
 }

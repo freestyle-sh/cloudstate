@@ -37,3 +37,22 @@ const counter = useCloud<typeof CounterCS>("counter");
 
 await counter.increment();
 ```
+
+## Support
+### Array
+| Method | Status | Notes | 
+|--------|--------|-------|
+| .filter  | ✅ Tested |
+| .length    | 🙂 Not Tested |
+| .slice    | ❌ Not Supported |
+| .at | ✅ Tested |
+| .join | ✅ Tested |
+| .includes | ✅ Tested |
+| .every | ✅ Tested |
+| .toReversed | 🙂 Not Tested | Not done lazily, should be |
+| Array.from | ✅ Tested |
+| .keys | ❌ Not Supported |
+| .pop | 🙂 Not Tested |
+| .shift | ❌ Not Supported  |
+| .unshift | ❌ Not Supported  |
+

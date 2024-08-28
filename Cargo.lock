@@ -2693,10 +2693,14 @@ dependencies = [
  "deno_url",
  "deno_web",
  "deno_webidl",
+ "http-body-util",
+ "mime",
  "redb",
  "serde",
  "serde_json",
  "tokio",
+ "tower 0.5.0",
+ "tower-http",
 ]
 
 [[package]]
@@ -3021,6 +3025,10 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "36b837f86b25d7c0d7988f00a54e74739be6477f2aac6201b8f429a7569991b7"
 dependencies = [
+ "futures-core",
+ "futures-util",
+ "pin-project-lite",
+ "sync_wrapper 0.1.2",
  "tower-layer",
  "tower-service",
 ]
@@ -3043,6 +3051,7 @@ dependencies = [
  "tokio-util",
  "tower-layer",
  "tower-service",
+ "tracing",
 ]
 
 [[package]]
