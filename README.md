@@ -41,18 +41,29 @@ await counter.increment();
 
 ### Array
 
-| Method      | Status                                        | Notes                      |
-| ----------- | --------------------------------------------- | -------------------------- |
-| .filter     | 🙂 Not Tested                                 |                            |
-| .length     | 🙂 Not Tested                                 |                            |
-| .slice      | ❌ Not Supported                              |                            |
-| .at         | ✅ [Tested](/runtime/tests/array_at.js)       |                            |
-| .join       | ✅ [Tested](/runtime/tests/array_join.js)     |                            |
-| .includes   | ✅ [Tested](/runtime/tests/array_includes.js) |                            |
-| .every      | ✅ [Tested](/runtime/tests/array_every.js)    |                            |
-| .toReversed | 🙂 Not Tested                                 | Not done lazily, should be |
-| Array.from  | ✅ Not Tested                                 |                            |
-| .keys       | ❌ Not Supported                              |                            |
-| .pop        | 🙂 Not Tested                                 |                            |
-| .shift      | ❌ Not Supported                              |                            |
-| .unshift    | ❌ Not Supported                              |                            |
+| Method            | Status                                        | Notes               |
+| ----------------- | --------------------------------------------- | ------------------- |
+| .at               | ✅ [Tested](/runtime/tests/array_at.js)       |                     |
+| .every            | ✅ [Tested](/runtime/tests/array_every.js)    |                     |
+| .filter           | 🙂 Not Tested                                 |                     |
+| .find             | 🙂 Not Tested                                 |                     |
+| .findIndex        | 🙂 Not Tested                                 |                     |
+| .findLastIndex    | 🙂 Not Tested                                 |                     |
+| .includes         | ✅ [Tested](/runtime/tests/array_includes.js) |                     |
+| .indexOf          | 🙂 Not Tested                                 |                     |
+| .join             | ✅ [Tested](/runtime/tests/array_join.js)     |                     |
+| .keys             | ❌ Not Supported                              |                     |
+| .length           | 🙂 Not Tested                                 |                     |
+| .map              | 🙂 Not Tested                                 |                     |
+| .pop              | 🙂 Not Tested                                 |                     |
+| .push             | 🙂 Not Tested                                 |                     |
+| .reduce           | 🙂 Not Tested                                 |                     |
+| .reduceRight      | 🙂 Not Tested                                 |                     |
+| .reverse          | 🙂 Not Tested                                 |                     |
+| .shift            | 🙂 Not Tested                                 |                     |
+| .slice            | ❌ Not Supported                              |                     |
+| .some             | 🙂 Not Tested                                 |                     |
+| .toReversed       | 🙂 Not Tested                                 | Not done lazily yet |
+| .unshift          | ❌ Not Supported                              |                     |
+| Array.from        | 🙂 Not Tested                                 |                     |
+| [Symbol.iterator] | 🙂 Not Tested                                 |                     |
