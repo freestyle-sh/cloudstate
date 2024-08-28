@@ -476,6 +476,15 @@ class CloudstateTransaction {
                   return acc;
                 };
               }
+              case "reverse": {
+                return () => {
+                  Deno.core.ops.op_cloudstate_array_reverse(
+                    this.transactionId,
+                    this.namespace,
+                    id
+                  );
+                };
+              }
               case "reduceRight": {
                 return (fn, initialValue) => {
                   let acc = initialValue;

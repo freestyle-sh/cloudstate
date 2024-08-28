@@ -69,6 +69,52 @@ fn op_cloudstate_object_get(
     Ok(result.unwrap())
 }
 
+#[op2(fast)]
+fn op_cloudstate_array_reverse(
+    state: &mut OpState,
+    #[string] transaction_id: String,
+    #[string] namespace: String,
+    #[string] array_id: String,
+) {
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+
+    let mut cs = cs.lock().unwrap();
+
+    let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
+
+    let mut table = write_txn.open_table(ARRAYS_TABLE).unwrap();
+
+    let keys: Vec<CloudstateArrayItemKey> = table
+        .iter()
+        .unwrap()
+        .map(|entry| entry.unwrap().0.value())
+        .filter(|key| key.id == array_id && key.namespace == namespace)
+        .collect();
+
+    let mut values = vec![];
+
+    for key in &keys {
+        let value = table.get(key).unwrap().unwrap().value().data;
+        values.push(value);
+    }
+
+    for (_i, key) in keys.iter().enumerate() {
+        let value = values.pop().unwrap(); // this is where the reversal happens
+        table
+            .insert(
+                &CloudstateArrayItemKey {
+                    namespace: key.namespace.clone(),
+                    id: key.id.clone(),
+                    index: key.index,
+                },
+                CloudstateArrayItemValue { data: value },
+            )
+            .unwrap();
+    }
+}
+
 #[op2]
 #[to_v8]
 fn op_cloudstate_cloudstate_get(
@@ -938,7 +984,8 @@ deno_core::extension!(
     op_cloudstate_map_size,
     op_cloudstate_cloudstate_get,
     op_map_delete,
-    op_map_clear
+    op_map_clear,
+    op_cloudstate_array_reverse
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],
