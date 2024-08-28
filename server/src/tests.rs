@@ -48,9 +48,11 @@ async fn test_fetch() {
     assert_eq!(response.status(), StatusCode::OK);
 
     let body = response.into_body().collect().await.unwrap().to_bytes();
+    let body_str = String::from_utf8(body.to_vec()).unwrap();
+    let body_json: serde_json::Value = serde_json::from_str(&body_str).unwrap();
 
     assert_eq!(
-        serde_json::to_value(&body[..]).unwrap(),
+        body_json,
         json!({
             "result": 1
         })
