@@ -1,4 +1,5 @@
 use crate::tables::{ARRAYS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
+use _ops::RustToV8NoScope;
 use chrono::{DateTime, TimeZone, Utc};
 use deno_core::anyhow::Error;
 use deno_core::error::JsError;
@@ -709,7 +710,7 @@ pub enum CloudstatePrimitiveData {
     Undefined,
     Null,
     Date(DateTime<Utc>),
-    // RegExp(String),
+    Blob(Blob),
     URL(Url),
     // Error(JsError),
     ObjectReference(ObjectReference),
@@ -719,6 +720,11 @@ pub enum CloudstatePrimitiveData {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct ObjectReference {
+    pub id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub struct Blob {
     pub id: String,
 }
 
@@ -806,6 +812,34 @@ impl ToV8<'_> for CloudstatePrimitiveData {
             CloudstatePrimitiveData::Null => v8::null(scope).into(),
             CloudstatePrimitiveData::URL(value) => {
                 v8::String::new(scope, value.as_str()).unwrap().into()
+            }
+            CloudstatePrimitiveData::Blob(value) => {
+                let context = scope.get_current_context();
+                let export_name = "CloudstateBlobReference";
+
+                let class = {
+                    let global = context.global(scope);
+
+                    let export_name = v8::String::new(scope, export_name).unwrap().into();
+                    global
+                        .get(scope, export_name)
+                        .expect("CloudstateBlobReference class should be globally defined")
+                };
+
+                let prototype_key = v8::String::new(scope, "prototype").unwrap().into();
+                let prototype = v8::Local::<v8::Function>::try_from(class)
+                    .unwrap()
+                    .get(scope, prototype_key)
+                    .unwrap();
+
+                let object = v8::Object::new(scope);
+                object.set_prototype(scope, prototype).unwrap();
+
+                let key = v8::String::new(scope, "blobId").unwrap().into();
+                let value = v8::String::new(scope, &value.id).unwrap().into();
+                object.set(scope, key, value);
+
+                object.into()
             }
             // CloudstatePrimitiveData::Error(value) => v8::Error::new(scope, value.clone()).into(),
             CloudstatePrimitiveData::ObjectReference(value) => {
@@ -941,6 +975,14 @@ impl FromV8<'_> for CloudstatePrimitiveData {
                             .unwrap()
                             .to_rust_string_lossy(scope),
                     ));
+                }
+                "CloudstateBlobReference" => {
+                    let key = v8::String::new(scope, "blobId").unwrap().into();
+                    return Ok(CloudstatePrimitiveData::Blob(Blob {
+                        id: v8::Local::<v8::String>::try_from(object.get(scope, key).unwrap())
+                            .unwrap()
+                            .to_rust_string_lossy(scope),
+                    }));
                 }
                 "CloudstateObjectReference" => {
                     let object_key = v8::String::new(scope, "objectId").unwrap().into();

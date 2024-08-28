@@ -13,6 +13,12 @@ class CloudstateObjectReference {
   }
 }
 
+class CloudstateBlobReference {
+  constructor(blobId) {
+    this.blobId = blobId;
+  }
+}
+
 class CloudstateMapReference {
   constructor(objectId) {
     this.objectId = objectId;
@@ -28,6 +34,7 @@ class CloudstateArrayReference {
 globalThis.CloudstateMapReference = CloudstateMapReference;
 globalThis.CloudstateObjectReference = CloudstateObjectReference;
 globalThis.CloudstateArrayReference = CloudstateArrayReference;
+globalThis.CloudstateBlob = CloudstateBlobReference;
 
 function isPrimitive(value) {
   return (
@@ -115,6 +122,23 @@ class CloudstateTransaction {
           });
         },
       });
+    }
+
+    if (value instanceof CloudstateBlobReference) {
+      Object.defineProperty(object, key, {
+        get: () => {
+          return Deno.core.ops.op_cloudstate_blob_get(
+            this.transactionId,
+            value.blobId
+          );
+        },
+        set: (v) => {
+          Deno.core.ops.op_cloudstate_blob_set(
+            this.transactionId,
+            value.blobId,
+            v
+          );
+        });
     }
 
     if (value instanceof CloudstateArrayReference) {

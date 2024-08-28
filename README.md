@@ -1,8 +1,10 @@
-![cloudstate banner](https://github.com/user-attachments/assets/c580008f-98da-47d7-9a82-7abf423a426b)
+# ![cloudstate banner](https://github.com/user-attachments/assets/c580008f-98da-47d7-9a82-7abf423a426b)
 
 <p align="center">
+  <a href="https://freestyle.sh">Freestyle</a> ·
  <a href="https://docs.freestyle.dev/getting-started/intro">Get Started</a> · <a href="https://docs.freestyle.dev">Docs</a> · <a href="https://discord.gg/YTRprVkdnz">Discord</a>
 </p>
+
 <p align="center">
 <b>Cloudstate</b> is a combined JavaScript Runtime and Database Engine that allows developers to persist their data with just JavaScript.
 </p>

@@ -14,7 +14,6 @@ const baseMap = new Map([
   setRoot("test-root", object);
   commit();
 }
-
 {
   const object = getRoot("test-root");
   object.value.set("f", "foxtrot");
