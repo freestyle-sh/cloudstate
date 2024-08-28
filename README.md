@@ -321,23 +321,23 @@ await counter.increment();
 | Object.setPrototypeOf()            | 🚧 Planned |       |
 | Object.values()                    | 🚧 Planned |       |
 
-| Instance method            | Status     | Notes                                                                                                                     |
-| -------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------- |
-| ⚠️ .\_\_defineGetter\_\_() | 🚧 Planned | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/__defineGetter__) |
-| ⚠️ .\_\_defineSetter\_\_() | 🚧 Planned | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/__defineSetter__) |
-| ⚠️ .\_\_lookupGetter\_\_() | 🚧 Planned | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/__lookupGetter__) |
-| ⚠️ .\_\_lookupSetter\_\_() | 🚧 Planned | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/__lookupSetter__) |
-| .hasOwnProperty()          | 🚧 Planned |                                                                                                                           |
-| .isPrototypeOf()           | 🚧 Planned |                                                                                                                           |
-| .propertyIsEnumerable()    | 🚧 Planned |                                                                                                                           |
-| .toLocaleString()          | 🚧 Planned |                                                                                                                           |
-| .toString()                | 🚧 Planned |                                                                                                                           |
-| .valueOf()                 | 🚧 Planned |                                                                                                                           |
+| Instance method         | Status     | Notes                                                                                                                     |
+| ----------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------- |
+| .\_\_defineGetter\_\_() | 🚧 Planned | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/__defineGetter__) |
+| .\_\_defineSetter\_\_() | 🚧 Planned | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/__defineSetter__) |
+| .\_\_lookupGetter\_\_() | 🚧 Planned | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/__lookupGetter__) |
+| .\_\_lookupSetter\_\_() | 🚧 Planned | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/__lookupSetter__) |
+| .hasOwnProperty()       | 🚧 Planned |                                                                                                                           |
+| .isPrototypeOf()        | 🚧 Planned |                                                                                                                           |
+| .propertyIsEnumerable() | 🚧 Planned |                                                                                                                           |
+| .toLocaleString()       | 🚧 Planned |                                                                                                                           |
+| .toString()             | 🚧 Planned |                                                                                                                           |
+| .valueOf()              | 🚧 Planned |                                                                                                                           |
 
 | Instance property | Status     | Notes                                                                                                          |
 | ----------------- | ---------- | -------------------------------------------------------------------------------------------------------------- |
 | .constructor      | 🚧 Planned |                                                                                                                |
-| ⚠️ .\_\_proto\_\_ | 🚧 Planned | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/proto) |
+| .\_\_proto\_\_    | 🚧 Planned | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/proto) |
 
 ### RangeError
 
@@ -355,7 +355,7 @@ await counter.increment();
 
 | Instance method      | Status     | Notes                                                                                                            |
 | -------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------- |
-| ⚠️ .compile()        | 🚧 Planned | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/compile) |
+| .compile()           | 🚧 Planned | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/compile) |
 | .exec()              | 🚧 Planned |                                                                                                                  |
 | \[Symbol.match]()    | 🚧 Planned |                                                                                                                  |
 | \[Symbol.matchAll]() | 🚧 Planned |                                                                                                                  |
@@ -426,25 +426,25 @@ await counter.increment();
 
 | Instance method      | Status        | Notes                                                                                                              |
 | -------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------ |
-| ⚠️ .anchor()         | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/anchor)    |
+| .anchor()            | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/anchor)    |
 | .at()                | 🙂 Not Tested |                                                                                                                    |
-| ⚠️ .big()            | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/big)       |
-| ⚠️ .blink()          | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/blink)     |
-| ⚠️ .bold()           | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/bold)      |
+| .big()               | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/big)       |
+| .blink()             | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/blink)     |
+| .bold()              | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/bold)      |
 | .charAt()            | 🙂 Not Tested |                                                                                                                    |
 | .charCodeAt()        | 🙂 Not Tested |                                                                                                                    |
 | .codePointAt()       | 🙂 Not Tested |                                                                                                                    |
 | .concat()            | 🙂 Not Tested |                                                                                                                    |
 | .endsWith()          | 🙂 Not Tested |                                                                                                                    |
-| ⚠️ .fixed()          | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/fixed)     |
-| ⚠️.fontcolor()       | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/fontcolor) |
-| ⚠️.fontsize()        | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/fontsize)  |
+| .fixed()             | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/fixed)     |
+| .fontcolor()         | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/fontcolor) |
+| .fontsize()          | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/fontsize)  |
 | .includes()          | 🙂 Not Tested |                                                                                                                    |
 | .indexOf()           | 🙂 Not Tested |                                                                                                                    |
 | .isWellFormed()      | 🙂 Not Tested |                                                                                                                    |
-| ⚠️ .italics()        | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/italics)   |
+| .italics()           | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/italics)   |
 | .lastIndexOf()       | 🙂 Not Tested |                                                                                                                    |
-| ⚠️ .link()           | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/link)      |
+| .link()              | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/link)      |
 | .localeCompare()     | 🙂 Not Tested |                                                                                                                    |
 | .match()             | 🙂 Not Tested |                                                                                                                    |
 | .matchAll()          | 🙂 Not Tested |                                                                                                                    |
@@ -456,14 +456,14 @@ await counter.increment();
 | .replaceAll()        | 🙂 Not Tested |                                                                                                                    |
 | .search()            | 🙂 Not Tested |                                                                                                                    |
 | .slice()             | 🙂 Not Tested |                                                                                                                    |
-| ⚠️ .small()          | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/small)     |
+| .small()             | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/small)     |
 | .split()             | 🙂 Not Tested |                                                                                                                    |
 | .startsWith()        | 🙂 Not Tested |                                                                                                                    |
-| ⚠️ .strike()         | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/strike)    |
-| ⚠️ .sub()            | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/sub)       |
-| ⚠️ .substr()         | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/substr)    |
+| .strike()            | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/strike)    |
+| .sub()               | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/sub)       |
+| .substr()            | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/substr)    |
 | .substring()         | 🙂 Not Tested |                                                                                                                    |
-| ⚠️ .sup()            | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/sup)       |
+| .sup()               | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/sup)       |
 | \[Symbol.iterator]() | 🙂 Not Tested |                                                                                                                    |
 | .toLocaleLowerCase() | 🙂 Not Tested |                                                                                                                    |
 | .toLocaleUpperCase() | 🙂 Not Tested |                                                                                                                    |
