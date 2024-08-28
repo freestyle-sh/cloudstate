@@ -33,6 +33,7 @@ js_test!(map_empty_set);
 js_test!(map_entries);
 js_test!(map_keys);
 js_test!(map_of_objects);
+js_test!(map_size_in_array);
 js_test!(map_size);
 js_test!(map_values);
 js_test!(map_values_objects);
