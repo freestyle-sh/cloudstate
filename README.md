@@ -19,11 +19,13 @@ setRoot("test-root", object);
 ```
 
 To retrieve an object from the database, call `getRoot` and pass in the identifier you used to store the object.
+
 ```ts
 const object = getRoot("test-root");
 ```
 
 If you have multiple references to the same object, those references will be preserved. The values of each property are also lazy loaded, so you don't need to worry about the complexity of objects stored in a single `setRoot` call.
+
 ```ts
 const obj = {};
 const objects = {
@@ -33,12 +35,14 @@ const objects = {
 
 setRoot("objects", objects);
 ```
+
 ```ts
 const objects = getRoot("objects");
 objects.a === objects.b; // true
 ```
 
 ### `cloudstate serve ./script.js`
+
 A more structured way to store data in cloudstate is via the `cloudstate serve` command. Instead of writing what the script should execute, you write classes. When you put a static id on a class, it will be automatically constructed and stored using `setRoot` for you. Methods will be exposed as endpoints which you can call via http.
 
 ```ts
@@ -57,9 +61,10 @@ curl -X POST http://localhost:3000/cloudstate/instances/counter/increment -H "Co
 ```
 
 ### `npx freestyle dev`
+
 The highest level api is built into freestyle's dev tooling. You can define classes anywhere in a full stack project using a decorator and they be automatically compiled into a single file and served.
 
-```bash
+```ts
 import { cloudstate } from "freestyle-sh";
 
 @cloudstate
@@ -74,6 +79,7 @@ class CounterCS {
 ```
 
 Then you can easily query that data using `useCloud`.
+
 ```ts
 import { type CounterCS } from "./schema.js";
 import { useCloud } from "freestyle-sh";
@@ -82,6 +88,7 @@ const counter = useCloud<typeof CounterCS>("counter");
 
 await counter.increment();
 ```
+
 To learn more read the [freestyle docs](https://docs.freestyle.dev/getting-started/intro).
 
 ## Support for JavaScript Objects
