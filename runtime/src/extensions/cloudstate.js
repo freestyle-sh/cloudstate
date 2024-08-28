@@ -185,6 +185,11 @@ class CloudstateTransaction {
           value.objectId,
           key
         );
+
+        if (object instanceof CloudstateObjectReference) {
+          return this.getObject(object.objectId);
+        }
+
         mapSet.apply(map, [key, object]);
         return object;
       };
@@ -270,8 +275,7 @@ class CloudstateTransaction {
       const object = stack.pop();
 
       if (object instanceof Map) {
-        const changes = this.mapChanges.get(object) || object;
-        for (const [key, value] of changes.entries()) {
+        for (const [key, value] of object.entries()) {
           if (isPrimitive(value)) {
             Deno.core.ops.op_cloudstate_map_set(
               this.transactionId,
@@ -280,8 +284,18 @@ class CloudstateTransaction {
               key,
               value
             );
+          } else {
+            const id = this.#setObject(value);
+            Deno.core.ops.op_cloudstate_map_set(
+              this.transactionId,
+              this.namespace,
+              this.objectIds.get(object),
+              key,
+              new CloudstateObjectReference(id)
+            );
           }
         }
+
         continue;
       }
 
