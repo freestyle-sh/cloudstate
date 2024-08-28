@@ -6,7 +6,7 @@ We recommend you try out cloudstate via a freestyle template. Read our [getting 
 
 If you're interested in learning more about how cloudstate works behind the scenes, read on.
 
-You can install the cloudstate cli alongside the freestyle cli. Run `npm install -g freestyle-sh` or you can build it from source.
+You can install the cloudstate cli alongside the freestyle cli. Run `npm install -g freestyle-sh@beta` or you can build it from source.
 
 ### `cloudstate run ./script.js`
 
