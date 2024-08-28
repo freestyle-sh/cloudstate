@@ -170,6 +170,22 @@ class CloudstateTransaction {
           })
           .values();
       };
+      map["delete"] = (key) => {
+        return Deno.core.ops.op_map_delete(
+          this.transactionId,
+          this.namespace,
+          value.objectId,
+          key
+        );
+      };
+
+      map["clear"] = () => {
+        return Deno.core.ops.op_map_clear(
+          this.transactionId,
+          this.namespace,
+          value.objectId
+        );
+      };
 
       map["forEach"] = (fn) => {
         const entries = map.entries();
@@ -409,6 +425,21 @@ class CloudstateTransaction {
 
           if (isNaN(index)) {
             switch (key) {
+              case "toReversed": {
+                return () => {
+                  //TODO: LAZY-fy
+
+                  let length = Deno.core.ops.op_cloudstate_array_length(
+                    this.transactionId,
+                    id
+                  );
+                  let reversed = [];
+                  for (let i = length - 1; i >= 0; i--) {
+                    reversed.push(array[i]);
+                  }
+                  return reversed;
+                };
+              }
               case "length": {
                 return Deno.core.ops.op_cloudstate_array_length(
                   this.transactionId,

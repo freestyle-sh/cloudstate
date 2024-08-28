@@ -21,8 +21,6 @@ commit();
   object.value.set("object", { a: 1, b: 2, c: 3 });
 
   commit();
-
-  // baseMap.set("object", { a: 1, b: 2, c: 3 });
 }
 {
   const object = getRoot("test-root");

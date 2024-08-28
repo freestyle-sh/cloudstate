@@ -139,6 +139,65 @@ fn op_cloudstate_map_set(
     Ok(())
 }
 
+#[op2(fast)]
+fn op_map_delete(
+    state: &mut OpState,
+    #[string] transaction_id: String,
+    #[string] namespace: String,
+    #[string] map_id: String,
+    #[string] key: String,
+) -> bool {
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+    let mut cs = cs.lock().unwrap();
+
+    let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
+
+    let mut table = write_txn.open_table(MAPS_TABLE).unwrap();
+
+    let key = CloudstateMapFieldKey {
+        namespace: namespace.to_string(),
+        id: map_id.to_string(),
+        field: key.to_string(),
+    };
+
+    let did_exist = match table.remove(&key).unwrap() {
+        Some(_) => true,
+        None => false,
+    };
+
+    did_exist
+}
+
+#[op2(fast)]
+fn op_map_clear(
+    state: &mut OpState,
+    #[string] transaction_id: String,
+    #[string] namespace: String,
+    #[string] map_id: String,
+) {
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+    let mut cs = cs.lock().unwrap();
+
+    let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
+
+    let mut table = write_txn.open_table(MAPS_TABLE).unwrap();
+
+    let keys: Vec<CloudstateMapFieldKey> = table
+        .iter()
+        .unwrap()
+        .map(|entry| entry.unwrap().0.value())
+        .filter(|key| key.id == map_id && key.namespace == namespace)
+        .collect();
+
+    for key in keys {
+        table.remove(&key).unwrap();
+    }
+}
+
 #[op2]
 #[to_v8]
 fn op_cloudstate_map_get(
@@ -878,6 +937,8 @@ deno_core::extension!(
     op_map_entries,
     op_cloudstate_map_size,
     op_cloudstate_cloudstate_get
+    op_map_delete,
+    op_map_clear
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],
