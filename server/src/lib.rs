@@ -374,7 +374,7 @@ pub async fn execute_script(
     .unwrap()
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 pub async fn execute_script_internal(
     script: &str,
     classes_script: &str,
