@@ -1,24 +1,24 @@
 import * as url from "ext:deno_url/00_url.js";
 import "ext:deno_url/01_urlpattern.js";
 
-import "ext:deno_web/00_infra.js";
-import "ext:deno_web/01_dom_exception.js";
-import "ext:deno_web/01_mimesniff.js";
-import "ext:deno_web/02_event.js";
-import "ext:deno_web/02_structured_clone.js";
-import "ext:deno_web/02_timers.js";
-import "ext:deno_web/03_abort_signal.js";
-import "ext:deno_web/04_global_interfaces.js";
-import "ext:deno_web/05_base64.js";
-import "ext:deno_web/06_streams.js";
-import "ext:deno_web/08_text_encoding.js";
-import "ext:deno_web/09_file.js";
-import "ext:deno_web/10_filereader.js";
-import "ext:deno_web/12_location.js";
-import "ext:deno_web/13_message_port.js";
-import "ext:deno_web/14_compression.js";
-import "ext:deno_web/15_performance.js";
-import "ext:deno_web/16_image_data.js";
+import * as infra from "ext:deno_web/00_infra.js";
+import * as DOMException from "ext:deno_web/01_dom_exception.js";
+import * as mimesniff from "ext:deno_web/01_mimesniff.js";
+import * as event from "ext:deno_web/02_event.js";
+import * as structuredClone from "ext:deno_web/02_structured_clone.js";
+import * as timers from "ext:deno_web/02_timers.js";
+import * as abortSignal from "ext:deno_web/03_abort_signal.js";
+import * as globalInterfaces from "ext:deno_web/04_global_interfaces.js";
+import * as base64 from "ext:deno_web/05_base64.js";
+import * as streams from "ext:deno_web/06_streams.js";
+import * as encoding from "ext:deno_web/08_text_encoding.js";
+import * as file from "ext:deno_web/09_file.js";
+import * as fileReader from "ext:deno_web/10_filereader.js";
+import * as location from "ext:deno_web/12_location.js";
+import * as messagePort from "ext:deno_web/13_message_port.js";
+import * as compression from "ext:deno_web/14_compression.js";
+import * as performance from "ext:deno_web/15_performance.js";
+import * as imageData from "ext:deno_web/16_image_data.js";
 
 import "ext:deno_net/01_net.js";
 import "ext:deno_net/02_tls.js";
@@ -42,7 +42,6 @@ Object.defineProperty(globalThis, "console", {
   configurable: true,
   writable: true,
 });
-
 
 Object.defineProperty(globalThis, "URL", {
   value: url.URL,
@@ -126,6 +125,13 @@ Object.defineProperty(globalThis, "Headers", {
 
 Object.defineProperty(globalThis, "FormData", {
   value: formData.FormData,
+  enumerable: false,
+  configurable: true,
+  writable: true,
+});
+
+Object.defineProperty(globalThis, "structuredClone", {
+  value: structuredClone.structuredClone,
   enumerable: false,
   configurable: true,
   writable: true,
