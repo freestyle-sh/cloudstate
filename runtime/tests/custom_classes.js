@@ -13,16 +13,13 @@ class Counter {
 globalThis.cloudstate.customClasses = [Counter];
 
 {
-
   const object = {
     counter: new Counter(),
   };
 
   setRoot("test-root", object);
+  commit();
 }
-
-commit();
-
 
 {
   const object = getRoot("test-root");
@@ -43,9 +40,7 @@ commit();
     throw new Error("object.counter.count should be 1");
   }
   commit();
-
 }
-
 
 {
   const object = getRoot("test-root");
@@ -56,5 +51,5 @@ commit();
     throw new Error("object.counter.count should be 1");
   }
 
-  commit()
+  commit();
 }
