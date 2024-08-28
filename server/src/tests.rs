@@ -8,6 +8,8 @@ use serde_json::json;
 use std::sync::{Arc, Mutex};
 use tower::util::ServiceExt;
 
+mod concurrent_fetch;
+
 #[tokio::test]
 async fn test_fetch() {
     let router = crate::CloudstateServer::new(

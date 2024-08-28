@@ -5,7 +5,7 @@ use clap::ValueHint;
 use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
 use notify::Watcher;
 use redb::{backends::InMemoryBackend, Database};
-use server::CloudstateServer;
+use server::{execute_script, CloudstateServer};
 use std::{
     collections::HashMap,
     fs,
@@ -56,14 +56,19 @@ async fn main() {
     match matches.subcommand() {
         Some(("run", run_matches)) => {
             let filename = run_matches.get_one::<String>("filename").unwrap();
-            let watch = run_matches.get_one::<bool>("watch");
+            let script = fs::read_to_string(filename).unwrap();
 
-            if *watch.unwrap_or(&false) {
-                // watch_file(Path::new(filename), run_func);
-            }
-
-            println!("Running file: {:?}", filename);
-            println!("Watching: {:?}", watch);
+            execute_script(
+                &script,
+                &"",
+                Arc::new(Mutex::new(ReDBCloudstate {
+                    db: Database::builder()
+                        .create_with_backend(InMemoryBackend::default())
+                        .unwrap(),
+                    transactions: HashMap::new(),
+                })),
+            )
+            .await;
         }
         Some(("serve", serve_matches)) => {
             let serve_matches = serve_matches.clone();
