@@ -212,9 +212,21 @@ class CloudstateTransaction {
         mapSet.apply(map, [key, object]);
         return object;
       };
-      map.set = (key, value) => {
-        mapSet.apply(map, [key, value]);
-        changeMap.set(key, value);
+      map.set = (key, set_value) => {
+        // todo: support nested arrays
+        const val = isPrimitive(set_value)
+          ? set_value
+          : new CloudstateObjectReference(this.#setObject(set_value));
+
+        Deno.core.ops.op_cloudstate_map_set(
+          this.transactionId,
+          this.namespace,
+          value.objectId,
+          key,
+          val
+        );
+
+        mapSet.apply(map, [key, val]);
       };
 
       Object.defineProperty(map, "size", {

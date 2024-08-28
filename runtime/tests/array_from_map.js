@@ -27,11 +27,10 @@ const baseMap = new Map([
   const object = getRoot("test-root");
   const values = object.value.values();
   const arr = Array.from(values);
-  if (arr.length !== Array.from(baseMap.values()).length) {
+  const targetLength = 7;
+  if (arr.length !== targetLength) {
     throw new Error(
-      `Should have been arr.length = ${
-        Array.from(baseMap.values()).length
-      }, got ${arr.length}`,
+      `Should have been arr.length = ${targetLength}, got ${arr.length}`
     );
   }
 }
