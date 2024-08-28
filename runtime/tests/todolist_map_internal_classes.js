@@ -57,17 +57,15 @@ globalThis.cloudstate.customClasses = [TodoListCS, TodoItem];
   console.log("ROUND 3");
   const root = getRoot("test-root");
 
-  // const items = root.value.getItems();
+  const items = root.value.getItems();
 
-  console.log("ITEMSMSSS", JSON.stringify(root.value.getItemsKeys()));
+  if (items.length !== 1) {
+    throw new Error(`Expected items length to be 1, got ${items.length}`);
+  }
 
-  // if (items.length !== 1) {
-  //   throw new Error(`Expected items length to be 1, got ${items.length}`);
-  // }
-
-  // if (items[0].title !== "First item") {
-  //   throw new Error(`Expected title to be "First item", got ${items[0].title}`);
-  // }
+  if (items[0].title !== "First item") {
+    throw new Error(`Expected title to be "First item", got ${items[0].title}`);
+  }
 
   commit();
 }
