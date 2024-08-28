@@ -49,12 +49,12 @@ await counter.increment();
 
 ### Array
 
-| Static method     | Status        | Notes |
-| ----------------- | ------------- | ----- |
-| Array.from()      | 🙂 Not Tested |       |
-| Array.fromAsync() | 🚧 Planned    |       |
-| Array.isArray()   | 🚧 Planned    |       |
-| Array.of()        | 🚧 Planned    |       |
+| Static method     | Status                                    | Notes |
+| ----------------- | ----------------------------------------- | ----- |
+| Array.from()      | ✅ [Tested](/runtime/tests/array_from.js) |       |
+| Array.fromAsync() | 🚧 Planned                                |       |
+| Array.isArray()   | 🚧 Planned                                |       |
+| Array.of()        | 🚧 Planned                                |       |
 
 | Instance method      | Status                                            | Notes               |
 | -------------------- | ------------------------------------------------- | ------------------- |

@@ -272,13 +272,15 @@ async fn method_request(
         getStore: () => {{
             return {{
                 env: {{
-                    invalidateMethod: (method) => {{
-                        fetch('http://example.com/__invalidate__', {{
+                    invalidateMethod: (rawMethod) => {{
+                        const method = rawMethod.toJSON();
+                        fetch(`http://localhost:8910/__invalidate__/${{method.instance}}/${{method.method}}`, {{
                             method: 'POST',
-                            body: JSON.stringify(method),
                             headers: {{
-                                'Content-Type': 'application/json'
+                                'Content-Type': 'application/json',
                             }}
+                        }}).catch(e => {{
+                            console.error(e);
                         }});
                     }},
                 }}
@@ -377,7 +379,7 @@ pub async fn execute_script(
     .unwrap()
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 pub async fn execute_script_internal(
     script: &str,
     classes_script: &str,
