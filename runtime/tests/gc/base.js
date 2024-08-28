@@ -12,7 +12,6 @@
       ]),
     },
   };
-
   root.nested1 = nested1;
 
   const nested2 = {
@@ -21,28 +20,29 @@
       value: 8,
     },
   };
-
   root.nested2 = nested2;
 
   setRoot("test-root", root);
-
   commit();
 }
 
 {
   const root = getRoot("test-root");
-
-  if (!root) throw new Error("root should exist");
-
-  if (!root.nested1) throw new Error("root.nested1 should exist");
-
-  if (!root.nested1.nestedObject)
+  if (!root) {
+    throw new Error("root should exist");
+  }
+  if (!root.nested1) {
+    throw new Error("root.nested1 should exist");
+  }
+  if (!root.nested1.nestedObject) {
     throw new Error("root.nested1.nestedObject should exist");
-
-  if (!root.nested2) throw new Error("root.nested2 should exist");
-
-  if (!root.nested2.otherNest)
+  }
+  if (!root.nested2) {
+    throw new Error("root.nested2 should exist");
+  }
+  if (!root.nested2.otherNest) {
     throw new Error("root.nested2.otherNest should exist");
+  }
 
   commit();
 }
@@ -50,29 +50,31 @@
 {
   // delete the nested1
   const root = getRoot("test-root");
-
-  if (!root) throw new Error("root should exist");
+  if (!root) {
+    throw new Error("root should exist");
+  }
 
   delete root.nested1;
 
   setRoot("test-root", root);
-
   commit();
 }
 
 {
   // confirm nested1 is gone but nested2 is still there
-
   const root = getRoot("test-root");
-
-  if (!root) throw new Error("root should exist");
-
-  if (root.nested1) throw new Error("root.nested1 should not exist");
-
-  if (!root.nested2) throw new Error("root.nested2 should exist");
-
-  if (!root.nested2.otherNest)
+  if (!root) {
+    throw new Error("root should exist");
+  }
+  if (root.nested1) {
+    throw new Error("root.nested1 should not exist");
+  }
+  if (!root.nested2) {
+    throw new Error("root.nested2 should exist");
+  }
+  if (!root.nested2.otherNest) {
     throw new Error("root.nested2.otherNest should exist");
+  }
 
   commit();
 }
