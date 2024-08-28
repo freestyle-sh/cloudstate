@@ -435,6 +435,17 @@ class CloudstateTransaction {
 
           if (isNaN(index)) {
             switch (key) {
+              case "filter": {
+                return (fn) => {
+                  let arr = [];
+                  for (let i = 0; i < array.length; i++) {
+                    if (fn(array[i], i, array)) {
+                      arr.push(array[i]);
+                    }
+                  }
+                  return arr;
+                };
+              }
               case "toReversed": {
                 return () => {
                   //TODO: LAZY-fy
@@ -462,6 +473,23 @@ class CloudstateTransaction {
               case "at": {
                 return (index) => {
                   return array[index];
+                };
+              }
+              case "pop": {
+                return () => {
+                  let length = Deno.core.ops.op_cloudstate_array_length(
+                    this.transactionId,
+                    id
+                  );
+                  if (length === 0) return undefined;
+
+                  const value = array[length - 1];
+                  Deno.core.ops.op_cloudstate_array_pop(
+                    this.transactionId,
+                    this.namespace,
+                    id
+                  );
+                  return value;
                 };
               }
               case "push": {
@@ -558,6 +586,8 @@ class CloudstateTransaction {
 
           if (result instanceof CloudstateObjectReference) {
             return this.getObject(result.objectId);
+          } else if (result instanceof CloudstateArrayReference) {
+            return this.getArray(result.objectId);
           } else {
             return result;
           }
@@ -573,6 +603,8 @@ class CloudstateTransaction {
             // todo: support nested arrays
             isPrimitive(value)
               ? value
+              : value instanceof Array
+              ? new CloudstateArrayReference(this.#setObject(value))
               : new CloudstateObjectReference(this.#setObject(value))
           );
         },
