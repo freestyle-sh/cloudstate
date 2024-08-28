@@ -39,7 +39,13 @@ const counter = useCloud<typeof CounterCS>("counter");
 await counter.increment();
 ```
 
-## Support for JavaScript APIs
+## Support for JavaScript Objects
+
+> [!NOTE]
+> We currently support most of the core JavaScript objects, with active development on all object constructors, methods, and property getters marked as "🚧 Planned".
+
+> [!TIP]
+> Tests are essential to building a robust and reliable runtime. If you'd like to contribute in a small but meaningful way, please consider writing tests for the methods and property getters marked as "🙂 Not Tested".
 
 ### Array
 
@@ -95,6 +101,10 @@ await counter.increment();
 | .length               | 🙂 Not Tested |       |
 | \[Symbol.unscopables] | ❓ Unknown    |       |
 
+### AsyncIterator
+
+🤔 Considering
+
 ### BigInt
 
 | Static method    | Status     | Notes |
@@ -107,6 +117,14 @@ await counter.increment();
 | .toLocaleString() | 🚧 Planned |       |
 | .toString()       | 🚧 Planned |       |
 | .valueOf()        | 🚧 Planned |       |
+
+### BigInt64Array
+
+🤔 Considering
+
+### BigUint64Array
+
+🤔 Considering
 
 ### Boolean
 
@@ -121,315 +139,396 @@ await counter.increment();
 
 ### DataView
 
-🚧 Planned
+🤔 Considering
 
 ### Date
 
-| Constructor | Status           | Notes |
-| ----------- | ---------------- | ----- |
-| Date()      | ❌ Not Supported |       |
+| Constructor | Status        | Notes |
+| ----------- | ------------- | ----- |
+| Date()      | 🙂 Not Tested |       |
 
-| Static method | Status           | Notes |
-| ------------- | ---------------- | ----- |
-| Date.now()    | ❌ Not Supported |       |
-| Date.parse()  | ❌ Not Supported |       |
-| Date.UTC()    | ❌ Not Supported |       |
+| Static method | Status        | Notes |
+| ------------- | ------------- | ----- |
+| Date.now()    | 🙂 Not Tested |       |
+| Date.parse()  | 🙂 Not Tested |       |
+| Date.UTC()    | 🙂 Not Tested |       |
 
-| Instance method         | Status           | Notes |
-| ----------------------- | ---------------- | ----- |
-| .getDate()              | ❌ Not Supported |       |
-| .getDay()               | ❌ Not Supported |       |
-| .getFullYear()          | ❌ Not Supported |       |
-| .getHours()             | ❌ Not Supported |       |
-| .getMilliseconds()      | ❌ Not Supported |       |
-| .getMinutes()           | ❌ Not Supported |       |
-| .getMonth()             | ❌ Not Supported |       |
-| .getSeconds()           | ❌ Not Supported |       |
-| .getTime()              | ❌ Not Supported |       |
-| .getTimezoneOffset()    | ❌ Not Supported |       |
-| .getUTCDate()           | ❌ Not Supported |       |
-| .getUTCDay()            | ❌ Not Supported |       |
-| .getUTCFullYear()       | ❌ Not Supported |       |
-| .getUTCHours()          | ❌ Not Supported |       |
-| .getUTCMilliseconds()   | ❌ Not Supported |       |
-| .getUTCMinutes()        | ❌ Not Supported |       |
-| .getUTCMonth()          | ❌ Not Supported |       |
-| .getUTCSeconds()        | ❌ Not Supported |       |
-| ⚠️ .getYear()           | ❌ Not Supported |       |
-| .setDate()              | ❌ Not Supported |       |
-| .setFullYear()          | ❌ Not Supported |       |
-| .setHours()             | ❌ Not Supported |       |
-| .setMilliseconds()      | ❌ Not Supported |       |
-| .setMinutes()           | ❌ Not Supported |       |
-| .setMonth()             | ❌ Not Supported |       |
-| .setSeconds()           | ❌ Not Supported |       |
-| .setTime()              | ❌ Not Supported |       |
-| .setUTCDate()           | ❌ Not Supported |       |
-| .setUTCFullYear()       | ❌ Not Supported |       |
-| .setUTCHours()          | ❌ Not Supported |       |
-| .setUTCMilliseconds()   | ❌ Not Supported |       |
-| .setUTCMinutes()        | ❌ Not Supported |       |
-| .setUTCMonth()          | ❌ Not Supported |       |
-| .setUTCSeconds()        | ❌ Not Supported |       |
-| ⚠️ .setYear()           | ❌ Not Supported |       |
-| \[Symbol.toPrimitive]() | ❌ Not Supported |       |
-| .toDateString()         | ❌ Not Supported |       |
-| .toISOString()          | ❌ Not Supported |       |
-| .toJSON()               | ❌ Not Supported |       |
-| .toLocaleDateString()   | ❌ Not Supported |       |
-| .toLocaleString()       | ❌ Not Supported |       |
-| .toLocaleTimeString()   | ❌ Not Supported |       |
-| .toTimeString()         | ❌ Not Supported |       |
-| .toUTCString()          | ❌ Not Supported |       |
-| .valueOf()              | ❌ Not Supported |       |
+| Instance method         | Status        | Notes                                                                                                          |
+| ----------------------- | ------------- | -------------------------------------------------------------------------------------------------------------- |
+| .getDate()              | 🙂 Not Tested |                                                                                                                |
+| .getDay()               | 🙂 Not Tested |                                                                                                                |
+| .getFullYear()          | 🙂 Not Tested |                                                                                                                |
+| .getHours()             | 🙂 Not Tested |                                                                                                                |
+| .getMilliseconds()      | 🙂 Not Tested |                                                                                                                |
+| .getMinutes()           | 🙂 Not Tested |                                                                                                                |
+| .getMonth()             | 🙂 Not Tested |                                                                                                                |
+| .getSeconds()           | 🙂 Not Tested |                                                                                                                |
+| .getTime()              | 🙂 Not Tested |                                                                                                                |
+| .getTimezoneOffset()    | 🙂 Not Tested |                                                                                                                |
+| .getUTCDate()           | 🙂 Not Tested |                                                                                                                |
+| .getUTCDay()            | 🙂 Not Tested |                                                                                                                |
+| .getUTCFullYear()       | 🙂 Not Tested |                                                                                                                |
+| .getUTCHours()          | 🙂 Not Tested |                                                                                                                |
+| .getUTCMilliseconds()   | 🙂 Not Tested |                                                                                                                |
+| .getUTCMinutes()        | 🙂 Not Tested |                                                                                                                |
+| .getUTCMonth()          | 🙂 Not Tested |                                                                                                                |
+| .getUTCSeconds()        | 🙂 Not Tested |                                                                                                                |
+| .getYear()              | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/getYear) |
+| .setDate()              | 🙂 Not Tested |                                                                                                                |
+| .setFullYear()          | 🙂 Not Tested |                                                                                                                |
+| .setHours()             | 🙂 Not Tested |                                                                                                                |
+| .setMilliseconds()      | 🙂 Not Tested |                                                                                                                |
+| .setMinutes()           | 🙂 Not Tested |                                                                                                                |
+| .setMonth()             | 🙂 Not Tested |                                                                                                                |
+| .setSeconds()           | 🙂 Not Tested |                                                                                                                |
+| .setTime()              | 🙂 Not Tested |                                                                                                                |
+| .setUTCDate()           | 🙂 Not Tested |                                                                                                                |
+| .setUTCFullYear()       | 🙂 Not Tested |                                                                                                                |
+| .setUTCHours()          | 🙂 Not Tested |                                                                                                                |
+| .setUTCMilliseconds()   | 🙂 Not Tested |                                                                                                                |
+| .setUTCMinutes()        | 🙂 Not Tested |                                                                                                                |
+| .setUTCMonth()          | 🙂 Not Tested |                                                                                                                |
+| .setUTCSeconds()        | 🙂 Not Tested |                                                                                                                |
+| .setYear()              | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/setYear) |
+| \[Symbol.toPrimitive]() | ❓ Unknown    |                                                                                                                |
+| .toDateString()         | 🙂 Not Tested |                                                                                                                |
+| .toISOString()          | 🙂 Not Tested |                                                                                                                |
+| .toJSON()               | 🙂 Not Tested |                                                                                                                |
+| .toLocaleDateString()   | 🙂 Not Tested |                                                                                                                |
+| .toLocaleString()       | 🙂 Not Tested |                                                                                                                |
+| .toLocaleTimeString()   | 🙂 Not Tested |                                                                                                                |
+| .toTimeString()         | 🙂 Not Tested |                                                                                                                |
+| .toUTCString()          | 🙂 Not Tested |                                                                                                                |
+| .valueOf()              | 🙂 Not Tested |                                                                                                                |
 
-### Error?
+### Error
 
-❌ Not Supported
+🤔 Considering
+
+### EvalError
+
+🤔 Considering
+
+### Float16Array
+
+🚧 Planned
+
+### Float32Array
+
+🚧 Planned
+
+### Float64Array
+
+🚧 Planned
+
+### Int8Array
+
+🚧 Planned
+
+### Int16Array
+
+🚧 Planned
+
+### Int32Array
+
+🚧 Planned
+
+### Iterator
+
+🤔 Considering
 
 ### Map
 
-| Constructor | Status           | Notes |
-| ----------- | ---------------- | ----- |
-| Map()       | ❌ Not Supported |       |
+| Constructor | Status        | Notes |
+| ----------- | ------------- | ----- |
+| Map()       | 🙂 Not Tested |       |
 
-| Static method | Status           | Notes |
-| ------------- | ---------------- | ----- |
-| Map.groupBy() | ❌ Not Supported |       |
+| Static method | Status        | Notes |
+| ------------- | ------------- | ----- |
+| Map.groupBy() | 🙂 Not Tested |       |
 
-| Instance method      | Status           | Notes |
-| -------------------- | ---------------- | ----- |
-| .clear()             | ❌ Not Supported |       |
-| .delete()            | ❌ Not Supported |       |
-| .entries()           | ❌ Not Supported |       |
-| .forEach()           | ❌ Not Supported |       |
-| .get()               | ❌ Not Supported |       |
-| .has()               | ❌ Not Supported |       |
-| .keys()              | ❌ Not Supported |       |
-| .set()               | ❌ Not Supported |       |
-| \[Symbol.iterator]() | ❌ Not Supported |       |
-| .values()            | ❌ Not Supported |       |
+| Instance method      | Status        | Notes |
+| -------------------- | ------------- | ----- |
+| .clear()             | 🙂 Not Tested |       |
+| .delete()            | 🙂 Not Tested |       |
+| .entries()           | 🙂 Not Tested |       |
+| .forEach()           | 🙂 Not Tested |       |
+| .get()               | 🙂 Not Tested |       |
+| .has()               | 🙂 Not Tested |       |
+| .keys()              | 🙂 Not Tested |       |
+| .set()               | 🙂 Not Tested |       |
+| \[Symbol.iterator]() | 🙂 Not Tested |       |
+| .values()            | 🙂 Not Tested |       |
 
-| Instance property | Status           | Notes |
-| ----------------- | ---------------- | ----- |
-| .size             | ❌ Not Supported |       |
+| Instance property | Status        | Notes |
+| ----------------- | ------------- | ----- |
+| .size             | 🙂 Not Tested |       |
 
 ### Number
 
-| Constructor | Status           | Notes |
-| ----------- | ---------------- | ----- |
-| Number()    | ❌ Not Supported |       |
+| Constructor | Status        | Notes |
+| ----------- | ------------- | ----- |
+| Number()    | 🙂 Not Tested |       |
 
-| Static method          | Status           | Notes |
-| ---------------------- | ---------------- | ----- |
-| Number.isFinite()      | ❌ Not Supported |       |
-| Number.isInteger()     | ❌ Not Supported |       |
-| Number.isNaN()         | ❌ Not Supported |       |
-| Number.isSafeInteger() | ❌ Not Supported |       |
-| Number.parseFloat()    | ❌ Not Supported |       |
-| Number.parseInt()      | ❌ Not Supported |       |
+| Static method          | Status        | Notes |
+| ---------------------- | ------------- | ----- |
+| Number.isFinite()      | 🙂 Not Tested |       |
+| Number.isInteger()     | 🙂 Not Tested |       |
+| Number.isNaN()         | 🙂 Not Tested |       |
+| Number.isSafeInteger() | 🙂 Not Tested |       |
+| Number.parseFloat()    | 🙂 Not Tested |       |
+| Number.parseInt()      | 🙂 Not Tested |       |
 
-| Instance method   | Status           | Notes |
-| ----------------- | ---------------- | ----- |
-| .toExponential()  | ❌ Not Supported |       |
-| .toFixed()        | ❌ Not Supported |       |
-| .toLocaleString() | ❌ Not Supported |       |
-| .toPrecision()    | ❌ Not Supported |       |
-| .toString()       | ❌ Not Supported |       |
-| .valueOf()        | ❌ Not Supported |       |
+| Instance method   | Status        | Notes |
+| ----------------- | ------------- | ----- |
+| .toExponential()  | 🙂 Not Tested |       |
+| .toFixed()        | 🙂 Not Tested |       |
+| .toLocaleString() | 🙂 Not Tested |       |
+| .toPrecision()    | 🙂 Not Tested |       |
+| .toString()       | 🙂 Not Tested |       |
+| .valueOf()        | 🙂 Not Tested |       |
 
 ### Object
 
-| Constructor                         | Status           | Notes |
-| ----------------------------------- | ---------------- | ----- |
-| Object()                            | ❌ Not Supported |       |
-| Object initializer / literal syntax | ❌ Not Supported |       |
+| Constructor                         | Status        | Notes |
+| ----------------------------------- | ------------- | ----- |
+| Object()                            | 🙂 Not Tested |       |
+| Object initializer / literal syntax | 🙂 Not Tested |       |
 
-| Static method                      | Status           | Notes |
-| ---------------------------------- | ---------------- | ----- |
-| Object.assign()                    | ❌ Not Supported |       |
-| Object.create()                    | ❌ Not Supported |       |
-| Object.defineProperties()          | ❌ Not Supported |       |
-| Object.defineProperty()            | ❌ Not Supported |       |
-| Object.entries()                   | ❌ Not Supported |       |
-| Object.freeze()                    | ❌ Not Supported |       |
-| Object.fromEntries()               | ❌ Not Supported |       |
-| Object.getOwnPropertyDescriptor()  | ❌ Not Supported |       |
-| Object.getOwnPropertyDescriptors() | ❌ Not Supported |       |
-| Object.getOwnPropertyNames()       | ❌ Not Supported |       |
-| Object.getOwnPropertySymbols()     | ❌ Not Supported |       |
-| Object.getPrototypeOf()            | ❌ Not Supported |       |
-| Object.groupBy()                   | ❌ Not Supported |       |
-| Object.hasOwn()                    | ❌ Not Supported |       |
-| Object.is()                        | ❌ Not Supported |       |
-| Object.isExtensible()              | ❌ Not Supported |       |
-| Object.isFrozen()                  | ❌ Not Supported |       |
-| Object.isSealed()                  | ❌ Not Supported |       |
-| Object.keys()                      | ❌ Not Supported |       |
-| Object.preventExtensions()         | ❌ Not Supported |       |
-| Object.seal()                      | ❌ Not Supported |       |
-| Object.setPrototypeOf()            | ❌ Not Supported |       |
-| Object.values()                    | ❌ Not Supported |       |
+| Static method                      | Status     | Notes |
+| ---------------------------------- | ---------- | ----- |
+| Object.assign()                    | 🚧 Planned |       |
+| Object.create()                    | 🚧 Planned |       |
+| Object.defineProperties()          | 🚧 Planned |       |
+| Object.defineProperty()            | 🚧 Planned |       |
+| Object.entries()                   | 🚧 Planned |       |
+| Object.freeze()                    | 🚧 Planned |       |
+| Object.fromEntries()               | 🚧 Planned |       |
+| Object.getOwnPropertyDescriptor()  | 🚧 Planned |       |
+| Object.getOwnPropertyDescriptors() | 🚧 Planned |       |
+| Object.getOwnPropertyNames()       | 🚧 Planned |       |
+| Object.getOwnPropertySymbols()     | 🚧 Planned |       |
+| Object.getPrototypeOf()            | 🚧 Planned |       |
+| Object.groupBy()                   | 🚧 Planned |       |
+| Object.hasOwn()                    | 🚧 Planned |       |
+| Object.is()                        | 🚧 Planned |       |
+| Object.isExtensible()              | 🚧 Planned |       |
+| Object.isFrozen()                  | 🚧 Planned |       |
+| Object.isSealed()                  | 🚧 Planned |       |
+| Object.keys()                      | 🚧 Planned |       |
+| Object.preventExtensions()         | 🚧 Planned |       |
+| Object.seal()                      | 🚧 Planned |       |
+| Object.setPrototypeOf()            | 🚧 Planned |       |
+| Object.values()                    | 🚧 Planned |       |
 
-| Instance method         | Status           | Notes |
-| ----------------------- | ---------------- | ----- |
-| ⚠️ .**defineGetter**()  | ❌ Not Supported |       |
-| ⚠️ .**defineSetter**()  | ❌ Not Supported |       |
-| ⚠️ .**lookupGetter**()  | ❌ Not Supported |       |
-| ⚠️ .**lookupSetter**()  | ❌ Not Supported |       |
-| .hasOwnProperty()       | ❌ Not Supported |       |
-| .isPrototypeOf()        | ❌ Not Supported |       |
-| .propertyIsEnumerable() | ❌ Not Supported |       |
-| .toLocaleString()       | ❌ Not Supported |       |
-| .toString()             | ❌ Not Supported |       |
-| .valueOf()              | ❌ Not Supported |       |
+| Instance method            | Status     | Notes                                                                                                                     |
+| -------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------- |
+| ⚠️ .\_\_defineGetter\_\_() | 🚧 Planned | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/__defineGetter__) |
+| ⚠️ .\_\_defineSetter\_\_() | 🚧 Planned | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/__defineSetter__) |
+| ⚠️ .\_\_lookupGetter\_\_() | 🚧 Planned | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/__lookupGetter__) |
+| ⚠️ .\_\_lookupSetter\_\_() | 🚧 Planned | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/__lookupSetter__) |
+| .hasOwnProperty()          | 🚧 Planned |                                                                                                                           |
+| .isPrototypeOf()           | 🚧 Planned |                                                                                                                           |
+| .propertyIsEnumerable()    | 🚧 Planned |                                                                                                                           |
+| .toLocaleString()          | 🚧 Planned |                                                                                                                           |
+| .toString()                | 🚧 Planned |                                                                                                                           |
+| .valueOf()                 | 🚧 Planned |                                                                                                                           |
 
-| Instance property | Status           | Notes |
-| ----------------- | ---------------- | ----- |
-| .constructor      | ❌ Not Supported |       |
-| ⚠️ .**proto**     | ❌ Not Supported |       |
+| Instance property | Status     | Notes                                                                                                          |
+| ----------------- | ---------- | -------------------------------------------------------------------------------------------------------------- |
+| .constructor      | 🚧 Planned |                                                                                                                |
+| ⚠️ .\_\_proto\_\_ | 🚧 Planned | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/proto) |
+
+### RangeError
+
+🤔 Considering
+
+### ReferenceError
+
+🤔 Considering
 
 ### RegExp
 
-| Constructor | Status           | Notes |
-| ----------- | ---------------- | ----- |
-| RegExp()    | ❌ Not Supported |       |
+| Constructor | Status     | Notes |
+| ----------- | ---------- | ----- |
+| RegExp()    | 🚧 Planned |       |
 
-| Instance method      | Status           | Notes |
-| -------------------- | ---------------- | ----- |
-| ⚠️ .compile()        | ❌ Not Supported |       |
-| .exec()              | ❌ Not Supported |       |
-| \[Symbol.match]()    | ❌ Not Supported |       |
-| \[Symbol.matchAll]() | ❌ Not Supported |       |
-| \[Symbol.replace]()  | ❌ Not Supported |       |
-| \[Symbol.search]()   | ❌ Not Supported |       |
-| \[Symbol.split]()    | ❌ Not Supported |       |
-| .test()              | ❌ Not Supported |       |
-| .toString()          | ❌ Not Supported |       |
+| Instance method      | Status     | Notes                                                                                                            |
+| -------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------- |
+| ⚠️ .compile()        | 🚧 Planned | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/compile) |
+| .exec()              | 🚧 Planned |                                                                                                                  |
+| \[Symbol.match]()    | 🚧 Planned |                                                                                                                  |
+| \[Symbol.matchAll]() | 🚧 Planned |                                                                                                                  |
+| \[Symbol.replace]()  | 🚧 Planned |                                                                                                                  |
+| \[Symbol.search]()   | 🚧 Planned |                                                                                                                  |
+| \[Symbol.split]()    | 🚧 Planned |                                                                                                                  |
+| .test()              | 🚧 Planned |                                                                                                                  |
+| .toString()          | 🚧 Planned |                                                                                                                  |
 
-| Instance property | Status           | Notes |
-| ----------------- | ---------------- | ----- |
-| .dotAll           | ❌ Not Supported |       |
-| .flags            | ❌ Not Supported |       |
-| .global           | ❌ Not Supported |       |
-| .hasIndices       | ❌ Not Supported |       |
-| .ignoreCase       | ❌ Not Supported |       |
-| .lastIndex        | ❌ Not Supported |       |
-| .multiline        | ❌ Not Supported |       |
-| .source           | ❌ Not Supported |       |
-| .sticky           | ❌ Not Supported |       |
-| .unicode          | ❌ Not Supported |       |
-| .unicodeSets      | ❌ Not Supported |       |
+| Instance property | Status     | Notes |
+| ----------------- | ---------- | ----- |
+| .dotAll           | 🚧 Planned |       |
+| .flags            | 🚧 Planned |       |
+| .global           | 🚧 Planned |       |
+| .hasIndices       | 🚧 Planned |       |
+| .ignoreCase       | 🚧 Planned |       |
+| .lastIndex        | 🚧 Planned |       |
+| .multiline        | 🚧 Planned |       |
+| .source           | 🚧 Planned |       |
+| .sticky           | 🚧 Planned |       |
+| .unicode          | 🚧 Planned |       |
+| .unicodeSets      | 🚧 Planned |       |
 
 ### Set
 
-| Constructor | Status           | Notes |
-| ----------- | ---------------- | ----- |
-| Set()       | ❌ Not Supported |       |
+| Constructor | Status     | Notes |
+| ----------- | ---------- | ----- |
+| Set()       | 🚧 Planned |       |
 
-| Instance method        | Status           | Notes |
-| ---------------------- | ---------------- | ----- |
-| .add()                 | ❌ Not Supported |       |
-| .clear()               | ❌ Not Supported |       |
-| .delete()              | ❌ Not Supported |       |
-| .difference()          | ❌ Not Supported |       |
-| .entries()             | ❌ Not Supported |       |
-| .forEach()             | ❌ Not Supported |       |
-| .has()                 | ❌ Not Supported |       |
-| .intersection()        | ❌ Not Supported |       |
-| .isDisjointFrom()      | ❌ Not Supported |       |
-| .isSubsetOf()          | ❌ Not Supported |       |
-| .isSupersetOf()        | ❌ Not Supported |       |
-| .keys()                | ❌ Not Supported |       |
-| \[Symbol.iterator]()   | ❌ Not Supported |       |
-| .symmetricDifference() | ❌ Not Supported |       |
-| .union()               | ❌ Not Supported |       |
-| .values()              | ❌ Not Supported |       |
+| Instance method        | Status     | Notes |
+| ---------------------- | ---------- | ----- |
+| .add()                 | 🚧 Planned |       |
+| .clear()               | 🚧 Planned |       |
+| .delete()              | 🚧 Planned |       |
+| .difference()          | 🚧 Planned |       |
+| .entries()             | 🚧 Planned |       |
+| .forEach()             | 🚧 Planned |       |
+| .has()                 | 🚧 Planned |       |
+| .intersection()        | 🚧 Planned |       |
+| .isDisjointFrom()      | 🚧 Planned |       |
+| .isSubsetOf()          | 🚧 Planned |       |
+| .isSupersetOf()        | 🚧 Planned |       |
+| .keys()                | 🚧 Planned |       |
+| \[Symbol.iterator]()   | 🚧 Planned |       |
+| .symmetricDifference() | 🚧 Planned |       |
+| .union()               | 🚧 Planned |       |
+| .values()              | 🚧 Planned |       |
 
-| Instance property | Status           | Notes |
-| ----------------- | ---------------- | ----- |
-| .size             | ❌ Not Supported |       |
+| Instance property | Status     | Notes |
+| ----------------- | ---------- | ----- |
+| .size             | 🚧 Planned |       |
+
+### SharedArrayBuffer
+
+🤔 Considering
 
 ### String
 
-| Constructor | Status           | Notes |
-| ----------- | ---------------- | ----- |
-| String()    | ❌ Not Supported |       |
+| Constructor | Status        | Notes |
+| ----------- | ------------- | ----- |
+| String()    | 🙂 Not Tested |       |
 
-| Static method          | Status           | Notes |
-| ---------------------- | ---------------- | ----- |
-| String.fromCharCode()  | ❌ Not Supported |       |
-| String.fromCodePoint() | ❌ Not Supported |
-| String.raw()           | ❌ Not Supported |       |
+| Static method          | Status        | Notes |
+| ---------------------- | ------------- | ----- |
+| String.fromCharCode()  | 🙂 Not Tested |       |
+| String.fromCodePoint() | 🙂 Not Tested |
+| String.raw()           | 🙂 Not Tested |       |
 
-| Instance method      | Status           | Notes |
-| -------------------- | ---------------- | ----- |
-| ⚠️ .anchor()         | ❌ Not Supported |       |
-| .at()                | ❌ Not Supported |       |
-| ⚠️ .big()            | ❌ Not Supported |       |
-| ⚠️ .blink()          | ❌ Not Supported |       |
-| ⚠️ .bold()           | ❌ Not Supported |       |
-| .charAt()            | ❌ Not Supported |       |
-| .charCodeAt()        | ❌ Not Supported |       |
-| .codePointAt()       | ❌ Not Supported |       |
-| .concat()            | ❌ Not Supported |       |
-| .endsWith()          | ❌ Not Supported |       |
-| ⚠️ .fixed()          | ❌ Not Supported |       |
-| ⚠️.fontcolor()       | ❌ Not Supported |       |
-| ⚠️.fontsize()        | ❌ Not Supported |       |
-| .includes()          | ❌ Not Supported |       |
-| .indexOf()           | ❌ Not Supported |       |
-| .isWellFormed()      | ❌ Not Supported |       |
-| ⚠️ .italics()        | ❌ Not Supported |       |
-| .lastIndexOf()       | ❌ Not Supported |       |
-| ⚠️ .link()           | ❌ Not Supported |       |
-| .localeCompare()     | ❌ Not Supported |       |
-| .match()             | ❌ Not Supported |       |
-| .matchAll()          | ❌ Not Supported |       |
-| .normalize()         | ❌ Not Supported |       |
-| .padEnd()            | ❌ Not Supported |       |
-| .padStart()          | ❌ Not Supported |       |
-| .repeat()            | ❌ Not Supported |       |
-| .replace()           | ❌ Not Supported |       |
-| .replaceAll()        | ❌ Not Supported |       |
-| .search()            | ❌ Not Supported |       |
-| .slice()             | ❌ Not Supported |       |
-| ⚠️ .small()          | ❌ Not Supported |       |
-| .split()             | ❌ Not Supported |       |
-| .startsWith()        | ❌ Not Supported |       |
-| ⚠️ .strike()         | ❌ Not Supported |       |
-| ⚠️ .sub()            | ❌ Not Supported |       |
-| ⚠️ .substr()         | ❌ Not Supported |       |
-| .substring()         | ❌ Not Supported |       |
-| ⚠️ .sup()            | ❌ Not Supported |       |
-| \[Symbol.iterator]() | ❌ Not Supported |       |
-| .toLocaleLowerCase() | ❌ Not Supported |       |
-| .toLocaleUpperCase() | ❌ Not Supported |       |
-| .toLowerCase()       | ❌ Not Supported |       |
-| .toString()          | ❌ Not Supported |       |
-| .toUpperCase()       | ❌ Not Supported |       |
-| .toWellFormed()      | ❌ Not Supported |       |
-| .trim()              | ❌ Not Supported |       |
-| .trimEnd()           | ❌ Not Supported |       |
-| .trimStart()         | ❌ Not Supported |       |
-| .valueOf()           | ❌ Not Supported |       |
+| Instance method      | Status        | Notes                                                                                                              |
+| -------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------ |
+| ⚠️ .anchor()         | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/anchor)    |
+| .at()                | 🙂 Not Tested |                                                                                                                    |
+| ⚠️ .big()            | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/big)       |
+| ⚠️ .blink()          | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/blink)     |
+| ⚠️ .bold()           | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/bold)      |
+| .charAt()            | 🙂 Not Tested |                                                                                                                    |
+| .charCodeAt()        | 🙂 Not Tested |                                                                                                                    |
+| .codePointAt()       | 🙂 Not Tested |                                                                                                                    |
+| .concat()            | 🙂 Not Tested |                                                                                                                    |
+| .endsWith()          | 🙂 Not Tested |                                                                                                                    |
+| ⚠️ .fixed()          | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/fixed)     |
+| ⚠️.fontcolor()       | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/fontcolor) |
+| ⚠️.fontsize()        | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/fontsize)  |
+| .includes()          | 🙂 Not Tested |                                                                                                                    |
+| .indexOf()           | 🙂 Not Tested |                                                                                                                    |
+| .isWellFormed()      | 🙂 Not Tested |                                                                                                                    |
+| ⚠️ .italics()        | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/italics)   |
+| .lastIndexOf()       | 🙂 Not Tested |                                                                                                                    |
+| ⚠️ .link()           | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/link)      |
+| .localeCompare()     | 🙂 Not Tested |                                                                                                                    |
+| .match()             | 🙂 Not Tested |                                                                                                                    |
+| .matchAll()          | 🙂 Not Tested |                                                                                                                    |
+| .normalize()         | 🙂 Not Tested |                                                                                                                    |
+| .padEnd()            | 🙂 Not Tested |                                                                                                                    |
+| .padStart()          | 🙂 Not Tested |                                                                                                                    |
+| .repeat()            | 🙂 Not Tested |                                                                                                                    |
+| .replace()           | 🙂 Not Tested |                                                                                                                    |
+| .replaceAll()        | 🙂 Not Tested |                                                                                                                    |
+| .search()            | 🙂 Not Tested |                                                                                                                    |
+| .slice()             | 🙂 Not Tested |                                                                                                                    |
+| ⚠️ .small()          | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/small)     |
+| .split()             | 🙂 Not Tested |                                                                                                                    |
+| .startsWith()        | 🙂 Not Tested |                                                                                                                    |
+| ⚠️ .strike()         | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/strike)    |
+| ⚠️ .sub()            | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/sub)       |
+| ⚠️ .substr()         | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/substr)    |
+| .substring()         | 🙂 Not Tested |                                                                                                                    |
+| ⚠️ .sup()            | 🙂 Not Tested | ⚠️ [Deprecated](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/sup)       |
+| \[Symbol.iterator]() | 🙂 Not Tested |                                                                                                                    |
+| .toLocaleLowerCase() | 🙂 Not Tested |                                                                                                                    |
+| .toLocaleUpperCase() | 🙂 Not Tested |                                                                                                                    |
+| .toLowerCase()       | 🙂 Not Tested |                                                                                                                    |
+| .toString()          | 🙂 Not Tested |                                                                                                                    |
+| .toUpperCase()       | 🙂 Not Tested |                                                                                                                    |
+| .toWellFormed()      | 🙂 Not Tested |                                                                                                                    |
+| .trim()              | 🙂 Not Tested |                                                                                                                    |
+| .trimEnd()           | 🙂 Not Tested |                                                                                                                    |
+| .trimStart()         | 🙂 Not Tested |                                                                                                                    |
+| .valueOf()           | 🙂 Not Tested |                                                                                                                    |
 
-| Instance property | Status           | Notes |
-| ----------------- | ---------------- | ----- |
-| .length           | ❌ Not Supported |       |
+| Instance property | Status        | Notes |
+| ----------------- | ------------- | ----- |
+| .length           | 🙂 Not Tested |       |
 
 ### Symbol
 
-❌ Not Supported
+🤔 Considering
+
+### SyntaxError
+
+🤔 Considering
+
+### TypeError
+
+🤔 Considering
+
+### Uint8Array
+
+🚧 Planned
+
+### Uint8ClampedArray
+
+🚧 Planned
+
+### Uint16Array
+
+🚧 Planned
+
+### Uint32Array
+
+🚧 Planned
+
+### URIError
+
+🤔 Considering
 
 ### WeakMap
 
-❌ Not Supported
+🤔 Considering
 
 ### WeakSet
 
-❌ Not Supported
+🤔 Considering
 
-## Not planned
+## Out of Scope
+
+> [!IMPORTANT]
+> The following APIs are not planned to ever be supported in Cloudstate.
 
 - Function
+- FinalizationRegistry
+- globalThis
+- InternalError ([⚠️ Non-standard](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/InternalError))
+- Promise
+- Proxy
+- WeakRef
