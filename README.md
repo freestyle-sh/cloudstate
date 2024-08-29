@@ -1,4 +1,6 @@
-# Cloudstate
+<h1 align="center">
+  <b>Cloudstate</b>
+</h1>
 
 <p align="center">
   <a href="https://freestyle.sh">Freestyle</a> ·
