@@ -27,3 +27,7 @@ Thank you for contributing to Cloudstate! We welcome contributions from everyone
 ## Getting Started
 
 The place we most want help is testing the runtime. `runtime/tests` contains our current test suite. If you find any edge cases, or anything we're not testing that we should be, please follow the [writing tests](runtime/TESTING.md) to add a test.
+
+## Feature Requests
+
+If you have a feature request, please open an issue on the repository. We'd love to hear your ideas!
