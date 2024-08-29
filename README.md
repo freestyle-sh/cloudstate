@@ -75,7 +75,7 @@ import { cloudstate } from "freestyle-sh";
 
 @cloudstate
 class CounterCS {
-  id = "counter";
+  static id = "counter";
   count = 0;
 
   increment() {
@@ -112,4 +112,5 @@ To learn more read the [freestyle docs](https://docs.freestyle.dev/getting-start
 > [!NOTE]
 > We currently support _most_ of the core JavaScript objects, with active development on all object constructors, methods, and property getters marked as "🚧 Planned".
 > [!TIP]
+> <<<<<<< HEAD
 > Tests are essential to building a robust and reliable runtime. If you'd like to contribute in a small but meaningful way, **please consider writing tests** for the methods and property getters marked as "🙂 Not Tested".

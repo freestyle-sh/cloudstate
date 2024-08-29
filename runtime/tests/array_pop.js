@@ -4,7 +4,9 @@ const baseArray = ["a", "b", "c", "d", "e"];
     const object = {
         value: baseArray,
     };
+
     setRoot("test-root", object);
+    commit();
 }
 
 {
@@ -17,8 +19,6 @@ const baseArray = ["a", "b", "c", "d", "e"];
     if (popped !== "e") {
         throw new Error(`Expected "e", got ${popped}`);
     }
-    console.log("Popped 1", popped);
-    console.log("Array", object.value);
     commit();
 }
 {
@@ -44,8 +44,6 @@ const baseArray = ["a", "b", "c", "d", "e"];
     if (popped !== "d") {
         throw new Error(`Expected "d", got ${popped}`);
     }
-    console.log("Popped 2", popped);
-    console.log("Array", object.value);
     commit();
 }
 {
