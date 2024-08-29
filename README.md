@@ -118,46 +118,46 @@ To learn more read the [freestyle docs](https://docs.freestyle.dev/getting-start
 | Array.isArray()   | 🚧 Planned                                |       |
 | Array.of()        | 🚧 Planned                                |       |
 
-| Instance method      | Status                                               | Notes               |
-| -------------------- | ---------------------------------------------------- | ------------------- |
-| .at()                | ✅ [Tested](/runtime/tests/array_at.js)              |                     |
-| .concat()            | 🚧 Planned                                           |                     |
-| .copyWithin()        | 🚧 Planned                                           |                     |
-| .entries()           | 🚧 Planned                                           |                     |
-| .every()             | ✅ [Tested](/runtime/tests/array_every.js)           |                     |
-| .filter()            | ✅ [Tested](/runtime/tests/array_filter.js)          |                     |
-| .find()              | ✅ [Tested](/runtime/tests/array_find.js)            |                     |
-| .findIndex()         | ✅ [Tested](/runtime/tests/array_find_index.js)      |                     |
-| .findLast()          | ✅ [Tested](/runtime/tests/array_find_last.js)       |                     |
-| .findLastIndex()     | ✅ [Tested](/runtime/tests/array_find_last_index.js) |                     |
-| .flat()              | 🚧 Planned                                           |                     |
-| .flatMap()           | 🚧 Planned                                           |                     |
-| .forEach()           | 🚧 Planned                                           |                     |
-| .includes()          | ✅ [Tested](/runtime/tests/array_includes.js)        |                     |
-| .indexOf()           | ✅ [Tested](/runtime/tests/array_index_of.js)        |                     |
-| .join()              | ✅ [Tested](/runtime/tests/array_join.js)            |                     |
-| .keys()              | 🚧 Planned                                           |                     |
-| .lastIndexOf()       | ✅ [Tested](/runtime/tests/array_last_index_of.js)   |                     |
-| .map()               | ✅ [Tested](/runtime/tests/array_map.js)             |                     |
-| .pop()               | ✅ [Tested](/runtime/tests/array_pop.js)             |                     |
-| .push()              | ✅ [Tested](/runtime/tests/array_push.js)            |                     |
-| .reduce()            | ✅ [Tested](/runtime/tests/array_reduce.js)          |                     |
-| .reduceRight()       | ✅ [Tested](/runtime/tests/array_reduce_right.js)    |                     |
-| .reverse()           | ✅ [Tested](/runtime/tests/array_reverse.js)         |                     |
-| .shift()             | ✅ [Tested](/runtime/tests/array_shift.js)           |                     |
-| .slice()             | 🚧 Planned                                           |                     |
-| .some()              | ✅ [Tested](/runtime/tests/array_some.js)            |                     |
-| .sort()              | 🚧 Planned                                           |                     |
-| .splice()            | 🚧 Planned                                           |                     |
-| \[Symbol.iterator]() | ✅ [Tested](/runtime/tests/array_iterator.js)        |                     |
-| .toLocaleString()    | 🚧 Planned                                           |                     |
-| .toReversed()        | ✅ [Tested](/runtime/tests/array_to_reversed.js)     | Not done lazily yet |
-| .toSorted()          | 🚧 Planned                                           |                     |
-| .toSpliced()         | 🚧 Planned                                           |                     |
-| .toString()          | 🚧 Planned                                           |                     |
-| .unshift()           | 🚧 Planned                                           |                     |
-| .values()            | 🚧 Planned                                           |                     |
-| .with()              | 🚧 Planned                                           |                     |
+| Instance method      | Status                                               | Notes                         |
+| -------------------- | ---------------------------------------------------- | ----------------------------- |
+| .at()                | ✅ [Tested](/runtime/tests/array_at.js)              |                               |
+| .concat()            | 🚧 Planned                                           |                               |
+| .copyWithin()        | 🚧 Planned                                           |                               |
+| .entries()           | 🚧 Planned                                           |                               |
+| .every()             | ✅ [Tested](/runtime/tests/array_every.js)           |                               |
+| .filter()            | ✅ [Tested](/runtime/tests/array_filter.js)          |                               |
+| .find()              | ✅ [Tested](/runtime/tests/array_find.js)            |                               |
+| .findIndex()         | ✅ [Tested](/runtime/tests/array_find_index.js)      |                               |
+| .findLast()          | ✅ [Tested](/runtime/tests/array_find_last.js)       |                               |
+| .findLastIndex()     | ✅ [Tested](/runtime/tests/array_find_last_index.js) |                               |
+| .flat()              | 🚧 Planned                                           |                               |
+| .flatMap()           | 🚧 Planned                                           |                               |
+| .forEach()           | 🚧 Planned                                           |                               |
+| .includes()          | ✅ [Tested](/runtime/tests/array_includes.js)        |                               |
+| .indexOf()           | ✅ [Tested](/runtime/tests/array_index_of.js)        |                               |
+| .join()              | ✅ [Tested](/runtime/tests/array_join.js)            |                               |
+| .keys()              | 🚧 Planned                                           |                               |
+| .lastIndexOf()       | ✅ [Tested](/runtime/tests/array_last_index_of.js)   |                               |
+| .map()               | ✅ [Tested](/runtime/tests/array_map.js)             |                               |
+| .pop()               | ✅ [Tested](/runtime/tests/array_pop.js)             |                               |
+| .push()              | ✅ [Tested](/runtime/tests/array_push.js)            |                               |
+| .reduce()            | ✅ [Tested](/runtime/tests/array_reduce.js)          |                               |
+| .reduceRight()       | ✅ [Tested](/runtime/tests/array_reduce_right.js)    |                               |
+| .reverse()           | ✅ [Tested](/runtime/tests/array_reverse.js)         |                               |
+| .shift()             | ✅ [Tested](/runtime/tests/array_shift.js)           |                               |
+| .slice()             | 🚧 Planned                                           |                               |
+| .some()              | ✅ [Tested](/runtime/tests/array_some.js)            |                               |
+| .sort()              | 🚧 Planned                                           |                               |
+| .splice()            | 🚧 Planned                                           |                               |
+| \[Symbol.iterator]() | ✅ [Tested](/runtime/tests/array_iterator.js)        |                               |
+| .toLocaleString()    | 🚧 Planned                                           |                               |
+| .toReversed()        | ✅ [Tested](/runtime/tests/array_to_reversed.js)     | Not done lazily yet. See #15. |
+| .toSorted()          | 🚧 Planned                                           |                               |
+| .toSpliced()         | 🚧 Planned                                           |                               |
+| .toString()          | 🚧 Planned                                           |                               |
+| .unshift()           | 🚧 Planned                                           |                               |
+| .values()            | 🚧 Planned                                           |                               |
+| .with()              | 🚧 Planned                                           |                               |
 
 | Instance property     | Status                                      | Notes |
 | --------------------- | ------------------------------------------- | ----- |
@@ -241,18 +241,18 @@ To learn more read the [freestyle docs](https://docs.freestyle.dev/getting-start
 | ------------- | ------------------------------------------- | ----- |
 | Map.groupBy() | ✅ [Tested](/runtime/tests/map_group_by.js) |       |
 
-| Instance method      | Status                                       | Notes                                                                           |
-| -------------------- | -------------------------------------------- | ------------------------------------------------------------------------------- |
-| .clear()             | ✅ [Tested](/runtime/tests/map_clear.js)     |                                                                                 |
-| .delete()            | ✅ [Tested](/runtime/tests/map_delete.js)    |                                                                                 |
-| .entries()           | ✅ [Tested](/runtime/tests/map_entries.js)   |                                                                                 |
-| .forEach()           | ✅ [Tested](/runtime/tests/map_for_each.js)  |                                                                                 |
-| .get()               | ❌ [Tested](/runtime/tests/map_get.js)       | Crashes for non-keys (`fatal runtime error: failed to initiate panic, error 5`) |
-| .has()               | ❌ [Tested](/runtime/tests/map_has.js)       | Crashes for non-keys (`fatal runtime error: failed to initiate panic, error 5`) |
-| .keys()              | ✅ [Tested](/runtime/tests/map_keys.js)      |                                                                                 |
-| .set()               | ✅ [Tested](/runtime/tests/map_empty_set.js) |                                                                                 |
-| \[Symbol.iterator]() | ❌ [Tested](/runtime/tests/map_iterator.js)  | Zero iterations completed                                                       |
-| .values()            | ✅ [Tested](/runtime/tests/map_values.js)    |                                                                                 |
+| Instance method      | Status                                       | Notes                                   |
+| -------------------- | -------------------------------------------- | --------------------------------------- |
+| .clear()             | ✅ [Tested](/runtime/tests/map_clear.js)     |                                         |
+| .delete()            | ✅ [Tested](/runtime/tests/map_delete.js)    |                                         |
+| .entries()           | ✅ [Tested](/runtime/tests/map_entries.js)   |                                         |
+| .forEach()           | ✅ [Tested](/runtime/tests/map_for_each.js)  |                                         |
+| .get()               | ❌ [Tested](/runtime/tests/map_get.js)       | Crashes for non-existent keys. See #12. |
+| .has()               | ❌ [Tested](/runtime/tests/map_has.js)       | Crashes for non-existent keys. See #13. |
+| .keys()              | ✅ [Tested](/runtime/tests/map_keys.js)      |                                         |
+| .set()               | ✅ [Tested](/runtime/tests/map_empty_set.js) |                                         |
+| \[Symbol.iterator]() | ❌ [Tested](/runtime/tests/map_iterator.js)  | Zero iterations are made. See #14.      |
+| .values()            | ✅ [Tested](/runtime/tests/map_values.js)    |                                         |
 
 | Instance property | Status                                  | Notes |
 | ----------------- | --------------------------------------- | ----- |
