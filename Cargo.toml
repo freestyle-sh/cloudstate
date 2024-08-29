@@ -2,3 +2,4 @@
 
 members = ["runtime", "server", "cli"]
 resolver = "2"
+package.rust-version = "1.80.1"
