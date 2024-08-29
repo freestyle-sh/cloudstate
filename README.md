@@ -75,7 +75,7 @@ import { cloudstate } from "freestyle-sh";
 
 @cloudstate
 class CounterCS {
-  id = "counter";
+  static id = "counter";
   count = 0;
 
   increment() {
