@@ -353,10 +353,11 @@ fn op_cloudstate_map_get(
         field: field.to_string(),
     };
 
-    let result = table.get(key).unwrap();
-    let result = result.map(|s| s.value().data);
-
-    result.unwrap()
+    let out = match table.get(key).unwrap_or(None) {
+        Some(value) => value.value().data,
+        None => CloudstatePrimitiveData::Undefined,
+    };
+    out
 }
 
 #[op2]
