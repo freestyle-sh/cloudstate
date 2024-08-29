@@ -1,5 +1,11 @@
 # Support for JavaScript Objects
 
+> [!NOTE]
+> We currently support _most_ of the core JavaScript objects, with active development on all object constructors, methods, and property getters marked as "🚧 Planned".
+
+> [!TIP]
+> Tests are essential to building a robust and reliable runtime. If you'd like to contribute in a small but meaningful way, **please consider writing tests** for the methods and property getters marked as "🙂 Not Tested".
+
 > [!IMPORTANT]
 > This document is a work in progress and is subject to change.
 
