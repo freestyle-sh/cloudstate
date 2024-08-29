@@ -147,7 +147,7 @@
 | .delete()            | ✅ [Tested](/runtime/tests/map_delete.js)    |                                                             |
 | .entries()           | ✅ [Tested](/runtime/tests/map_entries.js)   |                                                             |
 | .forEach()           | ✅ [Tested](/runtime/tests/map_for_each.js)  |                                                             |
-| .get()               | ❌ [Tested](/runtime/tests/map_get.js)       | Crashes for non-existent keys. See [#12](/../../issues/12). |
+| .get()               | ✅ [Tested](/runtime/tests/map_get.js)       | 
 | .has()               | ❌ [Tested](/runtime/tests/map_has.js)       | Crashes for non-existent keys. See [#13](/../../issues/13). |
 | .keys()              | ✅ [Tested](/runtime/tests/map_keys.js)      |                                                             |
 | .set()               | ✅ [Tested](/runtime/tests/map_empty_set.js) |                                                             |
