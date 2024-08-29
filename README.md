@@ -107,7 +107,7 @@ To learn more read the [freestyle docs](https://docs.freestyle.dev/getting-start
 
 ## Support for JavaScript Objects
 
-- Check out the [JavaScript Objects](OBJECTS.md) guide to learn more about the objects we support.
+- Check out the [Support for JavaScript Objects](SUPPORT.md) to learn more about the current state of support for JavaScript objects.
 
 > [!NOTE]
 > We currently support _most_ of the core JavaScript objects, with active development on all object constructors, methods, and property getters marked as "🚧 Planned".
