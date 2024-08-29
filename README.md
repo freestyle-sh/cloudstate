@@ -1,10 +1,12 @@
+# Cloudstate
+
 <b>Cloudstate</b> is a JavaScript database runtime. It is a foundational component of <a href="https://freestyle.sh">Freestyle</a>'s full stack JavaScript hosting.
 
 We recommend you try out cloudstate via a freestyle template. Read our [getting started](https://docs.freestyle.dev/getting-started/intro) guide to learn more.
 
 If you're interested in learning more about how cloudstate works behind the scenes, read on.
 
-You can install the cloudstate cli alongside the freestyle cli. Run `npm install -g freestyle-sh` or you can build it from source.
+You can install the cloudstate cli alongside the freestyle cli. Run `npm install -g freestyle-sh@beta` or you can build it from source.
 
 ### `cloudstate run ./script.js`
 
