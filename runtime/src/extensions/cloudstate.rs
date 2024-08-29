@@ -1,5 +1,4 @@
 use crate::tables::{ARRAYS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
-use _ops::RustToV8NoScope;
 use chrono::{DateTime, TimeZone, Utc};
 use deno_core::anyhow::Error;
 use deno_core::error::JsError;
@@ -114,6 +113,44 @@ fn op_cloudstate_array_reverse(
             )
             .unwrap();
     }
+}
+
+#[op2]
+#[to_v8]
+fn op_cloudstate_array_pop(
+    state: &mut OpState,
+    #[string] transaction_id: String,
+    #[string] namespace: String,
+    #[string] array_id: String,
+) -> Result<CloudstatePrimitiveData, Error> {
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+    let mut cs = cs.lock().unwrap();
+
+    let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
+    let mut table = write_txn.open_table(ARRAYS_TABLE).unwrap();
+
+    let keys: Vec<CloudstateArrayItemKey> = table
+        .iter()
+        .unwrap()
+        .map(|entry| entry.unwrap().0.value())
+        .filter(|key| key.id == array_id && key.namespace == namespace)
+        .collect();
+
+    let length = keys.len() as i32;
+    if length == 0 {
+        return Ok(CloudstatePrimitiveData::Undefined);
+    }
+
+    let key = match keys.iter().find(|key| key.index == length - 1) {
+        Some(key) => key,
+        None => return Ok(CloudstatePrimitiveData::Undefined),
+    };
+
+    let value = table.remove(key).unwrap().unwrap().value().data;
+
+    Ok(value)
 }
 
 #[op2]
@@ -1075,7 +1112,8 @@ deno_core::extension!(
     op_cloudstate_cloudstate_get,
     op_map_delete,
     op_map_clear,
-    op_cloudstate_array_reverse
+    op_cloudstate_array_reverse,
+    op_cloudstate_array_pop
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],

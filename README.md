@@ -118,45 +118,46 @@ To learn more read the [freestyle docs](https://docs.freestyle.dev/getting-start
 | Array.isArray()   | 🚧 Planned                                |       |
 | Array.of()        | 🚧 Planned                                |       |
 
-| Instance method      | Status                                            | Notes               |
-| -------------------- | ------------------------------------------------- | ------------------- |
-| .at()                | ✅ [Tested](/runtime/tests/array_at.js)           |                     |
-| .concat()            | 🚧 Planned                                        |                     |
-| .copyWithin()        | 🚧 Planned                                        |                     |
-| .entries()           | 🚧 Planned                                        |                     |
-| .every()             | ✅ [Tested](/runtime/tests/array_every.js)        |                     |
-| .filter()            | ✅ [Tested](/runtime/tests/array_filter.js)       |                     |
-| .find()              | 🙂 Not Tested                                     |                     |
-| .findIndex()         | 🙂 Not Tested                                     |                     |
-| .findLastIndex()     | 🙂 Not Tested                                     |                     |
-| .flat()              | 🚧 Planned                                        |                     |
-| .flatMap()           | 🚧 Planned                                        |                     |
-| .forEach()           | 🚧 Planned                                        |                     |
-| .includes()          | ✅ [Tested](/runtime/tests/array_includes.js)     |                     |
-| .indexOf()           | 🙂 Not Tested                                     |                     |
-| .join()              | ✅ [Tested](/runtime/tests/array_join.js)         |                     |
-| .keys()              | 🚧 Planned                                        |                     |
-| .lastIndexOf()       | 🚧 Planned                                        |                     |
-| .map()               | 🙂 Not Tested                                     |                     |
-| .pop()               | 🙂 Not Tested                                     |                     |
-| .push()              | 🙂 Not Tested                                     |                     |
-| .reduce()            | ✅ [Tested](/runtime/tests/array_reduce.js)       |                     |
-| .reduceRight()       | ✅ [Tested](/runtime/tests/array_reduce_right.js) |                     |
-| .reverse()           | 🙂 Not Tested                                     |                     |
-| .shift()             | 🙂 Not Tested                                     |                     |
-| .slice()             | 🚧 Planned                                        |                     |
-| .some()              | 🙂 Not Tested                                     |                     |
-| .sort()              | 🚧 Planned                                        |                     |
-| .splice()            | 🚧 Planned                                        |                     |
-| \[Symbol.iterator]() | 🙂 Not Tested                                     |                     |
-| .toLocaleString()    | 🚧 Planned                                        |                     |
-| .toReversed()        | 🙂 Not Tested                                     | Not done lazily yet |
-| .toSorted()          | 🚧 Planned                                        |                     |
-| .toSpliced()         | 🚧 Planned                                        |                     |
-| .toString()          | 🚧 Planned                                        |                     |
-| .unshift()           | 🚧 Planned                                        |                     |
-| .values()            | 🚧 Planned                                        |                     |
-| .with()              | 🚧 Planned                                        |                     |
+| Instance method      | Status                                               | Notes               |
+| -------------------- | ---------------------------------------------------- | ------------------- |
+| .at()                | ✅ [Tested](/runtime/tests/array_at.js)              |                     |
+| .concat()            | 🚧 Planned                                           |                     |
+| .copyWithin()        | 🚧 Planned                                           |                     |
+| .entries()           | 🚧 Planned                                           |                     |
+| .every()             | ✅ [Tested](/runtime/tests/array_every.js)           |                     |
+| .filter()            | ✅ [Tested](/runtime/tests/array_filter.js)          |                     |
+| .find()              | ✅ [Tested](/runtime/tests/array_find.js)            |                     |
+| .findIndex()         | ✅ [Tested](/runtime/tests/array_find_index.js)      |                     |
+| .findLast()          | ✅ [Tested](/runtime/tests/array_find_last.js)       |                     |
+| .findLastIndex()     | ✅ [Tested](/runtime/tests/array_find_last_index.js) |                     |
+| .flat()              | 🚧 Planned                                           |                     |
+| .flatMap()           | 🚧 Planned                                           |                     |
+| .forEach()           | 🚧 Planned                                           |                     |
+| .includes()          | ✅ [Tested](/runtime/tests/array_includes.js)        |                     |
+| .indexOf()           | ✅ [Tested](/runtime/tests/array_index_of.js)        |                     |
+| .join()              | ✅ [Tested](/runtime/tests/array_join.js)            |                     |
+| .keys()              | 🚧 Planned                                           |                     |
+| .lastIndexOf()       | 🚧 Planned                                           |                     |
+| .map()               | ✅ [Tested](/runtime/tests/array_map.js)             |                     |
+| .pop()               | 🙂 Not Tested                                        |                     |
+| .push()              | 🙂 Not Tested                                        |                     |
+| .reduce()            | ✅ [Tested](/runtime/tests/array_reduce.js)          |                     |
+| .reduceRight()       | ✅ [Tested](/runtime/tests/array_reduce_right.js)    |                     |
+| .reverse()           | 🙂 Not Tested                                        |                     |
+| .shift()             | 🙂 Not Tested                                        |                     |
+| .slice()             | 🚧 Planned                                           |                     |
+| .some()              | 🙂 Not Tested                                        |                     |
+| .sort()              | 🚧 Planned                                           |                     |
+| .splice()            | 🚧 Planned                                           |                     |
+| \[Symbol.iterator]() | ✅ [Tested](/runtime/tests/array_iterator.js)        |                     |
+| .toLocaleString()    | 🚧 Planned                                           |                     |
+| .toReversed()        | ✅ [Tested](/runtime/tests/array_to_reversed.js)     | Not done lazily yet |
+| .toSorted()          | 🚧 Planned                                           |                     |
+| .toSpliced()         | 🚧 Planned                                           |                     |
+| .toString()          | 🚧 Planned                                           |                     |
+| .unshift()           | 🚧 Planned                                           |                     |
+| .values()            | 🚧 Planned                                           |                     |
+| .with()              | 🚧 Planned                                           |                     |
 
 | Instance property     | Status        | Notes |
 | --------------------- | ------------- | ----- |

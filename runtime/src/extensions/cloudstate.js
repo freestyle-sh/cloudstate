@@ -102,12 +102,12 @@ class CloudstateTransaction {
 
           if (value.constructorName) {
             const constructor = this.customClasses.find(
-              (klass) => klass.name === value.constructorName
+              (klass) => klass.name === value.constructorName,
             );
 
             if (!constructor) {
               throw new Error(
-                `Custom class ${value.constructorName} not found`
+                `Custom class ${value.constructorName} not found`,
               );
             }
 
@@ -130,21 +130,21 @@ class CloudstateTransaction {
       blob["text"] = async () => {
         return Deno.core.ops.op_cloudstate_blob_text(
           this.transactionId,
-          value.blobId
+          value.blobId,
         );
       };
 
       blob["arrayBuffer"] = async () => {
         return Deno.core.ops.op_cloudstate_blob_array_buffer(
           this.transactionId,
-          value.blobId
+          value.blobId,
         );
       };
 
       blob["bytes"] = async () => {
         return Deno.core.ops.op_cloudstate_blob_bytes(
           this.transactionId,
-          value.blobId
+          value.blobId,
         );
       };
 
@@ -152,7 +152,7 @@ class CloudstateTransaction {
         get: () => {
           return Deno.core.ops.op_cloudstate_blob_size(
             this.transactionId,
-            value.blobId
+            value.blobId,
           );
         },
       });
@@ -162,7 +162,7 @@ class CloudstateTransaction {
           // TODO: MAKE TYPE
           return Deno.core.ops.op_cloudstate_blob_get_type(
             this.transactionId,
-            value.blobId
+            value.blobId,
           );
         },
       });
@@ -190,7 +190,6 @@ class CloudstateTransaction {
   }
 
   commit() {
-    console.log("Committing objects");
     // console.log(Array.from(this.objects.keys()));
     for (const value of this.objects.values()) {
       this.#setObject(value);
@@ -211,7 +210,7 @@ class CloudstateTransaction {
     map["values"] = () => {
       let map_values = Deno.core.ops.op_map_values(
         this.transactionId,
-        objectId
+        objectId,
       );
 
       return map_values
@@ -246,7 +245,7 @@ class CloudstateTransaction {
         this.transactionId,
         this.namespace,
         objectId,
-        key
+        key,
       );
     };
 
@@ -254,7 +253,7 @@ class CloudstateTransaction {
       return Deno.core.ops.op_map_clear(
         this.transactionId,
         this.namespace,
-        objectId
+        objectId,
       );
     };
 
@@ -273,7 +272,7 @@ class CloudstateTransaction {
         this.transactionId,
         this.namespace,
         objectId,
-        key
+        key,
       );
 
       if (object instanceof CloudstateObjectReference) {
@@ -294,7 +293,7 @@ class CloudstateTransaction {
         this.namespace,
         objectId,
         key,
-        val
+        val,
       );
 
       mapSet.apply(map, [key, val]);
@@ -304,7 +303,7 @@ class CloudstateTransaction {
       get: () => {
         return Deno.core.ops.op_cloudstate_map_size(
           this.transactionId,
-          objectId
+          objectId,
         );
       },
     });
@@ -320,15 +319,15 @@ class CloudstateTransaction {
     const object = Deno.core.ops.op_cloudstate_object_get(
       this.transactionId,
       this.namespace,
-      id
+      id,
     );
 
     if (object.__cloudstate__constructorName) {
       Object.setPrototypeOf(
         object,
         this.customClasses.find(
-          (klass) => klass.name === object.__cloudstate__constructorName
-        ).prototype
+          (klass) => klass.name === object.__cloudstate__constructorName,
+        ).prototype,
       );
       delete object.__cloudstate__constructorName;
     }
@@ -357,7 +356,7 @@ class CloudstateTransaction {
       const value = Deno.core.ops.op_cloudstate_cloudstate_get(
         this.transactionId,
         this.namespace,
-        id
+        id,
       );
 
       return this.getObject(value.objectId);
@@ -382,7 +381,7 @@ class CloudstateTransaction {
               this.namespace,
               this.objectIds.get(object),
               key,
-              value
+              value,
             );
           } else {
             const id = this.#setObject(value);
@@ -391,7 +390,7 @@ class CloudstateTransaction {
               this.namespace,
               this.objectIds.get(object),
               key,
-              new CloudstateObjectReference(id)
+              new CloudstateObjectReference(id),
             );
           }
         }
@@ -427,7 +426,7 @@ class CloudstateTransaction {
               id,
               [Object, Array, Map].includes(value.constructor)
                 ? undefined
-                : value.constructor.name
+                : value.constructor.name,
             );
           }
 
@@ -448,7 +447,7 @@ class CloudstateTransaction {
             this.namespace,
             this.objectIds.get(object),
             i,
-            item
+            item,
           );
         });
       } else {
@@ -476,12 +475,15 @@ class CloudstateTransaction {
             return function* () {
               let length = Deno.core.ops.op_cloudstate_array_length(
                 transactionId,
-                id
+                id,
               );
               for (let i = 0; i < length; i++) {
                 yield array[i];
               }
             };
+          } else if (key === Symbol.toStringTag) {
+            console.log("key === Symbol.toStringTag");
+            // TODO: handle pop()
           }
           let index = parseInt(key);
 
@@ -504,7 +506,7 @@ class CloudstateTransaction {
 
                   let length = Deno.core.ops.op_cloudstate_array_length(
                     this.transactionId,
-                    id
+                    id,
                   );
                   let reversed = [];
                   for (let i = length - 1; i >= 0; i--) {
@@ -516,7 +518,7 @@ class CloudstateTransaction {
               case "length": {
                 return Deno.core.ops.op_cloudstate_array_length(
                   this.transactionId,
-                  id
+                  id,
                 );
               }
               case "reduce": {
@@ -533,7 +535,7 @@ class CloudstateTransaction {
                   Deno.core.ops.op_cloudstate_array_reverse(
                     this.transactionId,
                     this.namespace,
-                    id
+                    id,
                   );
                 };
               }
@@ -542,7 +544,7 @@ class CloudstateTransaction {
                   return Deno.core.ops.op_cloudstate_array_shift(
                     this.transactionId,
                     this.namespace,
-                    id
+                    id,
                   );
                 };
               }
@@ -575,26 +577,24 @@ class CloudstateTransaction {
               }
               case "pop": {
                 return () => {
-                  let length = Deno.core.ops.op_cloudstate_array_length(
-                    this.transactionId,
-                    id
-                  );
-                  if (length === 0) return undefined;
-
-                  const value = array[length - 1];
-                  Deno.core.ops.op_cloudstate_array_pop(
+                  console.log(
+                    "popping",
                     this.transactionId,
                     this.namespace,
-                    id
+                    id,
                   );
-                  return value;
+                  return Deno.core.ops.op_cloudstate_array_pop(
+                    this.transactionId,
+                    this.namespace,
+                    id,
+                  );
                 };
               }
               case "push": {
                 return (...args) => {
                   let length = Deno.core.ops.op_cloudstate_array_length(
                     this.transactionId,
-                    id
+                    id,
                   );
 
                   for (const arg of args) {
@@ -608,7 +608,7 @@ class CloudstateTransaction {
                       id,
                       length,
                       // todo: support nested arrays
-                      value
+                      value,
                     );
                     length++;
                   }
@@ -655,6 +655,14 @@ class CloudstateTransaction {
                   return -1;
                 };
               }
+              case "lastIndexOf": {
+                return (value, fromIndex) => {
+                  for (let i = fromIndex || array.length - 1; i >= 0; i--) {
+                    if (array[i] === value) return i;
+                  }
+                  return -1;
+                };
+              }
               case "every": {
                 return (fn) => {
                   let index = 0;
@@ -679,7 +687,7 @@ class CloudstateTransaction {
                 return () => {
                   const length = Deno.core.ops.op_cloudstate_array_length(
                     this.transactionId,
-                    id
+                    id,
                   );
                   const result = [];
                   for (let i = 0; i < length; i++) {
@@ -692,7 +700,7 @@ class CloudstateTransaction {
                 return (value) => {
                   const length = Deno.core.ops.op_cloudstate_array_length(
                     this.transactionId,
-                    id
+                    id,
                   );
                   for (let i = 0; i < length; i++) {
                     if (array[i] === value) return true;
@@ -719,7 +727,7 @@ class CloudstateTransaction {
             this.transactionId,
             this.namespace,
             id,
-            index
+            index,
           );
 
           if (result instanceof CloudstateObjectReference) {
@@ -743,10 +751,10 @@ class CloudstateTransaction {
               ? value
               : value instanceof Array
               ? new CloudstateArrayReference(this.#setObject(value))
-              : new CloudstateObjectReference(this.#setObject(value))
+              : new CloudstateObjectReference(this.#setObject(value)),
           );
         },
-      }
+      },
     );
 
     Object.setPrototypeOf(array, Array.prototype);
@@ -766,7 +774,7 @@ class CloudstateTransaction {
         this.transactionId,
         this.namespace,
         id,
-        data
+        data,
       );
       this.objectIds.set(object, id);
       this.objects.set(id, object);
@@ -777,7 +785,7 @@ class CloudstateTransaction {
         this.transactionId,
         this.namespace,
         existingId,
-        data
+        data,
       );
       return existingId;
     }
@@ -793,7 +801,7 @@ class CloudstateTransaction {
       this.transactionId,
       this.namespace,
       alias,
-      id
+      id,
     );
   }
 
@@ -803,7 +811,7 @@ class CloudstateTransaction {
     const id = Deno.core.ops.op_cloudstate_object_root_get(
       this.transactionId,
       this.namespace,
-      alias
+      alias,
     );
 
     if (!id) return undefined;
