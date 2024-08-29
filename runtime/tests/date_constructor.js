@@ -2,7 +2,7 @@ const baseDate = new Date();
 
 {
   const object = {
-    date: baseDate,
+    date: baseDateNow,
   };
 
   setRoot("test-root", object);
@@ -20,28 +20,28 @@ const baseDate = new Date();
   if (object.date instanceof Date === false) {
     throw new Error("object.date should be a Date");
   }
-  if (object.date.getTime() !== baseDate.getTime()) {
+  if (object.date.getTime() !== baseDateNow.getTime()) {
     throw new Error("object.date should be the same as baseDate");
   }
-  if (object.date.getFullYear() !== baseDate.getFullYear()) {
+  if (object.date.getFullYear() !== baseDateNow.getFullYear()) {
     throw new Error("object.date should be the same as baseDate");
   }
-  if (object.date.getMonth() !== baseDate.getMonth()) {
+  if (object.date.getMonth() !== baseDateNow.getMonth()) {
     throw new Error("object.date should be the same as baseDate");
   }
-  if (object.date.getDate() !== baseDate.getDate()) {
+  if (object.date.getDate() !== baseDateNow.getDate()) {
     throw new Error("object.date should be the same as baseDate");
   }
-  if (object.date.getHours() !== baseDate.getHours()) {
+  if (object.date.getHours() !== baseDateNow.getHours()) {
     throw new Error("object.date should be the same as baseDate");
   }
-  if (object.date.getMinutes() !== baseDate.getMinutes()) {
+  if (object.date.getMinutes() !== baseDateNow.getMinutes()) {
     throw new Error("object.date should be the same as baseDate");
   }
-  if (object.date.getSeconds() !== baseDate.getSeconds()) {
+  if (object.date.getSeconds() !== baseDateNow.getSeconds()) {
     throw new Error("object.date should be the same as baseDate");
   }
-  if (object.date.getMilliseconds() !== baseDate.getMilliseconds()) {
+  if (object.date.getMilliseconds() !== baseDateNow.getMilliseconds()) {
     throw new Error("object.date should be the same as baseDate");
   }
 }
