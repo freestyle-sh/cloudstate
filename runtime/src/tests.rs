@@ -17,6 +17,7 @@ js_test!(array_index_of);
 js_test!(array_iterator);
 js_test!(array_join);
 js_test!(array_last_index_of);
+js_test!(array_length);
 js_test!(array_map);
 js_test!(array_of_maps);
 js_test!(array_of_mixed_objects);

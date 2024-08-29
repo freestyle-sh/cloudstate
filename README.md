@@ -159,10 +159,10 @@ To learn more read the [freestyle docs](https://docs.freestyle.dev/getting-start
 | .values()            | 🚧 Planned                                           |                     |
 | .with()              | 🚧 Planned                                           |                     |
 
-| Instance property     | Status        | Notes |
-| --------------------- | ------------- | ----- |
-| .length               | 🙂 Not Tested |       |
-| \[Symbol.unscopables] | ❓ Unknown    |       |
+| Instance property     | Status                                      | Notes |
+| --------------------- | ------------------------------------------- | ----- |
+| .length               | ✅ [Tested](/runtime/tests/array_length.js) |       |
+| \[Symbol.unscopables] | ❓ Unknown                                  |       |
 
 ### AsyncIterator
 
