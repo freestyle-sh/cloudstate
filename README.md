@@ -137,16 +137,16 @@ To learn more read the [freestyle docs](https://docs.freestyle.dev/getting-start
 | .indexOf()           | ✅ [Tested](/runtime/tests/array_index_of.js)        |                     |
 | .join()              | ✅ [Tested](/runtime/tests/array_join.js)            |                     |
 | .keys()              | 🚧 Planned                                           |                     |
-| .lastIndexOf()       | 🚧 Planned                                           |                     |
+| .lastIndexOf()       | ✅ [Tested](/runtime/tests/array_last_index_of.js)   |                     |
 | .map()               | ✅ [Tested](/runtime/tests/array_map.js)             |                     |
-| .pop()               | 🙂 Not Tested                                        |                     |
-| .push()              | 🙂 Not Tested                                        |                     |
+| .pop()               | ✅ [Tested](/runtime/tests/array_pop.js)             |                     |
+| .push()              | ✅ [Tested](/runtime/tests/array_push.js)            |                     |
 | .reduce()            | ✅ [Tested](/runtime/tests/array_reduce.js)          |                     |
 | .reduceRight()       | ✅ [Tested](/runtime/tests/array_reduce_right.js)    |                     |
-| .reverse()           | 🙂 Not Tested                                        |                     |
-| .shift()             | 🙂 Not Tested                                        |                     |
+| .reverse()           | ✅ [Tested](/runtime/tests/array_reverse.js)         |                     |
+| .shift()             | ✅ [Tested](/runtime/tests/array_shift.js)           |                     |
 | .slice()             | 🚧 Planned                                           |                     |
-| .some()              | 🙂 Not Tested                                        |                     |
+| .some()              | ✅ [Tested](/runtime/tests/array_some.js)            |                     |
 | .sort()              | 🚧 Planned                                           |                     |
 | .splice()            | 🚧 Planned                                           |                     |
 | \[Symbol.iterator]() | ✅ [Tested](/runtime/tests/array_iterator.js)        |                     |

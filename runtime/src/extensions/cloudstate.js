@@ -482,8 +482,7 @@ class CloudstateTransaction {
               }
             };
           } else if (key === Symbol.toStringTag) {
-            console.log("key === Symbol.toStringTag");
-            // TODO: handle pop()
+            // TODO: handle console.log
           }
           let index = parseInt(key);
 
