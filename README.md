@@ -1,10 +1,10 @@
 <h1 align="center">Cloudstate</h1>
 
 <p align="center">
- <a href="https://docs.freestyle.dev/getting-started/intro">Get Started</a> ·  <a href="https://freestyle.sh">Freestyle</a> · <a href="https://docs.freestyle.dev">Docs</a> · <a href="https://discord.gg/YTRprVkdnz">Discord</a>
+  <a href="https://freestyle.sh">Freestyle</a> · <a href="https://docs.freestyle.dev">Docs</a> · <a href="https://discord.gg/YTRprVkdnz">Discord</a>
 </p>
 
-> [!NOTE]
+> [!TIP]
 > Wanna try it out, check out our [getting started](https://docs.freestyle.dev/getting-started/intro) guide.
 
 <b>Cloudstate</b> is a JavaScript database runtime. It is a foundational component of <a href="https://freestyle.sh">Freestyle</a>'s full stack JavaScript hosting.
