@@ -31,3 +31,7 @@ The place we most want help is testing the runtime. `runtime/tests` contains our
 ## Feature Requests
 
 If you have a feature request, please open an issue on the repository. We'd love to hear your ideas!
+
+## Contact Us
+
+Join our <a href="https://discord.gg/YTRprVkdnz">Discord</a>!
