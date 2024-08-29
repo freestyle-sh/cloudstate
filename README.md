@@ -185,14 +185,7 @@ To learn more read the [freestyle docs](https://docs.freestyle.dev/getting-start
 
 ### Boolean
 
-| Constructor | Status     | Notes |
-| ----------- | ---------- | ----- |
-| Boolean()   | 🚧 Planned |       |
-
-| Instance method | Status     | Notes |
-| --------------- | ---------- | ----- |
-| .toString()     | 🚧 Planned |       |
-| .valueOf()      | 🚧 Planned |       |
+✅ Unchanged from V8
 
 ### DataView
 
@@ -240,30 +233,30 @@ To learn more read the [freestyle docs](https://docs.freestyle.dev/getting-start
 
 ### Map
 
-| Constructor | Status        | Notes |
-| ----------- | ------------- | ----- |
-| Map()       | 🙂 Not Tested |       |
+| Constructor | Status                              | Notes |
+| ----------- | ----------------------------------- | ----- |
+| Map()       | ✅ [Tested](/runtime/tests/maps.js) |       |
 
-| Static method | Status        | Notes |
-| ------------- | ------------- | ----- |
-| Map.groupBy() | 🙂 Not Tested |       |
+| Static method | Status                                      | Notes |
+| ------------- | ------------------------------------------- | ----- |
+| Map.groupBy() | ✅ [Tested](/runtime/tests/map_group_by.js) |       |
 
-| Instance method      | Status        | Notes |
-| -------------------- | ------------- | ----- |
-| .clear()             | 🙂 Not Tested |       |
-| .delete()            | 🙂 Not Tested |       |
-| .entries()           | 🙂 Not Tested |       |
-| .forEach()           | 🙂 Not Tested |       |
-| .get()               | 🙂 Not Tested |       |
-| .has()               | 🙂 Not Tested |       |
-| .keys()              | 🙂 Not Tested |       |
-| .set()               | 🙂 Not Tested |       |
-| \[Symbol.iterator]() | 🙂 Not Tested |       |
-| .values()            | 🙂 Not Tested |       |
+| Instance method      | Status                                       | Notes                                                                           |
+| -------------------- | -------------------------------------------- | ------------------------------------------------------------------------------- |
+| .clear()             | ✅ [Tested](/runtime/tests/map_clear.js)     |                                                                                 |
+| .delete()            | ✅ [Tested](/runtime/tests/map_delete.js)    |                                                                                 |
+| .entries()           | ✅ [Tested](/runtime/tests/map_entries.js)   |                                                                                 |
+| .forEach()           | ✅ [Tested](/runtime/tests/map_for_each.js)  |                                                                                 |
+| .get()               | ❌ [Tested](/runtime/tests/map_get.js)       | Crashes for non-keys (`fatal runtime error: failed to initiate panic, error 5`) |
+| .has()               | ❌ [Tested](/runtime/tests/map_has.js)       | Crashes for non-keys (`fatal runtime error: failed to initiate panic, error 5`) |
+| .keys()              | ✅ [Tested](/runtime/tests/map_keys.js)      |                                                                                 |
+| .set()               | ✅ [Tested](/runtime/tests/map_empty_set.js) |                                                                                 |
+| \[Symbol.iterator]() | ❌ [Tested](/runtime/tests/map_iterator.js)  | Zero iterations completed                                                       |
+| .values()            | ✅ [Tested](/runtime/tests/map_values.js)    |                                                                                 |
 
-| Instance property | Status        | Notes |
-| ----------------- | ------------- | ----- |
-| .size             | 🙂 Not Tested |       |
+| Instance property | Status                                  | Notes |
+| ----------------- | --------------------------------------- | ----- |
+| .size             | ✅ [Tested](/runtime/tests/map_size.js) |       |
 
 ### Number
 
