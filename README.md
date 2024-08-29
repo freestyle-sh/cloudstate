@@ -91,6 +91,10 @@ await counter.increment();
 
 To learn more read the [freestyle docs](https://docs.freestyle.dev/getting-started/intro).
 
+## Contributing
+
+- Check out the [contributing guide](CONTRIBUTING.md) to learn about our development process.
+
 ## Support for JavaScript Objects
 
 > [!NOTE]
