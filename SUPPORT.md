@@ -162,10 +162,9 @@
 
 - No hydration for maps stored in arrays. See [#16](/../../issues/16).
 
-  | Test              | Status                                           | Notes                                                 |
-  | ----------------- | ------------------------------------------------ | ----------------------------------------------------- |
-  | Array of maps     | ❌ [Tested](/runtime/tests/array_of_maps.js)     |                                                       |
-  | Map size in array | ❌ [Tested](/runtime/tests/map_size_in_array.js) | Getting any property, not just size, would also fail. |
+  | Test          | Status                                       | Notes                                 |
+  | ------------- | -------------------------------------------- | ------------------------------------- |
+  | Array of maps | ❌ [Tested](/runtime/tests/array_of_maps.js) | Panics - commented out of `tests.rs`. |
 
 ### Number
 

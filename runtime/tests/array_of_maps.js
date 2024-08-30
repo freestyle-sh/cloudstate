@@ -12,7 +12,7 @@ function checkMapValueEquivalence({ map1, map2, test_ctx }) {
             `${test_ctx} different number of keys (${map1.size} !== ${map2.size})`,
         );
     }
-    for (const [key, value] of map1) {
+    for (const [key, value] of map1.entries()) {
         console.log("key of map1", key);
         console.log("value of map1", value);
         if (!map2.has(key)) {
@@ -58,7 +58,7 @@ function checkMapValueEquivalence({ map1, map2, test_ctx }) {
     }
 }
 
-const newObject = new Map([["a", 6], ["c", 7]]);
+const newMap = new Map([["a", 6], ["c", 7]]);
 {
     const root = getRoot("test-root");
     if (!root) {
@@ -68,8 +68,16 @@ const newObject = new Map([["a", 6], ["c", 7]]);
         throw new Error("root.value should exist");
     }
 
-    // add a new object to the array
-    root.value.push(newObject);
+    // add a new map to the array
+    root.value.push(newMap);
+    /*
+    TODO: op_cloudstate_array_set should add CloudstateMapReference, not CloudstateObjectReference
+    impl FromV8<'_> for CloudstatePrimitiveData
+    ...
+    "CloudstateObjectReference" => {
+    ...
+    id: v8::Local::<v8::String>::try_from(
+    */
     commit();
 }
 
