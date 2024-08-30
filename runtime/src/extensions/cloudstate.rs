@@ -272,7 +272,7 @@ fn op_cloudstate_map_set(
 }
 
 #[op2(fast)]
-fn op_map_delete(
+fn op_cloudstate_map_delete(
     state: &mut OpState,
     #[string] transaction_id: String,
     #[string] namespace: String,
@@ -294,16 +294,15 @@ fn op_map_delete(
         field: key.to_string(),
     };
 
-    let did_exist = match table.remove(&key).unwrap() {
+    let did_exist = match table.remove(&key).unwrap_or(None) {
         Some(_) => true,
         None => false,
     };
-
     did_exist
 }
 
 #[op2(fast)]
-fn op_map_clear(
+fn op_cloudstate_map_clear(
     state: &mut OpState,
     #[string] transaction_id: String,
     #[string] namespace: String,
@@ -356,6 +355,36 @@ fn op_cloudstate_map_get(
     let out = match table.get(key).unwrap_or(None) {
         Some(value) => value.value().data,
         None => CloudstatePrimitiveData::Undefined,
+    };
+    out
+}
+
+#[op2]
+#[to_v8]
+fn op_cloudstate_map_has(
+    state: &mut OpState,
+    #[string] transaction_id: String,
+    #[string] namespace: String,
+    #[string] id: String,
+    #[string] field: String,
+) -> CloudstatePrimitiveData {
+    let cs = state
+        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
+        .unwrap();
+    let cs = cs.lock().unwrap();
+
+    let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
+    let table = read_txn.open_table(MAPS_TABLE).unwrap();
+
+    let key = CloudstateMapFieldKey {
+        namespace: namespace.to_string(),
+        id: id.to_string(),
+        field: field.to_string(),
+    };
+
+    let out = match table.get(key).unwrap_or(None) {
+        Some(_) => CloudstatePrimitiveData::Boolean(true),
+        None => CloudstatePrimitiveData::Boolean(false),
     };
     out
 }
@@ -519,7 +548,10 @@ fn op_cloudstate_object_root_set(
 
 #[op2(fast)]
 #[string]
-fn op_create_transaction(state: &mut OpState, #[string] id: String) -> Result<(), Error> {
+fn op_cloudstate_create_transaction(
+    state: &mut OpState,
+    #[string] id: String,
+) -> Result<(), Error> {
     println!("Creating transaction");
     let cs = state
         .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
@@ -534,7 +566,10 @@ fn op_create_transaction(state: &mut OpState, #[string] id: String) -> Result<()
 }
 
 #[op2(fast)]
-fn op_commit_transaction(state: &mut OpState, #[string] id: String) -> Result<(), Error> {
+fn op_cloudstate_commit_transaction(
+    state: &mut OpState,
+    #[string] id: String,
+) -> Result<(), Error> {
     let cs = state
         .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
         .unwrap();
@@ -547,7 +582,7 @@ fn op_commit_transaction(state: &mut OpState, #[string] id: String) -> Result<()
 //TODO: Lazy iterator?
 #[op2]
 #[to_v8]
-fn op_map_values(
+fn op_cloudstate_map_values(
     state: &mut OpState,
     #[string] transaction_id: String,
     #[string] map_id: String,
@@ -578,7 +613,7 @@ fn op_map_values(
 
 #[op2]
 #[to_v8]
-fn op_map_keys(
+fn op_cloudstate_map_keys(
     state: &mut OpState,
     #[string] transaction_id: String,
     #[string] map_id: String,
@@ -608,7 +643,7 @@ fn op_map_keys(
 
 #[op2]
 #[to_v8]
-fn op_map_entries(
+fn op_cloudstate_map_entries(
     state: &mut OpState,
     #[string] transaction_id: String,
     #[string] map_id: String,
@@ -1095,27 +1130,28 @@ pub struct CloudstateArrayItemValue {
 deno_core::extension!(
   cloudstate,
   ops = [
-    op_cloudstate_object_set,
-    op_cloudstate_object_get,
-    op_cloudstate_object_root_set,
-    op_cloudstate_object_root_get,
-    op_cloudstate_map_set,
-    op_cloudstate_map_get,
-    op_create_transaction,
-    op_commit_transaction,
-    op_cloudstate_array_set,
     op_cloudstate_array_get,
     op_cloudstate_array_length,
-    op_cloudstate_array_reverse,
     op_cloudstate_array_pop,
+    op_cloudstate_array_reverse,
+    op_cloudstate_array_set,
     op_cloudstate_array_shift,
-    op_map_values,
-    op_map_keys,
-    op_map_entries,
-    op_cloudstate_map_size,
     op_cloudstate_cloudstate_get,
-    op_map_delete,
-    op_map_clear
+    op_cloudstate_commit_transaction,
+    op_cloudstate_create_transaction,
+    op_cloudstate_map_clear,
+    op_cloudstate_map_delete,
+    op_cloudstate_map_entries,
+    op_cloudstate_map_get,
+    op_cloudstate_map_has,
+    op_cloudstate_map_keys,
+    op_cloudstate_map_set,
+    op_cloudstate_map_size,
+    op_cloudstate_map_values,
+    op_cloudstate_object_get,
+    op_cloudstate_object_root_get,
+    op_cloudstate_object_root_set,
+    op_cloudstate_object_set
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],

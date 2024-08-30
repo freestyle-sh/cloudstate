@@ -141,22 +141,28 @@
 | ------------- | ------------------------------------------- | ----- |
 | Map.groupBy() | ✅ [Tested](/runtime/tests/map_group_by.js) |       |
 
-| Instance method      | Status                                       | Notes                                                       |
-| -------------------- | -------------------------------------------- | ----------------------------------------------------------- |
-| .clear()             | ✅ [Tested](/runtime/tests/map_clear.js)     |                                                             |
-| .delete()            | ✅ [Tested](/runtime/tests/map_delete.js)    |                                                             |
-| .entries()           | ✅ [Tested](/runtime/tests/map_entries.js)   |                                                             |
-| .forEach()           | ✅ [Tested](/runtime/tests/map_for_each.js)  |                                                             |
-| .get()               | ✅ [Tested](/runtime/tests/map_get.js)       | 
-| .has()               | ❌ [Tested](/runtime/tests/map_has.js)       | Crashes for non-existent keys. See [#13](/../../issues/13). |
-| .keys()              | ✅ [Tested](/runtime/tests/map_keys.js)      |                                                             |
-| .set()               | ✅ [Tested](/runtime/tests/map_empty_set.js) |                                                             |
-| \[Symbol.iterator]() | ❌ [Tested](/runtime/tests/map_iterator.js)  | Zero iterations are made. See [#14](/../../issues/14).      |
-| .values()            | ✅ [Tested](/runtime/tests/map_values.js)    |                                                             |
+| Instance method      | Status                                       | Notes                                                  |
+| -------------------- | -------------------------------------------- | ------------------------------------------------------ |
+| .clear()             | ✅ [Tested](/runtime/tests/map_clear.js)     |                                                        |
+| .delete()            | ✅ [Tested](/runtime/tests/map_delete.js)    |                                                        |
+| .entries()           | ✅ [Tested](/runtime/tests/map_entries.js)   |                                                        |
+| .forEach()           | ✅ [Tested](/runtime/tests/map_for_each.js)  |                                                        |
+| .get()               | ✅ [Tested](/runtime/tests/map_get.js)       |                                                        |
+| .has()               | ✅ [Tested](/runtime/tests/map_has.js)       |                                                        |
+| .keys()              | ✅ [Tested](/runtime/tests/map_keys.js)      |                                                        |
+| .set()               | ✅ [Tested](/runtime/tests/map_empty_set.js) |                                                        |
+| \[Symbol.iterator]() | ❌ [Tested](/runtime/tests/map_iterator.js)  | Zero iterations are made. See [#14](/../../issues/14). |
+| .values()            | ✅ [Tested](/runtime/tests/map_values.js)    |                                                        |
 
 | Instance property | Status                                  | Notes |
 | ----------------- | --------------------------------------- | ----- |
 | .size             | ✅ [Tested](/runtime/tests/map_size.js) |       |
+
+#### Known issues
+
+- No hydration for maps stored in arrays. See [#16](/../../issues/16).
+  - ❌ [Tested](/runtime/tests/array_of_maps.js)
+  - ❌ [Tested](/runtime/tests/map_size_in_array.js) (getting any property, not just size, would also fail)
 
 ### Number
 

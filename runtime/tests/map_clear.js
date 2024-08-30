@@ -19,10 +19,10 @@
   // verify map is set correctly
   const a = object.value.get("foo");
   if (a !== 1) {
-    throw new Error(`Expected ${JSON.stringify(1)}, got ${JSON.stringify(a)}`);
+    throw new Error(`Expected 1, got ${a}`);
   }
   if (!object.value.has("foo")) {
-    throw new Error(`Expected ${JSON.stringify("foo")} to exist`);
+    throw new Error(`Expected "foo" to exist`);
   }
   if (object.value.size !== 3) {
     throw new Error(`Expected size to be 3, got ${object.value.size}`);
@@ -35,8 +35,8 @@
   if (object.value.size !== 0) {
     throw new Error(`Expected size to be 0, got ${object.value.size}`);
   }
-  if (!object.value.has("foo")) {
-    throw new Error(`Expected ${JSON.stringify("foo")} to be deleted`);
+  if (object.value.has("foo")) {
+    throw new Error(`Expected "foo" to be deleted`);
   }
 
   commit();
