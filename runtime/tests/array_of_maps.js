@@ -5,16 +5,21 @@ const baseArray = [
 ];
 
 function checkMapValueEquivalence({ map1, map2, test_ctx }) {
+    console.log("map1", map1);
+    console.log("map2", map2);
     if (map1.size !== map2.size) {
         throw new Error(
             `${test_ctx} different number of keys (${map1.size} !== ${map2.size})`,
         );
     }
     for (const [key, value] of map1) {
+        console.log("key of map1", key);
+        console.log("value of map1", value);
         if (!map2.has(key)) {
             throw new Error(`${test_ctx} key ${key} not found in map2 keys`);
         }
         if (map2.get(key) !== value) {
+            console.log("map2.get(key)", map2.get(key));
             throw new Error(
                 `${test_ctx} different values for key ${key} (${value} !== ${
                     map2.get(key)

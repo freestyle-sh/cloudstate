@@ -64,7 +64,7 @@ globalThis.Cloudstate = class Cloudstate {
 
   createTransaction() {
     const id = uuidv4();
-    Deno.core.ops.op_create_transaction(id, this.namespace);
+    Deno.core.ops.op_cloudstate_create_transaction(id, this.namespace);
     return new CloudstateTransaction(this.namespace, id, this.customClasses);
   }
 };
@@ -95,6 +95,8 @@ class CloudstateTransaction {
   }
 
   hydrate(object, key, value) {
+    console.log("hydrating some object");
+
     if (value instanceof CloudstateObjectReference) {
       Object.defineProperty(object, key, {
         get: () => {
@@ -182,20 +184,17 @@ class CloudstateTransaction {
     }
 
     if (value instanceof CloudstateMapReference) {
-      const map = this.getMap(value.objectId);
       Object.defineProperty(object, key, {
-        value: map,
+        value: this.getMap(value.objectId),
       });
     }
   }
 
   commit() {
-    // console.log(Array.from(this.objects.keys()));
     for (const value of this.objects.values()) {
       this.#setObject(value);
     }
-    // console.log("Committing done");
-    Deno.core.ops.op_commit_transaction(this.transactionId);
+    Deno.core.ops.op_cloudstate_commit_transaction(this.transactionId);
   }
 
   getMap(objectId) {
@@ -208,7 +207,7 @@ class CloudstateTransaction {
 
     this.objectIds.set(map, objectId);
     map["values"] = () => {
-      let map_values = Deno.core.ops.op_map_values(
+      let map_values = Deno.core.ops.op_cloudstate_map_values(
         this.transactionId,
         objectId
       );
@@ -224,11 +223,15 @@ class CloudstateTransaction {
         .values();
     };
     map["keys"] = () => {
-      return Deno.core.ops.op_map_keys(this.transactionId, objectId).values();
+      return Deno.core.ops.op_cloudstate_map_keys(this.transactionId, objectId)
+        .values();
     };
 
     map["entries"] = () => {
-      let entries = Deno.core.ops.op_map_entries(this.transactionId, objectId);
+      let entries = Deno.core.ops.op_cloudstate_map_entries(
+        this.transactionId,
+        objectId,
+      );
 
       return entries
         .map(([key, value]) => {
@@ -241,7 +244,7 @@ class CloudstateTransaction {
         .values();
     };
     map["delete"] = (key) => {
-      return Deno.core.ops.op_map_delete(
+      return Deno.core.ops.op_cloudstate_map_delete(
         this.transactionId,
         this.namespace,
         objectId,
@@ -250,7 +253,7 @@ class CloudstateTransaction {
     };
 
     map["clear"] = () => {
-      return Deno.core.ops.op_map_clear(
+      return Deno.core.ops.op_cloudstate_map_clear(
         this.transactionId,
         this.namespace,
         objectId
@@ -262,6 +265,15 @@ class CloudstateTransaction {
       for (const entry of entries) {
         fn(entry[1], entry[0], map);
       }
+    };
+
+    map.has = (key) => {
+      return Deno.core.ops.op_cloudstate_map_has(
+        this.transactionId,
+        this.namespace,
+        objectId,
+        key,
+      );
     };
 
     map.get = (key) => {

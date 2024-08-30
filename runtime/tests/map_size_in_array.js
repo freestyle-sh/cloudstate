@@ -12,6 +12,8 @@
 
 {
   const root = getRoot("test-root");
+  console.log("root", root);
+  console.log("root value", root.value);
   if (!root) {
     throw new Error("root should exist");
   }
@@ -30,7 +32,7 @@
 
   if (root.value[0].size !== 1) {
     throw new Error(
-      `root.value[0].size should be 1, got ${root.value[0].size}`
+      `root.value[0].size should be 1, got ${root.value[0].size}`,
     );
   }
 }

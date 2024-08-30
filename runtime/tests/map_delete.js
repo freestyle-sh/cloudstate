@@ -28,7 +28,11 @@ const baseMap = new Map([
 
   const deletedVal = object.value.delete("a");
   if (!deletedVal) {
-    throw new Error(`Expected ${JSON.stringify("a")} to be deleted`);
+    throw new Error(
+      `Expected ${
+        JSON.stringify("a")
+      } to be deleted (return value should be truthy)`,
+    );
   }
 
   commit();
