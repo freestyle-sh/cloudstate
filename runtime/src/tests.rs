@@ -30,6 +30,10 @@ js_test!(array_reduce);
 js_test!(array_reverse);
 js_test!(array_shift);
 js_test!(array_some);
+js_test!(array_sort_objects);
+js_test!(array_sort_single_item);
+
+js_test!(array_sort);
 js_test!(array_to_reversed);
 js_test!(bigints);
 js_test!(counter_class);
