@@ -10,6 +10,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use redb::{Database, ReadTransaction, ReadableTable, WriteTransaction};
+use tracing::event;
 
 pub fn mark_and_sweep(db: &Database) -> anyhow::Result<()> {
     let tx = db.begin_read()?;
@@ -18,7 +19,11 @@ pub fn mark_and_sweep(db: &Database) -> anyhow::Result<()> {
     let tx = match db.begin_write() {
         Ok(out) => out,
         Err(e) => {
-            println!("Error creating write transaction");
+            event!(
+                tracing::Level::ERROR,
+                "Error creating write transaction: {}",
+                e
+            );
 
             panic!("Error creating write transaction: {}", e)
         }
@@ -208,7 +213,6 @@ fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
 
 /// Consumes the transaction and deletes all objects not in the set
 fn sweep(tx: WriteTransaction, reachable: &BTreeSet<Pointer>) -> anyhow::Result<()> {
-    println!("SWEEPING WITH REACHABLE: {:?}", reachable);
     {
         let mut objects_table = match tx.open_table(OBJECTS_TABLE) {
             Ok(table) => table,

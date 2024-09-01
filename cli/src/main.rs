@@ -19,9 +19,14 @@ use std::{
 };
 use tokio::net::TcpListener;
 use tower::Service;
+use tracing::event;
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt::init();
+
+    event!(tracing::Level::DEBUG, "Starting cloudstate");
+
     let filename_arg = clap::Arg::new("filename")
         .help("The filename to serve")
         .value_hint(ValueHint::FilePath)
@@ -111,6 +116,7 @@ async fn main() {
 
             let cloned = Arc::clone(&app_state);
             let other_thread = tokio::spawn(async move {
+                event!(tracing::Level::INFO, "Starting server");
                 let _ = run_server(cloned, listener).await;
             });
 
@@ -129,7 +135,7 @@ async fn main() {
                             notify::EventKind::Other => false,
                         };
                         if should_reload {
-                            println!("Reloading file");
+                            event!(tracing::Level::INFO, "Reloading file");
 
                             Runtime::new().unwrap().block_on(async {
                                 if let Ok(new_classes) = fs::read_to_string(&pre_cloned_filename) {
@@ -165,7 +171,7 @@ async fn main() {
             }
         }
         _ => {
-            println!("No subcommand found");
+            event!(tracing::Level::INFO, "No subcommand found");
         }
     }
 }

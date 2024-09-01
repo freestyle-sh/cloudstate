@@ -22,6 +22,7 @@ use futures::TryStreamExt;
 use serde::Deserialize;
 use std::{borrow::BorrowMut, cell::RefCell, sync::Mutex};
 use std::{rc::Rc, sync::Arc};
+use tracing::event;
 
 #[cfg(test)]
 mod tests;
@@ -103,25 +104,12 @@ async fn fetch_request(
 ) -> axum::response::Response {
     let id = serde_json::to_string(&id).unwrap();
     let (parts, body) = request.into_parts();
-    println!("parts: {:?}", parts);
-    println!("parts URI: {:?}", parts.uri);
+
     let method = serde_json::to_string(&parts.method.to_string()).unwrap();
     let headers = parts.headers;
-    // find a way to not need the http://
+    // TODO: find a way to not need the http:// prefix
     let uri = format!("http://{}{}", host, parts.uri.path());
     let uri = serde_json::to_string(&uri).unwrap();
-    // let uri = format!("{}{}", host, request.uri().path());
-
-    // println!()
-    // println!("FETCH REQUEST");
-    // let id = serde_json::to_string(&id).unwrap();
-    // println!("id: {:?}", id);
-    // // let params = serde_json::to_string(&params.params).unwrap();
-    // // println!("params: {:?}", params);
-    // let uri = format!("{}{}", host, request.uri().path());
-    // let uri = serde_json::to_string(&uri).unwrap();
-    // println!("uri is: {:?}", uri);
-    // let method = request.method().to_string();
 
     let headers = headers
         .iter()
@@ -138,7 +126,6 @@ async fn fetch_request(
     let headers = format!("{{{}}}", headers);
     // let headers = serde_json::to_string(&headers).unwrap();
 
-    // // construct UInt8Array from body
     let mut bytes = Vec::new();
     let mut stream = body.into_data_stream();
     while let Ok(Some(chunk)) = stream.try_next().await {
@@ -206,16 +193,15 @@ async fn fetch_request(
     ",
     );
 
-    println!("executing script: {:#?}", script);
+    event!(tracing::Level::DEBUG, "executing script: {:#?}", script);
 
     let result = execute_script(&script.as_str(), &state.classes, state.cloudstate).await;
 
-    println!("completed script");
-    println!("script result: {:?}", result);
+    event!(tracing::Level::DEBUG, "script result: {:#?}", result);
 
     let json = serde_json::from_str::<ScriptResponseResult>(&result).unwrap();
 
-    println!("json: {:?}", json);
+    event!(tracing::Level::DEBUG, "json: {:#?}", json);
 
     let mut builder = Response::builder();
     for (key, value) in json.result.headers {
@@ -226,15 +212,6 @@ async fn fetch_request(
     let builder = builder.body(body).unwrap();
 
     builder
-    // (
-    //     json.headers
-    //         .iter()
-    //         .map(|(key, value)| (key.as_str(), value.as_str()))
-    //         .collect(),
-    //     json.bytes,
-    // );
-
-    // Json(serde_json::from_str(&result).unwrap())
 }
 
 #[derive(Clone)]
@@ -256,10 +233,20 @@ async fn method_request(
     // turn into valid, sanitized, json string
     let id = serde_json::to_string(&id).unwrap();
     let method = serde_json::to_string(&method).unwrap();
-    println!("id: {:?}", id);
-    println!("method: {:?}", method);
+
     let params = serde_json::to_string(&params.params).unwrap();
-    println!("params: {:?}", params);
+
+    event!(
+        tracing::Level::DEBUG,
+        "
+        \"id\": {:?},
+        \"method\": {:?},
+        \"params\": {:?}
+    ",
+        id,
+        method,
+        params
+    );
 
     // todo: fix injection vulnerability
     let script = format!(
@@ -297,12 +284,11 @@ async fn method_request(
     ",
     );
 
-    println!("executing script: {:#?}", script);
+    event!(tracing::Level::DEBUG, "executing script: {:#?}", script);
 
     let result = execute_script(&script.as_str(), &state.classes, state.cloudstate).await;
 
-    println!("completed script");
-    println!("result: {:?}", result);
+    event!(tracing::Level::DEBUG, "script result: {:#?}", result);
 
     Json(serde_json::from_str(&result).unwrap())
 }
@@ -323,7 +309,7 @@ impl FetchPermissions for CloudstateFetchPermissions {
         _url: &Url,
         _api_name: &str,
     ) -> Result<(), deno_core::error::AnyError> {
-        println!("checking net url fetch permission");
+        event!(tracing::Level::DEBUG, "checking net url fetch permission");
         Ok(())
     }
     fn check_read(
@@ -331,7 +317,7 @@ impl FetchPermissions for CloudstateFetchPermissions {
         _p: &std::path::Path,
         _api_name: &str,
     ) -> Result<(), deno_core::error::AnyError> {
-        println!("checking read fetch permission");
+        event!(tracing::Level::DEBUG, "checking read fetch permission");
         Ok(())
     }
 }
@@ -344,7 +330,7 @@ impl NetPermissions for CloudstateNetPermissions {
         _host: &(T, Option<u16>),
         _api_name: &str,
     ) -> Result<(), deno_core::error::AnyError> {
-        println!("checking net");
+        event!(tracing::Level::DEBUG, "checking net permission");
         Ok(())
     }
     fn check_read(
@@ -352,7 +338,7 @@ impl NetPermissions for CloudstateNetPermissions {
         _p: &std::path::Path,
         _api_name: &str,
     ) -> Result<(), deno_core::error::AnyError> {
-        println!("checking read");
+        event!(tracing::Level::DEBUG, "checking read permission");
         Ok(())
     }
     fn check_write(
@@ -360,7 +346,7 @@ impl NetPermissions for CloudstateNetPermissions {
         _p: &std::path::Path,
         _api_name: &str,
     ) -> Result<(), deno_core::error::AnyError> {
-        println!("checking write");
+        event!(tracing::Level::DEBUG, "checking write permission");
         Ok(())
     }
 }
@@ -405,7 +391,6 @@ pub async fn execute_script_internal(
         ],
         ..Default::default()
     });
-    println!("initialized js runtime");
 
     RefCell::borrow_mut(&js_runtime.op_state()).put(cs);
 
@@ -426,7 +411,7 @@ pub async fn execute_script_internal(
         let evaluation = js_runtime.mod_evaluate(mod_id);
         // let result = js_runtime.run_event_loop(Default::default()).await;
 
-        println!("starting polling");
+        event!(tracing::Level::DEBUG, "starting polling");
         let result = poll_fn(|cx| {
             let _ = js_runtime.execute_script("<handle>", "globalThis.commit();");
             js_runtime.poll_event_loop(cx, Default::default())
@@ -438,7 +423,7 @@ pub async fn execute_script_internal(
     };
 
     let (mut js_runtime, result) = future.await;
-    println!("completed polling");
+    event!(tracing::Level::DEBUG, "result: {:#?}", result);
 
     let mut js_runtime = js_runtime.handle_scope();
     let scope = js_runtime.borrow_mut();

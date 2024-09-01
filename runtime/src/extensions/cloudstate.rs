@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use std::i32;
 use std::sync::Arc;
 use std::sync::Mutex;
+use tracing::event;
 use url::Url;
 use v8::{Function, GetPropertyNamesArgs, HandleScope};
 
@@ -552,13 +553,13 @@ fn op_cloudstate_create_transaction(
     state: &mut OpState,
     #[string] id: String,
 ) -> Result<(), Error> {
-    println!("Creating transaction");
+    event!(tracing::Level::DEBUG, "Creating transaction");
     let cs = state
         .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
         .unwrap();
     let mut cs = cs.lock().unwrap();
 
-    println!("Opening write transaction");
+    event!(tracing::Level::DEBUG, "Opening write transaction");
     let write_txn = cs.db.begin_write().unwrap();
     // cs.transactions.ins
     cs.transactions.insert(id, write_txn);
@@ -601,8 +602,9 @@ fn op_cloudstate_map_values(
 
     for entry in table.iter().unwrap() {
         let (key, value) = entry.unwrap();
-        println!("Key: {:?}", key.value());
-        println!("Value: {:?}", value.value());
+        event!(tracing::Level::DEBUG, "Key: {:?}", key.value());
+        event!(tracing::Level::DEBUG, "Value: {:?}", value.value());
+
         if key.value().id == map_id {
             values.push(value.value().data);
         }
@@ -738,7 +740,7 @@ fn op_cloudstate_map_entries(
     #[string] transaction_id: String,
     #[string] map_id: String,
 ) -> Result<CloudstateEntriesVec, Error> {
-    println!("Getting map entries");
+    event!(tracing::Level::DEBUG, "Getting map entries");
     let cs = state
         .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
         .unwrap();

@@ -6,6 +6,7 @@ use futures::future::poll_fn;
 use std::path::Path;
 use std::rc::Rc;
 use std::sync::Arc;
+use tracing::event;
 
 use crate::extensions::bootstrap::bootstrap;
 use crate::extensions::cloudstate::{cloudstate, ReDBCloudstate};
@@ -22,11 +23,11 @@ struct CloudstateFetchPermissions {}
 
 impl FetchPermissions for CloudstateFetchPermissions {
     fn check_net_url(&mut self, _url: &url::Url, _api_name: &str) -> Result<(), error::AnyError> {
-        println!("checking net url fetch permission");
+        event!(tracing::Level::DEBUG, "checking net url fetch permission");
         Ok(())
     }
     fn check_read(&mut self, _p: &Path, _api_name: &str) -> Result<(), error::AnyError> {
-        println!("checking read fetch permission");
+        event!(tracing::Level::DEBUG, "checking read fetch permission");
         Ok(())
     }
 }
@@ -39,15 +40,15 @@ impl NetPermissions for CloudstateNetPermissions {
         _host: &(T, Option<u16>),
         _api_name: &str,
     ) -> Result<(), error::AnyError> {
-        println!("checking net");
+        event!(tracing::Level::DEBUG, "checking net permission");
         Ok(())
     }
     fn check_read(&mut self, _p: &Path, _api_name: &str) -> Result<(), error::AnyError> {
-        println!("checking read");
+        event!(tracing::Level::DEBUG, "checking read permission");
         Ok(())
     }
     fn check_write(&mut self, _p: &Path, _api_name: &str) -> Result<(), error::AnyError> {
-        println!("checking write");
+        event!(tracing::Level::DEBUG, "checking write permission");
         Ok(())
     }
 }
@@ -99,15 +100,7 @@ pub fn run_script(
         // let result = js_runtime.run_event_loop(Default::default()).await;
 
         let result = poll_fn(|cx| {
-            // let context = js_runtime.handle_scope();
-            // let mut scope = js_runtime.handle_scope().borrow_mut();
-
-            // let context = scope.get_current_context();
-            // let global = context.global(&mut scope);
-            // global.get(scope, v8_string_key!(scope, "CloudstateTransaction"));
-            // println!("polling");
-
-            println!("committing");
+            event!(tracing::Level::DEBUG, "committing");
             let _ = js_runtime.execute_script("<handle>", "globalThis.commit();");
 
             js_runtime.poll_event_loop(
