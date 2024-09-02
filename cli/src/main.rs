@@ -1,5 +1,5 @@
 use axum::{body::Body, extract::Request, routing::get};
-use tokio::runtime::Runtime; // 0.3.5
+use tokio::{runtime::Runtime, sync::RwLock}; // 0.3.5
 
 use clap::ValueHint;
 use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
@@ -112,7 +112,7 @@ async fn main() {
             }));
             let server = CloudstateServer::new(cloudstate.clone(), &classes).await;
 
-            let app_state = Arc::new(Mutex::new(server));
+            let app_state = Arc::new(RwLock::new(server));
 
             let cloned = Arc::clone(&app_state);
             let other_thread = tokio::spawn(async move {
@@ -139,7 +139,7 @@ async fn main() {
 
                             Runtime::new().unwrap().block_on(async {
                                 if let Ok(new_classes) = fs::read_to_string(&pre_cloned_filename) {
-                                    let mut server = app_state.lock().unwrap();
+                                    let mut server = app_state.write().await;
 
                                     *server =
                                         CloudstateServer::new(cloudstate.clone(), &new_classes)
@@ -176,12 +176,14 @@ async fn main() {
     }
 }
 
-async fn run_server(server: Arc<Mutex<CloudstateServer>>, listener: TcpListener) {
+async fn run_server(server: Arc<RwLock<CloudstateServer>>, listener: TcpListener) {
     let handle = |req: Request| async move {
-        let response = std::thread::spawn(move || handler(server.clone(), req))
-            .join()
-            .unwrap();
-        response
+        tokio::task::spawn_blocking(move || handler(server.clone(), req))
+            .await
+            .unwrap()
+        // let response = std::thread::spawn(move || handler(server.clone(), req))
+        //     .join()
+        //     .unwrap();
     };
 
     let svr = axum::Router::new().fallback(
@@ -199,15 +201,19 @@ async fn run_server(server: Arc<Mutex<CloudstateServer>>, listener: TcpListener)
 
 #[tokio::main(flavor = "current_thread")]
 async fn handler(
-    server: Arc<Mutex<CloudstateServer>>,
+    server: Arc<RwLock<CloudstateServer>>,
     req: Request<Body>,
 ) -> axum::http::Response<Body> {
-    event!(tracing::Level::INFO, "Handler Function");
+    event!(tracing::Level::INFO, "Pulling service");
 
-    let server = server.lock().unwrap();
+    let server = server.read().await;
     let router = server.router.clone();
 
+    drop(server);
+
     let mut service: axum::routing::RouterIntoService<Body> = router.into_service();
+
+    event!(tracing::Level::DEBUG, "Preparing service");
 
     poll_fn(|cx: &mut std::task::Context<'_>| {
         <axum::routing::RouterIntoService<Body>>::poll_ready(&mut service, cx)
@@ -215,7 +221,11 @@ async fn handler(
     .await
     .unwrap();
 
+    event!(tracing::Level::DEBUG, "Calling service");
+
     let response = service.call(req).await.unwrap();
+
+    event!(tracing::Level::DEBUG, "Returning response");
 
     return response;
 }

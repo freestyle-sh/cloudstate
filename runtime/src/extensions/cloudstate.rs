@@ -561,6 +561,8 @@ fn op_cloudstate_create_transaction(
 
     event!(tracing::Level::DEBUG, "Opening write transaction");
     let write_txn = cs.db.begin_write().unwrap();
+
+    event!(tracing::Level::DEBUG, "Inserting transaction");
     // cs.transactions.ins
     cs.transactions.insert(id, write_txn);
     Ok(())
@@ -571,12 +573,15 @@ fn op_cloudstate_commit_transaction(
     state: &mut OpState,
     #[string] id: String,
 ) -> Result<(), Error> {
+    event!(tracing::Level::DEBUG, "Committing transaction");
     let cs = state
         .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
         .unwrap();
     let mut cs = cs.lock().unwrap();
     let write_txn = cs.transactions.remove(&id).unwrap();
     write_txn.commit().unwrap();
+    event!(tracing::Level::DEBUG, "Transaction committed");
+
     Ok(())
 }
 
@@ -640,6 +645,8 @@ fn op_cloudstate_array_sort<'a>(
         match compare_fn {
             Some(compare_fn) => {
                 Box::new(|a: &CloudstatePrimitiveData, b: &CloudstatePrimitiveData| {
+                    // hydrate them
+
                     let a = a.clone().to_v8(scope).unwrap();
                     let b = b.clone().to_v8(scope).unwrap();
 
@@ -765,7 +772,6 @@ fn op_cloudstate_map_entries(
 
     Ok(CloudstateEntriesVec::from(entries))
 }
-
 pub struct ReDBCloudstate {
     pub db: Database,
     pub transactions: HashMap<String, WriteTransaction>,
@@ -886,6 +892,10 @@ pub enum CloudstatePrimitiveData {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct ObjectReference {
     pub id: String,
+}
+
+impl ObjectReference {
+    pub fn hydrate(&self) {}
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]

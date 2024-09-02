@@ -236,18 +236,6 @@ async fn method_request(
 
     let params = serde_json::to_string(&params.params).unwrap();
 
-    event!(
-        tracing::Level::DEBUG,
-        "
-        \"id\": {:?},
-        \"method\": {:?},
-        \"params\": {:?}
-    ",
-        id,
-        method,
-        params
-    );
-
     // todo: fix injection vulnerability
     let script = format!(
         "
@@ -284,8 +272,8 @@ async fn method_request(
     ",
     );
 
+    event!(tracing::Level::DEBUG, "executing script");
     let result = execute_script(&script.as_str(), &state.classes, state.cloudstate).await;
-
     event!(tracing::Level::DEBUG, "script result: {:#?}", result);
 
     Json(serde_json::from_str(&result).unwrap())
