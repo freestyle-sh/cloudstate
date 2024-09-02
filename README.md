@@ -5,7 +5,7 @@
 </p>
 
 > [!TIP]
-> Wanna try it out, check out our [getting started](https://docs.freestyle.dev/getting-started/intro) guide.
+> Wanna try it out, check out Freestyle's [getting started guide](https://docs.freestyle.dev/getting-started/intro).
 
 <b>Cloudstate</b> is a JavaScript database runtime. It is a foundational component of <a href="https://freestyle.sh">Freestyle</a>'s full stack JavaScript hosting.
 
