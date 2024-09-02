@@ -193,11 +193,11 @@ async fn fetch_request(
     ",
     );
 
-    event!(tracing::Level::DEBUG, "executing script: {:#?}", script);
+    event!(tracing::Level::DEBUG, "executing script");
 
     let result = execute_script(&script.as_str(), &state.classes, state.cloudstate).await;
 
-    event!(tracing::Level::DEBUG, "script result: {:#?}", result);
+    event!(tracing::Level::DEBUG, "script finished");
 
     let json = serde_json::from_str::<ScriptResponseResult>(&result).unwrap();
 
@@ -284,8 +284,6 @@ async fn method_request(
     ",
     );
 
-    event!(tracing::Level::DEBUG, "executing script: {:#?}", script);
-
     let result = execute_script(&script.as_str(), &state.classes, state.cloudstate).await;
 
     event!(tracing::Level::DEBUG, "script result: {:#?}", result);
@@ -358,6 +356,7 @@ pub async fn execute_script(
 ) -> String {
     let script_string = script.to_string();
     let classes_script_string = classes_script.to_string();
+
     tokio::task::spawn_blocking(move || {
         execute_script_internal(&script_string, &classes_script_string, cs)
     })

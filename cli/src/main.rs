@@ -19,7 +19,7 @@ use std::{
 };
 use tokio::net::TcpListener;
 use tower::Service;
-use tracing::event;
+use tracing::{debug, event};
 
 #[tokio::main]
 async fn main() {
@@ -183,6 +183,7 @@ async fn run_server(server: Arc<Mutex<CloudstateServer>>, listener: TcpListener)
             .unwrap();
         response
     };
+
     let svr = axum::Router::new().fallback(
         get(handle.clone())
             .post(handle.clone())
@@ -196,14 +197,15 @@ async fn run_server(server: Arc<Mutex<CloudstateServer>>, listener: TcpListener)
     out.await.unwrap();
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn handler(
     server: Arc<Mutex<CloudstateServer>>,
     req: Request<Body>,
 ) -> axum::http::Response<Body> {
+    event!(tracing::Level::INFO, "Handler Function");
+
     let server = server.lock().unwrap();
     let router = server.router.clone();
-    drop(server);
 
     let mut service: axum::routing::RouterIntoService<Body> = router.into_service();
 
