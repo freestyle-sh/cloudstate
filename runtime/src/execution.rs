@@ -102,7 +102,7 @@ pub fn run_script(
         let result = poll_fn(|cx| {
             event!(tracing::Level::DEBUG, "committing");
             let _ = js_runtime.execute_script("<handle>", "globalThis.commit();");
-
+            event!(tracing::Level::DEBUG, "polling event loop");
             js_runtime.poll_event_loop(
                 cx,
                 PollEventLoopOptions {
