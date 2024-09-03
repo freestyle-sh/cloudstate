@@ -5,7 +5,7 @@ edition = "2021"
 
 [lib]
 name = "cloudstate_runtime"
-path = "src/mod.rs"
+path = "src/lib.rs"
 
 
 [dependencies]

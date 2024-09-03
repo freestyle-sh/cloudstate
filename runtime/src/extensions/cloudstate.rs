@@ -12,7 +12,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use tracing::event;
 use url::Url;
-use v8::{Function, GetPropertyNamesArgs, HandleScope};
+use v8::GetPropertyNamesArgs;
 
 #[op2]
 fn op_cloudstate_object_set(
@@ -207,7 +207,7 @@ fn op_cloudstate_array_shift(
 fn op_cloudstate_cloudstate_get(
     state: &mut OpState,
     #[string] transaction_id: String,
-    #[string] namespace: String,
+    #[string] _namespace: String,
     #[string] id: String,
 ) -> CloudstatePrimitiveData {
     let cs = state
