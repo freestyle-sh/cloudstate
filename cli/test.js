@@ -1,5 +1,5 @@
 export class TestCS {
-  static id = "test";
+  static id = "counter";
   count = 0;
 
   increment() {

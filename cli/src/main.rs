@@ -19,7 +19,7 @@ use std::{
 };
 use tokio::net::TcpListener;
 use tower::Service;
-use tracing::{debug, event};
+use tracing::event;
 
 #[tokio::main]
 async fn main() {

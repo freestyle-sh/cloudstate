@@ -1,8 +1,7 @@
 use axum::{
-    body::{self, Body, HttpBody},
-    extract::{Host, OriginalUri, Path, Request, State},
+    body::Body,
+    extract::{Host, Path, Request, State},
     http::Response,
-    response::IntoResponse,
     routing::{get, post},
     Json, Router,
 };
@@ -22,7 +21,7 @@ use futures::TryStreamExt;
 use serde::Deserialize;
 use std::{borrow::BorrowMut, cell::RefCell, sync::Mutex};
 use std::{rc::Rc, sync::Arc};
-use tracing::event;
+use tracing::{debug, event};
 
 #[cfg(test)]
 mod tests;
@@ -66,6 +65,7 @@ impl CloudstateServer {
         // tracing_subscriber::fmt::init();
 
         execute_script(include_str!("./initialize.js"), classes, cloudstate.clone()).await;
+
         let app = Router::new()
             .route(
                 "/cloudstate/instances/:id",
@@ -230,6 +230,7 @@ async fn method_request(
     State(state): State<AppState>,
     Json(params): Json<MethodParams>,
 ) -> axum::response::Json<serde_json::Value> {
+    debug!("method_request");
     // turn into valid, sanitized, json string
     let id = serde_json::to_string(&id).unwrap();
     let method = serde_json::to_string(&method).unwrap();
@@ -346,6 +347,7 @@ pub async fn execute_script(
     let classes_script_string = classes_script.to_string();
 
     tokio::task::spawn_blocking(move || {
+        debug!("execute_script_internal blocking");
         execute_script_internal(&script_string, &classes_script_string, cs)
     })
     .await
@@ -378,6 +380,7 @@ pub async fn execute_script_internal(
         ],
         ..Default::default()
     });
+    debug!("initializing runtime");
 
     RefCell::borrow_mut(&js_runtime.op_state()).put(cs);
 
