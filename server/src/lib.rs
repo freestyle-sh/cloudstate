@@ -3,7 +3,7 @@ use axum::{
     extract::{Host, Path, Request, State},
     http::Response,
     routing::{get, post},
-    Json, Router,
+    Json, RequestExt, Router,
 };
 use cloudstate_runtime::extensions::{bootstrap::bootstrap, cloudstate::cloudstate};
 use cloudstate_runtime::{extensions::cloudstate::ReDBCloudstate, v8_string_key};
@@ -147,7 +147,7 @@ async fn fetch_request(
     //headers: new Headers({headers}),
     // method: '{method}',
     //{url},
-    // todo: fix injection vulnerability
+    // TODO: fix injection vulnerability
     let script = format!(
         "
     import * as classes from './lib.js';
@@ -228,16 +228,38 @@ struct MethodParams {
 async fn method_request(
     Path((id, method)): Path<(String, String)>,
     State(state): State<AppState>,
-    Json(params): Json<MethodParams>,
+    request: Request<Body>,
 ) -> axum::response::Json<serde_json::Value> {
     debug!("method_request");
     // turn into valid, sanitized, json string
     let id = serde_json::to_string(&id).unwrap();
     let method = serde_json::to_string(&method).unwrap();
 
+    // get host from request
+    let host = request.headers().get("Host").unwrap().to_str().unwrap();
+
+    // TODO: find a way to not need the http:// prefix
+    let uri = format!("https://{}{}", host, request.uri().path());
+    let uri = serde_json::to_string(&uri).unwrap();
+
+    let headers = request.headers();
+    let headers = headers
+        .iter()
+        .map(|(key, value)| {
+            format!(
+                "{}: {}",
+                serde_json::to_string(&key.to_string()).unwrap(),
+                serde_json::to_string(&value.to_str().unwrap_or_default().to_string()).unwrap()
+            )
+        })
+        .collect::<Vec<String>>()
+        .join(", ");
+    let headers = format!("{{{}}}", headers);
+
+    let Json::<MethodParams>(params) = request.extract().await.unwrap();
     let params = serde_json::to_string(&params.params).unwrap();
 
-    // todo: fix injection vulnerability
+    // TODO: fix injection vulnerability
     let script = format!(
         "
     import * as classes from './lib.js';
@@ -247,6 +269,9 @@ async fn method_request(
     globalThis.requestContext = {{
         getStore: () => {{
             return {{
+                request: new Request({uri}, {{
+                    headers: new Headers({headers}),
+                }}),
                 env: {{
                     invalidateMethod: (rawMethod) => {{
                         const method = rawMethod.toJSON();
