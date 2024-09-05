@@ -304,7 +304,7 @@ class CloudstateTransaction {
     });
 
     console.log("GETTING MAP entries()", Array.from(map.entries()));
-    console.log("GETTING MAP size", Array.from(map.size));
+    console.log("GETTING MAP size", map.size);
 
     return map;
   }
@@ -324,7 +324,9 @@ class CloudstateTransaction {
       Object.setPrototypeOf(
         object,
         this.customClasses.find(
-          (klass) => klass.name === object.__cloudstate__constructorName,
+          (klass) =>
+            klass.name ===
+              object.__cloudstate__constructorName.replace("_", ""), // TODO: should fix underlying issue: CS classes are prefixed with underscore at ESM build
         ).prototype,
       );
       delete object.__cloudstate__constructorName;
