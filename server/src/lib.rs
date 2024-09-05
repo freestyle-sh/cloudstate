@@ -270,12 +270,12 @@ async fn method_request(
     // TODO: fix injection vulnerability
     let script = format!(
         "
-    import * as classes from './lib.js';
-    globalThis.cloudstate.customClasses = Object.keys(classes).map((key) => classes[key]);
-
     globalThis.process = {{
         env: {env_string}
     }}
+    import * as classes from './lib.js';
+    globalThis.cloudstate.customClasses = Object.keys(classes).map((key) => classes[key]);
+
 
     // temporary hack to be compatible with legacy freestyle apis
     globalThis.requestContext = {{
