@@ -5,7 +5,10 @@ use axum::{
 use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
 use http_body_util::BodyExt;
 use serde_json::json;
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 use tower::{util::ServiceExt, Service};
 
 #[tokio::test]
@@ -24,6 +27,7 @@ async fn test_concurrent_fetch() {
                 await new Promise(resolve => setTimeout(resolve, 10000));
             }
         }",
+        HashMap::new(),
     )
     .await;
 
@@ -67,8 +71,8 @@ async fn test_concurrent_fetch() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = response.into_body().collect().await.unwrap().to_bytes();
-    let body = response_2.into_body().collect().await.unwrap().to_bytes();
+    let _body = response.into_body().collect().await.unwrap().to_bytes();
+    let _body = response_2.into_body().collect().await.unwrap().to_bytes();
     // let body_str = String::from_utf8(body.to_vec()).unwrap();
     // let body_json: serde_json::Value = serde_json::from_str(&body_str).unwrap();
 

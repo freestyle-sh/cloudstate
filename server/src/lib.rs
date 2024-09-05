@@ -19,7 +19,7 @@ use deno_web::BlobStore;
 use deno_web::TimersPermission;
 use futures::TryStreamExt;
 use serde::Deserialize;
-use std::{borrow::BorrowMut, cell::RefCell, sync::Mutex};
+use std::{borrow::BorrowMut, cell::RefCell, collections::HashMap, sync::Mutex};
 use std::{rc::Rc, sync::Arc};
 use tracing::{debug, event};
 
@@ -61,7 +61,11 @@ impl ModuleLoader for CloudstateModuleLoader {
 }
 
 impl CloudstateServer {
-    pub async fn new(cloudstate: Arc<Mutex<ReDBCloudstate>>, classes: &str) -> Self {
+    pub async fn new(
+        cloudstate: Arc<Mutex<ReDBCloudstate>>,
+        classes: &str,
+        env: HashMap<String, String>,
+    ) -> Self {
         // tracing_subscriber::fmt::init();
 
         execute_script(include_str!("./initialize.js"), classes, cloudstate.clone()).await;
@@ -79,6 +83,7 @@ impl CloudstateServer {
             .with_state(AppState {
                 cloudstate: cloudstate.clone(),
                 classes: classes.to_string(),
+                env: env,
             });
 
         CloudstateServer { router: app }
@@ -218,6 +223,7 @@ async fn fetch_request(
 struct AppState {
     cloudstate: Arc<Mutex<ReDBCloudstate>>,
     classes: String,
+    env: HashMap<String, String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -259,11 +265,17 @@ async fn method_request(
     let Json::<MethodParams>(params) = request.extract().await.unwrap();
     let params = serde_json::to_string(&params.params).unwrap();
 
+    let env_string = serde_json::to_string(&state.env).unwrap();
+
     // TODO: fix injection vulnerability
     let script = format!(
         "
     import * as classes from './lib.js';
     globalThis.cloudstate.customClasses = Object.keys(classes).map((key) => classes[key]);
+
+    globalThis.process = {{
+        env: {env_string}
+    }}
 
     // temporary hack to be compatible with legacy freestyle apis
     globalThis.requestContext = {{

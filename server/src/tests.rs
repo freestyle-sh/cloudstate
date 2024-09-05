@@ -5,7 +5,10 @@ use axum::{
 use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
 use http_body_util::BodyExt;
 use serde_json::json;
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 use tower::util::ServiceExt;
 
 mod concurrent_fetch;
@@ -26,6 +29,7 @@ async fn test_fetch() {
                 return ++this.count;
             }
         }",
+        HashMap::new(),
     )
     .await;
 
