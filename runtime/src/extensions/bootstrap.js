@@ -136,3 +136,38 @@ Object.defineProperty(globalThis, "structuredClone", {
   configurable: true,
   writable: true,
 });
+
+Object.defineProperty(globalThis, "AbortController", {
+  value: abortSignal.AbortController,
+  enumerable: false,
+  configurable: true,
+  writable: true,
+});
+
+Object.defineProperty(globalThis, "clearInterval", {
+  value: timers.clearInterval,
+  enumerable: true,
+  configurable: true,
+  writable: true,
+});
+
+Object.defineProperty(globalThis, "clearTimeout", {
+  value: timers.clearTimeout,
+  enumerable: true,
+  configurable: true,
+  writable: true,
+});
+
+Object.defineProperty(globalThis, "setInterval", {
+  value: timers.setInterval,
+  enumerable: true,
+  configurable: true,
+  writable: true,
+});
+
+Object.defineProperty(globalThis, "setTimeout", {
+  value: timers.setTimeout,
+  enumerable: true,
+  configurable: true,
+  writable: true,
+});
