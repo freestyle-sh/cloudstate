@@ -242,7 +242,10 @@ async fn method_request(
     let method = serde_json::to_string(&method).unwrap();
 
     // get host from request
-    let host = request.headers().get("Host").unwrap().to_str().unwrap();
+    let host = match request.headers().get("Host") {
+        Some(h) => h.to_str().unwrap(),
+        None => "www.example.com",
+    };
 
     // TODO: find a way to not need the http:// prefix
     let uri = format!("https://{}{}", host, request.uri().path());
