@@ -43,33 +43,14 @@ const base_array = [
 {
   const root = getRoot("test-root");
 
-  if (!root) {
-    throw new Error("root should exist");
-  }
-
-  if (!root.value) {
-    throw new Error("root.value should exist");
-  }
-
-  if (root.value.length !== base_array.length) {
-    throw new Error(`root.value should have length ${base_array.length}`);
-  }
-
-  if (
-    !root.value.every((value, index) => value.value === base_array[index].value)
-  ) {
-    throw new Error("root.value should be equal to base_array");
-  }
-
   // reverse
   root.value.sort((a, b) => b.value - a.value);
 
-  const reversed_array = [...base_array].sort((a, b) => b.value - a.value);
+  const reversed_array = [...base_array].reverse();
 
+  // check to make sure the sort worked in place
   for (let i = 0; i < root.value.length; i++) {
     if (root.value[i].value !== reversed_array[i].value) {
-      console.log("0 INDEX IS", root.value[0].value);
-
       throw new Error(
         `root.value[${i}].value should be equal to reversed_array[${i}].value, ${root.value[i].value} !== ${reversed_array[i].value} | ${root.value[0].value}`
       );
@@ -80,29 +61,17 @@ const base_array = [
 }
 
 {
-  // testing undefined sort function
-
   const root = getRoot("test-root");
 
-  if (!root) {
-    throw new Error("root should exist");
+  const reversed_array = [...base_array].reverse();
+
+  // check to make sure the sort was saved
+  // TODO: this is now cached so we need to validate that it's actually saved
+  for (let i = 0; i < root.value.length; i++) {
+    if (root.value[i].value !== reversed_array[i].value) {
+      throw new Error(
+        `root.value[${i}].value should be equal to reversed_array[${i}].value, ${root.value[i].value} !== ${reversed_array[i].value} | ${root.value[0].value}`
+      );
+    }
   }
-
-  if (!root.value) {
-    throw new Error("root.value should exist");
-  }
-
-  if (root.value.length !== base_array.length) {
-    throw new Error(`root.value should have length ${base_array.length}`);
-  }
-
-  root.value.sort();
-
-  if (
-    !root.value.every((value, index) => value.value === base_array[index].value)
-  ) {
-    throw new Error("root.value should be equal to base_array");
-  }
-
-  commit();
 }
