@@ -63,6 +63,7 @@ globalThis.Cloudstate = class Cloudstate {
   }
 
   createTransaction() {
+    console.log("Creating transaction");
     const id = uuidv4();
     Deno.core.ops.op_cloudstate_create_transaction(id, this.namespace);
     return new CloudstateTransaction(this.namespace, id, this.customClasses);
@@ -197,6 +198,7 @@ class CloudstateTransaction {
   }
 
   commit() {
+    console.log("Committing transaction");
     for (const value of objects.values()) {
       this.#setObject(value);
     }
@@ -927,3 +929,4 @@ globalThis.getRoot = getRoot;
 globalThis.setRoot = setRoot;
 globalThis.commit = commit;
 globalThis.getCloudstate = getCloudstate;
+globalThis.ensureTransaction = ensureTransaction;

@@ -443,10 +443,16 @@ pub async fn execute_script_internal(
 
         event!(tracing::Level::DEBUG, "starting polling");
         let result = poll_fn(|cx| {
-            let _ = js_runtime.execute_script("<handle>", "globalThis.commit();");
-            js_runtime.poll_event_loop(cx, Default::default())
+            let poll_result = js_runtime.poll_event_loop(cx, Default::default());
+            let _ = js_runtime.execute_script(
+                "<handle>",
+                "globalThis.commit(); globalThis.ensureTransaction();",
+            );
+            poll_result
         })
         .await;
+
+        let _ = js_runtime.execute_script("<handle>", "globalThis.commit();");
 
         let _ = evaluation.await;
         (js_runtime, result)
