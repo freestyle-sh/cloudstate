@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use redb::{backends::InMemoryBackend, Database, ReadableTable};
 
@@ -15,6 +15,8 @@ fn test_gc_objects() {
         db,
         transactions: HashMap::new(),
     };
+
+    let cloudstate = Arc::new(std::sync::Mutex::new(cloudstate));
 
     let (cloudstate, _) = run_script("tests/gc/base.js", cloudstate).unwrap();
 
@@ -72,6 +74,7 @@ fn test_gc_maps() {
         db: db,
         transactions: HashMap::new(),
     };
+    let cloudstate = Arc::new(std::sync::Mutex::new(cloudstate));
 
     let (cloudstate, _) = run_script("tests/gc/map.js", cloudstate).unwrap();
 
@@ -128,6 +131,8 @@ pub fn test_gc_array() {
         db,
         transactions: HashMap::new(),
     };
+
+    let cloudstate = Arc::new(std::sync::Mutex::new(cloudstate));
 
     let (cloudstate, _) = run_script("tests/gc/array.js", cloudstate).unwrap();
 

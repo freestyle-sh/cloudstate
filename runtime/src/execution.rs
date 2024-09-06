@@ -55,7 +55,7 @@ impl NetPermissions for CloudstateNetPermissions {
 
 pub fn run_script(
     path: &str,
-    cloudstate: ReDBCloudstate,
+    cloudstate: Arc<std::sync::Mutex<ReDBCloudstate>>,
 ) -> Result<
     (
         Arc<std::sync::Mutex<ReDBCloudstate>>,
@@ -85,10 +85,7 @@ pub fn run_script(
         ..Default::default()
     });
 
-    js_runtime
-        .op_state()
-        .borrow_mut()
-        .put(Arc::new(std::sync::Mutex::new(cloudstate)));
+    js_runtime.op_state().borrow_mut().put(cloudstate);
     js_runtime
         .op_state()
         .borrow_mut()
