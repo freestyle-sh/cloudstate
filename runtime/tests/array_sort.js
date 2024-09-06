@@ -8,6 +8,7 @@ const base_array = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   setRoot("test-root", object);
   commit();
 }
+
 {
   const root = getRoot("test-root");
 
@@ -55,9 +56,9 @@ const base_array = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     throw new Error(`root.value should have length ${base_array.length}`);
   }
 
-  root.value.sort();
+  const reversed_array = [...base_array].reverse();
 
-  if (!root.value.every((value, index) => value === base_array[index])) {
+  if (!root.value.every((value, index) => value === reversed_array[index])) {
     throw new Error("root.value should be equal to base_array");
   }
 }
