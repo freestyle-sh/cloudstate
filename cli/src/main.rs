@@ -2,7 +2,7 @@ use axum::{body::Body, extract::Request, routing::get};
 use tokio::{runtime::Runtime, sync::RwLock}; // 0.3.5
 
 use clap::ValueHint;
-use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
+use cloudstate_runtime::{extensions::cloudstate::ReDBCloudstate, print};
 use notify::Watcher;
 use redb::{
     backends::{self},
@@ -19,7 +19,7 @@ use std::{
 };
 use tokio::net::TcpListener;
 use tower::Service;
-use tracing::event;
+use tracing::{debug, event};
 
 #[tokio::main]
 async fn main() {
@@ -95,6 +95,7 @@ async fn main() {
             let filename = serve_matches.get_one::<String>("filename").unwrap().clone();
             let watch = serve_matches.get_one::<bool>("watch").unwrap();
             let memory_only = serve_matches.get_one::<bool>("memory-only").unwrap();
+            let env: HashMap<String, String> = std::env::vars().collect();
 
             let db = if memory_only.clone() {
                 Database::builder()
@@ -110,7 +111,7 @@ async fn main() {
                 db: db,
                 transactions: HashMap::new(),
             }));
-            let server = CloudstateServer::new(cloudstate.clone(), &classes).await;
+            let server = CloudstateServer::new(cloudstate.clone(), &classes, env.clone()).await;
 
             let app_state = Arc::new(RwLock::new(server));
 
@@ -141,9 +142,12 @@ async fn main() {
                                 if let Ok(new_classes) = fs::read_to_string(&pre_cloned_filename) {
                                     let mut server = app_state.write().await;
 
-                                    *server =
-                                        CloudstateServer::new(cloudstate.clone(), &new_classes)
-                                            .await;
+                                    *server = CloudstateServer::new(
+                                        cloudstate.clone(),
+                                        &new_classes,
+                                        env.clone(),
+                                    )
+                                    .await;
 
                                     drop(server);
                                 }

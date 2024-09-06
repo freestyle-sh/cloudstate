@@ -69,20 +69,19 @@ globalThis.Cloudstate = class Cloudstate {
   }
 };
 
-class CloudstateTransaction {
-  objectIds = new Map();
-  /**
-   * Maps object ids to their objects
-   ** Keys: object ids - strings
-   ** Values: objects themselves
-   */
-  objects = new Map();
-  arrayChanges = new Map();
-  arrays = new Map();
-  customClasses = [];
+/**
+ * Maps object ids to their objects
+ ** Keys: object ids - strings
+ ** Values: objects themselves
+ */
+const objects = new Map();
+const arrays = new Map();
+const objectIds = new Map();
+/** Maps the user defined id on classes to their objects */
+const cloudstateObjects = new Map();
 
-  /** Maps the user defined id on classes to their objects */
-  cloudstateObjects = new Map();
+class CloudstateTransaction {
+  customClasses = [];
 
   constructor(namespace, transactionId, customClasses) {
     if (typeof namespace !== "string") {
@@ -100,16 +99,17 @@ class CloudstateTransaction {
     if (value instanceof CloudstateObjectReference) {
       Object.defineProperty(object, key, {
         get: () => {
+          ensureTransaction();
           const object = this.getObject(value.objectId);
 
           if (value.constructorName) {
             const constructor = this.customClasses.find(
-              (klass) => klass.name === value.constructorName,
+              (klass) => klass.name === value.constructorName
             );
 
             if (!constructor) {
               throw new Error(
-                `Custom class ${value.constructorName} not found`,
+                `Custom class ${value.constructorName} not found`
               );
             }
 
@@ -119,6 +119,7 @@ class CloudstateTransaction {
           return object;
         },
         set: (v) => {
+          ensureTransaction();
           Object.defineProperty(object, key, {
             value: v,
           });
@@ -130,41 +131,46 @@ class CloudstateTransaction {
       const blob = new Blob();
 
       blob["text"] = async () => {
+        ensureTransaction();
         return Deno.core.ops.op_cloudstate_blob_text(
           this.transactionId,
-          value.blobId,
+          value.blobId
         );
       };
 
       blob["arrayBuffer"] = async () => {
+        ensureTransaction();
         return Deno.core.ops.op_cloudstate_blob_array_buffer(
           this.transactionId,
-          value.blobId,
+          value.blobId
         );
       };
 
       blob["bytes"] = async () => {
+        ensureTransaction();
         return Deno.core.ops.op_cloudstate_blob_bytes(
           this.transactionId,
-          value.blobId,
+          value.blobId
         );
       };
 
       Object.defineProperty(blob, "size", {
         get: () => {
+          ensureTransaction();
           return Deno.core.ops.op_cloudstate_blob_size(
             this.transactionId,
-            value.blobId,
+            value.blobId
           );
         },
       });
 
       Object.defineProperty(blob, "type", {
         get: () => {
+          ensureTransaction();
           // TODO: MAKE TYPE
           return Deno.core.ops.op_cloudstate_blob_get_type(
             this.transactionId,
-            value.blobId,
+            value.blobId
           );
         },
       });
@@ -191,22 +197,24 @@ class CloudstateTransaction {
   }
 
   commit() {
-    for (const value of this.objects.values()) {
+    for (const value of objects.values()) {
       this.#setObject(value);
     }
     Deno.core.ops.op_cloudstate_commit_transaction(this.transactionId);
   }
 
   getMap(objectId) {
+    ensureTransaction();
     const map = new Map();
     const mapSet = map.set;
     const mapGet = map.get;
 
-    this.objectIds.set(map, objectId);
+    objectIds.set(map, objectId);
     map["values"] = () => {
+      ensureTransaction();
       let map_values = Deno.core.ops.op_cloudstate_map_values(
         this.transactionId,
-        objectId,
+        objectId
       );
 
       return map_values
@@ -214,14 +222,17 @@ class CloudstateTransaction {
         .values();
     };
     map["keys"] = () => {
-      return Deno.core.ops.op_cloudstate_map_keys(this.transactionId, objectId)
+      ensureTransaction();
+      return Deno.core.ops
+        .op_cloudstate_map_keys(this.transactionId, objectId)
         .values();
     };
 
     map["entries"] = () => {
+      ensureTransaction();
       let entries = Deno.core.ops.op_cloudstate_map_entries(
         this.transactionId,
-        objectId,
+        objectId
       );
 
       return entries
@@ -229,23 +240,27 @@ class CloudstateTransaction {
         .values();
     };
     map["delete"] = (key) => {
+      ensureTransaction();
+      map.delete(key);
       return Deno.core.ops.op_cloudstate_map_delete(
         this.transactionId,
         this.namespace,
         objectId,
-        key,
+        key
       );
     };
 
     map["clear"] = () => {
+      ensureTransaction();
       return Deno.core.ops.op_cloudstate_map_clear(
         this.transactionId,
         this.namespace,
-        objectId,
+        objectId
       );
     };
 
     map["forEach"] = (fn) => {
+      ensureTransaction();
       const entries = map.entries();
       for (const entry of entries) {
         fn(entry[1], entry[0], map);
@@ -253,15 +268,17 @@ class CloudstateTransaction {
     };
 
     map.has = (key) => {
+      ensureTransaction();
       return Deno.core.ops.op_cloudstate_map_has(
         this.transactionId,
         this.namespace,
         objectId,
-        key,
+        key
       );
     };
 
     map.get = (key) => {
+      ensureTransaction();
       const result = mapGet.apply(map, [key]);
       if (result) return result;
 
@@ -269,7 +286,7 @@ class CloudstateTransaction {
         this.transactionId,
         this.namespace,
         objectId,
-        key,
+        key
       );
 
       // TODO: is this invalid reference callback needed?
@@ -278,6 +295,7 @@ class CloudstateTransaction {
       });
     };
     map.set = (key, set_value) => {
+      ensureTransaction();
       // todo: support nested arrays
       const val = isPrimitive(set_value)
         ? set_value
@@ -288,7 +306,7 @@ class CloudstateTransaction {
         this.namespace,
         objectId,
         key,
-        val,
+        val
       );
 
       mapSet.apply(map, [key, val]);
@@ -296,36 +314,39 @@ class CloudstateTransaction {
 
     Object.defineProperty(map, "size", {
       get: () => {
+        ensureTransaction();
         return Deno.core.ops.op_cloudstate_map_size(
           this.transactionId,
-          objectId,
+          objectId
         );
       },
     });
 
     console.log("GETTING MAP entries()", Array.from(map.entries()));
-    console.log("GETTING MAP size", Array.from(map.size));
+    console.log("GETTING MAP size", map.size);
 
     return map;
   }
   getObject(id) {
+    ensureTransaction();
     if (typeof id !== "string") throw new Error("id must be a string");
 
-    const existingObject = this.objects.get(id);
+    const existingObject = objects.get(id);
     if (existingObject) return existingObject;
 
     const object = Deno.core.ops.op_cloudstate_object_get(
       this.transactionId,
       this.namespace,
-      id,
+      id
     );
 
     if (object.__cloudstate__constructorName) {
       Object.setPrototypeOf(
         object,
         this.customClasses.find(
-          (klass) => klass.name === object.__cloudstate__constructorName,
-        ).prototype,
+          (klass) =>
+            klass.name === object.__cloudstate__constructorName.replace("_", "") // TODO: should fix underlying issue: CS classes are prefixed with underscore at ESM build
+        ).prototype
       );
       delete object.__cloudstate__constructorName;
     }
@@ -336,11 +357,11 @@ class CloudstateTransaction {
       this.hydrate(object, key, value);
     }
 
-    this.objectIds.set(object, id);
-    this.objects.set(id, object);
+    objectIds.set(object, id);
+    objects.set(id, object);
 
     if (object.id && this.customClasses.includes(object.constructor)) {
-      this.cloudstateObjects.set(object.id, object);
+      cloudstateObjects.set(object.id, object);
     }
 
     return object;
@@ -368,7 +389,7 @@ class CloudstateTransaction {
       value instanceof CloudstateBlobReference
     ) {
       console.error(
-        `${value.objectId} is already a reference: packToReferenceOrPrimitive is unnecessary`,
+        `${value.objectId} is already a reference: packToReferenceOrPrimitive is unnecessary`
       );
       return value;
     }
@@ -393,13 +414,13 @@ class CloudstateTransaction {
 
   getCloudstate(id) {
     if (typeof id !== "string") throw new Error("id must be a string");
-    if (this.cloudstateObjects.has(id)) {
-      return this.cloudstateObjects.get(id);
+    if (cloudstateObjects.has(id)) {
+      return cloudstateObjects.get(id);
     } else {
       const value = Deno.core.ops.op_cloudstate_cloudstate_get(
         this.transactionId,
         this.namespace,
-        id,
+        id
       );
 
       return this.getObject(value.objectId);
@@ -422,18 +443,18 @@ class CloudstateTransaction {
             Deno.core.ops.op_cloudstate_map_set(
               this.transactionId,
               this.namespace,
-              this.objectIds.get(object),
+              objectIds.get(object),
               key,
-              value,
+              value
             );
           } else {
             const id = this.#setObject(value);
             Deno.core.ops.op_cloudstate_map_set(
               this.transactionId,
               this.namespace,
-              this.objectIds.get(object),
+              objectIds.get(object),
               key,
-              new CloudstateObjectReference(id),
+              new CloudstateObjectReference(id)
             );
           }
         }
@@ -454,10 +475,10 @@ class CloudstateTransaction {
         if (isPrimitive(value)) {
           flatObject[key] = value;
         } else if (typeof value === "object") {
-          let id = this.objectIds.get(value);
+          let id = objectIds.get(value);
           if (!id) {
             id = uuidv4();
-            this.objectIds.set(value, id);
+            objectIds.set(value, id);
           }
 
           if (value instanceof Map) {
@@ -469,7 +490,7 @@ class CloudstateTransaction {
               id,
               [Object, Array, Map].includes(value.constructor)
                 ? undefined
-                : value.constructor.name,
+                : value.constructor.name
             );
           }
 
@@ -488,9 +509,9 @@ class CloudstateTransaction {
           Deno.core.ops.op_cloudstate_array_set(
             this.transactionId,
             this.namespace,
-            this.objectIds.get(object),
+            objectIds.get(object),
             i,
-            item,
+            item
           );
         });
       } else {
@@ -505,20 +526,22 @@ class CloudstateTransaction {
   }
 
   getArray(id) {
+    ensureTransaction();
     if (typeof id !== "string") throw new Error("id must be a string");
 
-    const existingArray = this.arrays.get(id);
+    const existingArray = arrays.get(id);
     if (existingArray) return existingArray;
     const transactionId = this.transactionId;
     const array = new Proxy(
       {},
       {
         get: (_target, key) => {
+          ensureTransaction();
           if (key === Symbol.iterator) {
             return function* () {
               let length = Deno.core.ops.op_cloudstate_array_length(
                 transactionId,
-                id,
+                id
               );
               for (let i = 0; i < length; i++) {
                 yield array[i];
@@ -548,7 +571,7 @@ class CloudstateTransaction {
 
                   let length = Deno.core.ops.op_cloudstate_array_length(
                     this.transactionId,
-                    id,
+                    id
                   );
                   let reversed = [];
                   for (let i = length - 1; i >= 0; i--) {
@@ -560,7 +583,7 @@ class CloudstateTransaction {
               case "length": {
                 return Deno.core.ops.op_cloudstate_array_length(
                   this.transactionId,
-                  id,
+                  id
                 );
               }
               case "reduce": {
@@ -577,7 +600,7 @@ class CloudstateTransaction {
                   Deno.core.ops.op_cloudstate_array_reverse(
                     this.transactionId,
                     this.namespace,
-                    id,
+                    id
                   );
                 };
               }
@@ -586,7 +609,7 @@ class CloudstateTransaction {
                   return Deno.core.ops.op_cloudstate_array_shift(
                     this.transactionId,
                     this.namespace,
-                    id,
+                    id
                   );
                 };
               }
@@ -623,12 +646,12 @@ class CloudstateTransaction {
                     "popping",
                     this.transactionId,
                     this.namespace,
-                    id,
+                    id
                   );
                   return Deno.core.ops.op_cloudstate_array_pop(
                     this.transactionId,
                     this.namespace,
-                    id,
+                    id
                   );
                 };
               }
@@ -636,7 +659,7 @@ class CloudstateTransaction {
                 return (...args) => {
                   let length = Deno.core.ops.op_cloudstate_array_length(
                     this.transactionId,
-                    id,
+                    id
                   );
 
                   for (const arg of args) {
@@ -646,7 +669,7 @@ class CloudstateTransaction {
                       id,
                       length,
                       // TODO: support nested arrays
-                      this.packToReferenceOrPrimitive(arg),
+                      this.packToReferenceOrPrimitive(arg)
                     );
                     length++;
                   }
@@ -667,7 +690,7 @@ class CloudstateTransaction {
                     this.transactionId,
                     this.namespace,
                     id,
-                    fn,
+                    fn
                   );
                 };
               }
@@ -735,7 +758,7 @@ class CloudstateTransaction {
                 return () => {
                   const length = Deno.core.ops.op_cloudstate_array_length(
                     this.transactionId,
-                    id,
+                    id
                   );
                   const result = [];
                   for (let i = 0; i < length; i++) {
@@ -748,7 +771,7 @@ class CloudstateTransaction {
                 return (value) => {
                   const length = Deno.core.ops.op_cloudstate_array_length(
                     this.transactionId,
-                    id,
+                    id
                   );
                   for (let i = 0; i < length; i++) {
                     if (array[i] === value) return true;
@@ -775,11 +798,12 @@ class CloudstateTransaction {
             this.transactionId,
             this.namespace,
             id,
-            index,
+            index
           );
           return this.unpackFromReference(result);
         },
         set: (_target, key, value) => {
+          ensureTransaction();
           console.log("SET ARRAY =>");
           if (typeof key !== "number") return;
 
@@ -793,33 +817,34 @@ class CloudstateTransaction {
             id,
             key,
             // TODO: support nested arrays
-            this.packToReferenceOrPrimitive(value),
+            this.packToReferenceOrPrimitive(value)
           );
         },
-      },
+      }
     );
 
     Object.setPrototypeOf(array, Array.prototype);
 
-    this.arrays.set(id, array);
-    this.objectIds.set(array, id);
+    arrays.set(id, array);
+    objectIds.set(array, id);
 
     return array;
   }
 
   #exportObject(object, data) {
+    ensureTransaction();
     console.log("exporting object");
-    const existingId = this.objectIds.get(object);
+    const existingId = objectIds.get(object);
     if (!existingId) {
       const id = uuidv4();
       Deno.core.ops.op_cloudstate_object_set(
         this.transactionId,
         this.namespace,
         id,
-        data,
+        data
       );
-      this.objectIds.set(object, id);
-      this.objects.set(id, object);
+      objectIds.set(object, id);
+      objects.set(id, object);
       return id;
     } else {
       console.log("existingId", existingId);
@@ -827,7 +852,7 @@ class CloudstateTransaction {
         this.transactionId,
         this.namespace,
         existingId,
-        data,
+        data
       );
       return existingId;
     }
@@ -843,7 +868,7 @@ class CloudstateTransaction {
       this.transactionId,
       this.namespace,
       alias,
-      id,
+      id
     );
   }
 
@@ -853,7 +878,7 @@ class CloudstateTransaction {
     const id = Deno.core.ops.op_cloudstate_object_root_get(
       this.transactionId,
       this.namespace,
-      alias,
+      alias
     );
 
     if (!id) return undefined;
@@ -869,24 +894,24 @@ globalThis.cloudstate = new Cloudstate("namespace", {});
 // globalThis.transaction = globalThis.cloudstate.createTransaction();
 
 function getRoot(...args) {
-  if (!globalThis.transaction) {
-    globalThis.transaction = globalThis.cloudstate.createTransaction();
-  }
+  ensureTransaction();
   return globalThis.transaction.getRoot(...args);
 }
 
 function getCloudstate(...args) {
-  if (!globalThis.transaction) {
-    globalThis.transaction = globalThis.cloudstate.createTransaction();
-  }
+  ensureTransaction();
   return globalThis.transaction.getCloudstate(...args);
 }
 
 function setRoot(...args) {
+  ensureTransaction();
+  return globalThis.transaction.setRoot(...args);
+}
+
+function ensureTransaction() {
   if (!globalThis.transaction) {
     globalThis.transaction = globalThis.cloudstate.createTransaction();
   }
-  return globalThis.transaction.setRoot(...args);
 }
 
 function commit() {

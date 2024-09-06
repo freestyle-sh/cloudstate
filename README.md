@@ -15,7 +15,7 @@ You can install the cloudstate cli alongside the freestyle cli. Run `npm install
 
 ### `cloudstate run ./script.js`
 
-The lowest level way to store data in cloudstate is via the `cloudstate run` command. You can use the global `setRoot` function with and id and object to store data.
+The lowest level way to store data in cloudstate is via the `cloudstate run` command. You can use the global `setRoot` function with an id and object to store data.
 
 ```ts
 const object = {

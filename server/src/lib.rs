@@ -3,7 +3,7 @@ use axum::{
     extract::{Host, Path, Request, State},
     http::Response,
     routing::{get, post},
-    Json, Router,
+    Json, RequestExt, Router,
 };
 use cloudstate_runtime::extensions::{bootstrap::bootstrap, cloudstate::cloudstate};
 use cloudstate_runtime::{extensions::cloudstate::ReDBCloudstate, v8_string_key};
@@ -19,7 +19,7 @@ use deno_web::BlobStore;
 use deno_web::TimersPermission;
 use futures::TryStreamExt;
 use serde::Deserialize;
-use std::{borrow::BorrowMut, cell::RefCell, sync::Mutex};
+use std::{borrow::BorrowMut, cell::RefCell, collections::HashMap, sync::Mutex};
 use std::{rc::Rc, sync::Arc};
 use tracing::{debug, event};
 
@@ -61,7 +61,11 @@ impl ModuleLoader for CloudstateModuleLoader {
 }
 
 impl CloudstateServer {
-    pub async fn new(cloudstate: Arc<Mutex<ReDBCloudstate>>, classes: &str) -> Self {
+    pub async fn new(
+        cloudstate: Arc<Mutex<ReDBCloudstate>>,
+        classes: &str,
+        env: HashMap<String, String>,
+    ) -> Self {
         // tracing_subscriber::fmt::init();
 
         execute_script(include_str!("./initialize.js"), classes, cloudstate.clone()).await;
@@ -79,6 +83,7 @@ impl CloudstateServer {
             .with_state(AppState {
                 cloudstate: cloudstate.clone(),
                 classes: classes.to_string(),
+                env: env,
             });
 
         CloudstateServer { router: app }
@@ -147,7 +152,7 @@ async fn fetch_request(
     //headers: new Headers({headers}),
     // method: '{method}',
     //{url},
-    // todo: fix injection vulnerability
+    // TODO: fix injection vulnerability
     let script = format!(
         "
     import * as classes from './lib.js';
@@ -218,6 +223,7 @@ async fn fetch_request(
 struct AppState {
     cloudstate: Arc<Mutex<ReDBCloudstate>>,
     classes: String,
+    env: HashMap<String, String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -228,25 +234,59 @@ struct MethodParams {
 async fn method_request(
     Path((id, method)): Path<(String, String)>,
     State(state): State<AppState>,
-    Json(params): Json<MethodParams>,
+    request: Request<Body>,
 ) -> axum::response::Json<serde_json::Value> {
     debug!("method_request");
     // turn into valid, sanitized, json string
     let id = serde_json::to_string(&id).unwrap();
     let method = serde_json::to_string(&method).unwrap();
 
+    // get host from request
+    let host = match request.headers().get("Host") {
+        Some(h) => h.to_str().unwrap(),
+        None => "www.example.com",
+    };
+
+    // TODO: find a way to not need the http:// prefix
+    let uri = format!("https://{}{}", host, request.uri().path());
+    let uri = serde_json::to_string(&uri).unwrap();
+
+    let headers = request.headers();
+    let headers = headers
+        .iter()
+        .map(|(key, value)| {
+            format!(
+                "{}: {}",
+                serde_json::to_string(&key.to_string()).unwrap(),
+                serde_json::to_string(&value.to_str().unwrap_or_default().to_string()).unwrap()
+            )
+        })
+        .collect::<Vec<String>>()
+        .join(", ");
+    let headers = format!("{{{}}}", headers);
+
+    let Json::<MethodParams>(params) = request.extract().await.unwrap();
     let params = serde_json::to_string(&params.params).unwrap();
 
-    // todo: fix injection vulnerability
+    let env_string = serde_json::to_string(&state.env).unwrap();
+
+    // TODO: fix injection vulnerability
     let script = format!(
         "
+    globalThis.process = {{
+        env: {env_string}
+    }}
     import * as classes from './lib.js';
     globalThis.cloudstate.customClasses = Object.keys(classes).map((key) => classes[key]);
+
 
     // temporary hack to be compatible with legacy freestyle apis
     globalThis.requestContext = {{
         getStore: () => {{
             return {{
+                request: new Request({uri}, {{
+                    headers: new Headers({headers}),
+                }}),
                 env: {{
                     invalidateMethod: (rawMethod) => {{
                         const method = rawMethod.toJSON();
