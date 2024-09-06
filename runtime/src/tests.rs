@@ -19,8 +19,7 @@ js_test!(array_join);
 js_test!(array_last_index_of);
 js_test!(array_length);
 js_test!(array_map);
-// TODO: fix array of maps (panics)
-// js_test!(array_of_maps);
+js_test!(array_of_maps);
 js_test!(array_of_mixed_objects);
 js_test!(array_of_num_objects);
 js_test!(array_of_str_objects);

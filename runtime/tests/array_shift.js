@@ -26,10 +26,10 @@ const baseArray = ["a", "b", "c", "d", "e"];
     if (object.value.length !== 4) {
         throw new Error(`Expected length to be 4, got ${object.value.length}`);
     }
-    for (let i = 0; i < 4; i++) {
-        if (object.value[i] !== baseArray[i + 1]) {
+    for (const [i, expected] of ["b", "c", "d", "e"].entries()) {
+        if (object.value[i] !== expected) {
             throw new Error(
-                `Expected ${baseArray[i + 1]}, got ${object.value[i]}`,
+                `Expected ${expected} at index ${i}, got ${object.value[i]}`,
             );
         }
     }

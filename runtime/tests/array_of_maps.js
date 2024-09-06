@@ -46,13 +46,19 @@ function checkMapValueEquivalence({ map1, map2, test_ctx }) {
     if (!root.value) {
         throw new Error("root.value should exist");
     }
-    if (root.value.length !== baseArray.length) {
-        throw new Error(`root.value should have length ${baseArray.length}`);
+    if (root.value.length !== 3) {
+        throw new Error(`root.value should have length 3`);
     }
-    for (let i = 0; i < root.value.length; i++) {
+    for (
+        const [i, expected] of [
+            new Map([["a", 1], ["b", 2]]),
+            new Map([["a", "3"], ["b", "4"]]),
+            new Map([["a", 5]]),
+        ].entries()
+    ) {
         checkMapValueEquivalence({
             map1: root.value[i],
-            map2: baseArray[i],
+            map2: expected,
             test_ctx: "first getRoot after commit",
         });
     }
@@ -70,14 +76,6 @@ const newMap = new Map([["a", 6], ["c", 7]]);
 
     // add a new map to the array
     root.value.push(newMap);
-    /*
-    TODO: op_cloudstate_array_set should add CloudstateMapReference, not CloudstateObjectReference
-    impl FromV8<'_> for CloudstatePrimitiveData
-    ...
-    "CloudstateObjectReference" => {
-    ...
-    id: v8::Local::<v8::String>::try_from(
-    */
     commit();
 }
 
@@ -89,15 +87,22 @@ const newMap = new Map([["a", 6], ["c", 7]]);
     if (!root.value) {
         throw new Error("root.value should exist");
     }
-    if (root.value.length !== baseArray.length + 1) {
+    if (root.value.length !== 4) {
         throw new Error(
-            `root.value should have length ${baseArray.length + 1}`,
+            `root.value should have length 4`,
         );
     }
-    for (let i = 0; i < baseArray.length; i++) {
+    for (
+        const [i, expected] of [
+            new Map([["a", 1], ["b", 2]]),
+            new Map([["a", "3"], ["b", "4"]]),
+            new Map([["a", 5]]),
+            new Map([["a", 6], ["c", 7]]),
+        ].entries()
+    ) {
         checkMapValueEquivalence({
             map1: root.value[i],
-            map2: baseArray[i],
+            map2: expected,
             test_ctx: "added single object { a: 6, c: 7 }",
         });
     }
@@ -116,13 +121,19 @@ const newMap = new Map([["a", 6], ["c", 7]]);
     if (!root.value) {
         throw new Error("root.value should exist");
     }
-    if (root.value.length !== baseArray.length) {
-        throw new Error(`root.value should have length ${baseArray.length}`);
+    if (root.value.length !== 3) {
+        throw new Error(`root.value should have length 3`);
     }
-    for (let i = 0; i < baseArray.length; i++) {
+    for (
+        const [i, expected] of [
+            new Map([["a", 1], ["b", 2]]),
+            new Map([["a", 5]]),
+            new Map([["a", 6], ["c", 7]]),
+        ].entries()
+    ) {
         checkMapValueEquivalence({
             map1: root.value[i],
-            map2: baseArray[i],
+            map2: expected,
             test_ctx: "removed object at index 1",
         });
     }
