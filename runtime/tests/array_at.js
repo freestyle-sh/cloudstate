@@ -1,6 +1,5 @@
-const base = ["a", "b", "c", "d", "e", "f"];
-
 {
+  const base = ["a", "b", "c", "d", "e", "f"];
   const object = {
     value: [...base],
   };
@@ -9,7 +8,10 @@ const base = ["a", "b", "c", "d", "e", "f"];
   commit();
 }
 
+// END_FILE
+
 {
+  const base = ["a", "b", "c", "d", "e", "f"];
   const root = getRoot("test-root");
   if (!root) {
     throw new Error("root should exist");
@@ -25,7 +27,7 @@ const base = ["a", "b", "c", "d", "e", "f"];
   for (let i = 0; i < root.value.length; i++) {
     if (root.value.at(i) !== base[i]) {
       throw new Error(
-        `value mismatch at index ${i}: ${root.value.at(i)} !== ${base[i]}`,
+        `value mismatch at index ${i}: ${root.value.at(i)} !== ${base[i]}`
       );
     }
   }
