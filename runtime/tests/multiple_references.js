@@ -2,7 +2,6 @@
   const common = {
     value: 1,
   };
-
   const object = {
     a: common,
     b: common,
@@ -11,6 +10,8 @@
   setRoot("test-root", object);
   commit();
 }
+
+// END_FILE
 
 {
   const object = getRoot("test-root");
@@ -28,5 +29,8 @@
   }
   if (object.a.value !== 1) {
     throw new Error("object.a.value should be 1");
+  }
+  if (object.b.value !== 1) {
+    throw new Error("object.b.value should be 1");
   }
 }

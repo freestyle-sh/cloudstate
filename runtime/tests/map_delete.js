@@ -1,74 +1,112 @@
-const baseMap = new Map([
-  ["a", "alpha"],
-  ["b", "beta"],
-  ["c", "charlie"],
-  ["d", "delta"],
-  ["e", "echo"],
-]);
 {
+  const base = new Map([
+    ["a", "alpha"],
+    ["b", "beta"],
+    ["c", "charlie"],
+    ["d", "delta"],
+    ["e", "echo"],
+  ]);
   const object = {
-    value: baseMap,
+    value: base,
   };
 
   setRoot("test-root", object);
   commit();
 }
 
+// END_FILE
+
 {
+  const expected = new Map([
+    ["a", "alpha"],
+    ["b", "beta"],
+    ["c", "charlie"],
+    ["d", "delta"],
+    ["e", "echo"],
+  ]);
+
   const object = getRoot("test-root");
-  const a = object.value.get("a");
-  if (a !== "alpha") {
+  if (!object) {
+    throw new Error("object should exist");
+  }
+  if (!object.value) {
+    throw new Error("object.value should exist");
+  }
+  if (!(object.value instanceof Map)) {
+    throw new Error("object.value should be a Map");
+  }
+  if (object.value.size !== expected.size) {
     throw new Error(
-      `Expected ${JSON.stringify("alpha")}, got ${JSON.stringify(a)}`
+      `object.value should have size ${expected.size}, got ${object.value.size}`,
     );
   }
-  if (!object.value.has("a")) {
-    throw new Error(`Expected ${JSON.stringify("a")} to exist`);
+  for (const [expectedKey, expectedVal] of expected.entries()) {
+    if (!object.value.has(expectedKey)) {
+      throw new Error(
+        `object.value should have key ${JSON.stringify(expectedKey)}`,
+      );
+    }
+    if (object.value.get(expectedKey) !== expectedVal) {
+      throw new Error(
+        `object.value.get(${JSON.stringify(expectedKey)}) should be ${
+          JSON.stringify(
+            expectedVal,
+          )
+        }, got ${JSON.stringify(object.value.get(expectedKey))}`,
+      );
+    }
   }
 
+  console.log("BEFORE DELETE");
   const deletedVal = object.value.delete("a");
+  console.log("AFTER DELETE");
   if (!deletedVal) {
     throw new Error(
-      `Expected ${JSON.stringify(
-        "a"
-      )} to be deleted (return value should be truthy)`
+      `Expected ${
+        JSON.stringify(
+          "a",
+        )
+      } to be deleted (return value should be truthy)`,
     );
   }
-
   commit();
 }
 
+// END_FILE
+
 {
+  const expected = new Map([
+    ["b", "beta"],
+    ["c", "charlie"],
+    ["d", "delta"],
+    ["e", "echo"],
+  ]);
+
   const object = getRoot("test-root");
-  if (object.value.has("a")) {
-    throw new Error(`Expected ${JSON.stringify("a")} to be deleted`);
+  if (!object) {
+    throw new Error("object should exist");
   }
-
-  commit();
-}
-
-{
-  const object = getRoot("test-root");
-  const values = object.value.values();
-  const arr = Array.from(values);
-  if (arr.length !== 4) {
+  if (!object.value) {
+    throw new Error("object.value should exist");
+  }
+  if (!(object.value instanceof Map)) {
+    throw new Error("object.value should be a Map");
+  }
+  if (object.value.size !== expected.size) {
     throw new Error(
-      `Should have been arr.length = ${
-        Array.from(baseMap.values()).length - 1
-      }, got ${arr.length}`
+      `object.value should have size ${expected.size}, got ${object.value.size}`,
     );
   }
-
-  commit();
-}
-
-{
-  const object = getRoot("test-root");
+  if (object.value.has("a")) {
+    throw new Error(
+      `object.value should not have key 'a'`,
+    );
+  }
 
   // delete key that doesn't exist
   const deletedVal = object.value.delete("z");
   if (deletedVal) {
-    throw new Error(`Expected ${JSON.stringify("z")} to not exist`);
+    throw new Error(`Expected falsy because key 'z' does not exist`);
   }
 
   commit();

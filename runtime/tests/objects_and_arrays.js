@@ -13,6 +13,8 @@
   commit();
 }
 
+// END_FILE
+
 {
   const object = getRoot("objects-test-root");
   if (!object) {

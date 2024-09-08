@@ -1,18 +1,17 @@
-export class Counter {
-  constructor() {
-    this.count = 0;
-  }
-  increment() {
-    this.count++;
-  }
-  getCount() {
-    return this.count;
-  }
-}
-
-globalThis.cloudstate.customClasses = [Counter];
-
 {
+  class Counter {
+    constructor() {
+      this.count = 0;
+    }
+    increment() {
+      this.count++;
+    }
+    getCount() {
+      return this.count;
+    }
+  }
+  globalThis.cloudstate.customClasses = [Counter];
+
   const root = {
     value: new Counter(),
   };
@@ -21,7 +20,22 @@ globalThis.cloudstate.customClasses = [Counter];
   commit();
 }
 
+// END_FILE
+
 {
+  class Counter {
+    constructor() {
+      this.count = 0;
+    }
+    increment() {
+      this.count++;
+    }
+    getCount() {
+      return this.count;
+    }
+  }
+  globalThis.cloudstate.customClasses = [Counter];
+
   const root = getRoot("test-root");
   root.value.increment();
   if (root.value.getCount() !== 1) {

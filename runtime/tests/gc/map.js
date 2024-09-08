@@ -15,6 +15,8 @@
   commit();
 }
 
+// END_FILE
+
 {
   // confirm that the object is still there
   const root = getRoot("test-root");
@@ -37,6 +39,8 @@
   commit();
 }
 
+// END_FILE
+
 {
   // delete the nested1
   const root = getRoot("test-root");
@@ -51,6 +55,8 @@
 
   commit();
 }
+
+// END_FILE
 
 {
   const root = getRoot("test-root");

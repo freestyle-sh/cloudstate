@@ -1,24 +1,38 @@
-class Counter {
-  count = 0;
-
-  increment() {
-    this.count += 1;
-  }
-
-  decrement() {
-    this.count -= 1;
-  }
-}
-
-globalThis.cloudstate.customClasses = [Counter];
-
 {
+  class Counter {
+    count = 0;
+
+    increment() {
+      this.count += 1;
+    }
+
+    decrement() {
+      this.count -= 1;
+    }
+  }
+  globalThis.cloudstate.customClasses = [Counter];
+
   // Set root to a class directly
   setRoot("test-root", new Counter());
   commit();
 }
 
+// END_FILE
+
 {
+  class Counter {
+    count = 0;
+
+    increment() {
+      this.count += 1;
+    }
+
+    decrement() {
+      this.count -= 1;
+    }
+  }
+  globalThis.cloudstate.customClasses = [Counter];
+
   // Check if root still exists
   const counter = getRoot("test-root");
   if (!counter) {
@@ -39,7 +53,22 @@ globalThis.cloudstate.customClasses = [Counter];
   commit();
 }
 
+// END_FILE
+
 {
+  class Counter {
+    count = 0;
+
+    increment() {
+      this.count += 1;
+    }
+
+    decrement() {
+      this.count -= 1;
+    }
+  }
+  globalThis.cloudstate.customClasses = [Counter];
+
   // Check if root still exists
   const counter = getRoot("test-root");
   if (!counter) {

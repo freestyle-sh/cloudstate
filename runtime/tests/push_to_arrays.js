@@ -7,6 +7,8 @@
   commit();
 }
 
+// END_FILE
+
 {
   const object = getRoot("objects-test-root");
   object.counters.push({
@@ -15,6 +17,8 @@
 
   commit();
 }
+
+// END_FILE
 
 {
   const object = getRoot("objects-test-root");
@@ -35,6 +39,8 @@
 
   commit();
 }
+
+// END_FILE
 
 {
   const object = getRoot("objects-test-root");

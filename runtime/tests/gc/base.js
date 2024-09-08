@@ -26,6 +26,8 @@
   commit();
 }
 
+// END_FILE
+
 {
   const root = getRoot("test-root");
   if (!root) {
@@ -47,6 +49,8 @@
   commit();
 }
 
+// END_FILE
+
 {
   // delete the nested1
   const root = getRoot("test-root");
@@ -59,6 +63,8 @@
   setRoot("test-root", root);
   commit();
 }
+
+// END_FILE
 
 {
   // confirm nested1 is gone but nested2 is still there

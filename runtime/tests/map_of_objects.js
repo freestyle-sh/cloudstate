@@ -14,6 +14,8 @@
   commit();
 }
 
+// END_FILE
+
 {
   const object = getRoot("test-root");
   if (!object) throw new Error("object should exist");

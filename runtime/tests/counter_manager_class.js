@@ -1,32 +1,30 @@
-class Counter {
-  count = 0;
-  increment() {
-    this.count++;
-  }
-  getCount() {
-    return this.count;
-  }
-}
-
-class CounterManager {
-  counters = [];
-
-  createCounter() {
-    const counter = new Counter();
-    this.counters.push(counter);
-    return counter;
-  }
-  getCounters() {
-    return this.counters;
-  }
-  getCounter(index) {
-    return this.counters[index];
-  }
-}
-
-globalThis.cloudstate.customClasses = [CounterManager, Counter];
-
 {
+  class Counter {
+    count = 0;
+    increment() {
+      this.count++;
+    }
+    getCount() {
+      return this.count;
+    }
+  }
+  class CounterManager {
+    counters = [];
+
+    createCounter() {
+      const counter = new Counter();
+      this.counters.push(counter);
+      return counter;
+    }
+    getCounters() {
+      return this.counters;
+    }
+    getCounter(index) {
+      return this.counters[index];
+    }
+  }
+  globalThis.cloudstate.customClasses = [CounterManager, Counter];
+
   const root = {
     value: new CounterManager(),
   };
@@ -35,7 +33,35 @@ globalThis.cloudstate.customClasses = [CounterManager, Counter];
   commit();
 }
 
+// END_FILE
+
 {
+  class Counter {
+    count = 0;
+    increment() {
+      this.count++;
+    }
+    getCount() {
+      return this.count;
+    }
+  }
+  class CounterManager {
+    counters = [];
+
+    createCounter() {
+      const counter = new Counter();
+      this.counters.push(counter);
+      return counter;
+    }
+    getCounters() {
+      return this.counters;
+    }
+    getCounter(index) {
+      return this.counters[index];
+    }
+  }
+  globalThis.cloudstate.customClasses = [CounterManager, Counter];
+
   const root = getRoot("test-root");
   const counter = root.value.createCounter();
 
@@ -47,7 +73,35 @@ globalThis.cloudstate.customClasses = [CounterManager, Counter];
   commit();
 }
 
+// END_FILE
+
 {
+  class Counter {
+    count = 0;
+    increment() {
+      this.count++;
+    }
+    getCount() {
+      return this.count;
+    }
+  }
+  class CounterManager {
+    counters = [];
+
+    createCounter() {
+      const counter = new Counter();
+      this.counters.push(counter);
+      return counter;
+    }
+    getCounters() {
+      return this.counters;
+    }
+    getCounter(index) {
+      return this.counters[index];
+    }
+  }
+  globalThis.cloudstate.customClasses = [CounterManager, Counter];
+
   const root = getRoot("test-root");
   const counter = root.value.getCounter(0);
 

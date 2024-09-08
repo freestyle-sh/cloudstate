@@ -8,6 +8,8 @@
     commit();
 }
 
+// END_FILE
+
 {
     const root = getRoot("test-root");
     if (!root) {
@@ -40,6 +42,8 @@
 
     commit();
 }
+
+// END_FILE
 
 {
     const root = getRoot("test-root");

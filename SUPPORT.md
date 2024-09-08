@@ -150,9 +150,9 @@
 
 ### Map
 
-| Constructor | Status                              | Notes |
-| ----------- | ----------------------------------- | ----- |
-| Map()       | ✅ [Tested](/runtime/tests/maps.js) |       |
+| Constructor | Status                                         | Notes |
+| ----------- | ---------------------------------------------- | ----- |
+| Map()       | ✅ [Tested](/runtime/tests/map_constructor.js) |       |
 
 | Static method | Status                                      | Notes |
 | ------------- | ------------------------------------------- | ----- |
@@ -161,7 +161,7 @@
 | Instance method      | Status                                       | Notes                                                  |
 | -------------------- | -------------------------------------------- | ------------------------------------------------------ |
 | .clear()             | ✅ [Tested](/runtime/tests/map_clear.js)     |                                                        |
-| .delete()            | ✅ [Tested](/runtime/tests/map_delete.js)    |                                                        |
+| .delete()            | ❌ [Tested](/runtime/tests/map_delete.js)    |                                                        |
 | .entries()           | ✅ [Tested](/runtime/tests/map_entries.js)   |                                                        |
 | .forEach()           | ✅ [Tested](/runtime/tests/map_for_each.js)  |                                                        |
 | .get()               | ✅ [Tested](/runtime/tests/map_get.js)       |                                                        |

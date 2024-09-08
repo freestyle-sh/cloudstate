@@ -1,13 +1,12 @@
-class CounterCS {
-  id = "counter";
-  count = 0;
-
-  increment() {
-    this.count += 1;
-  }
-}
-
 {
+  class CounterCS {
+    id = "counter";
+    count = 0;
+
+    increment() {
+      this.count += 1;
+    }
+  }
   globalThis.cloudstate.customClasses = [CounterCS];
 
   const object = {
@@ -18,7 +17,19 @@ class CounterCS {
   commit();
 }
 
+// END_FILE
+
 {
+  class CounterCS {
+    id = "counter";
+    count = 0;
+
+    increment() {
+      this.count += 1;
+    }
+  }
+  globalThis.cloudstate.customClasses = [CounterCS];
+
   const counter = getCloudstate("counter");
   if (!counter) {
     throw new Error("counter should exist");

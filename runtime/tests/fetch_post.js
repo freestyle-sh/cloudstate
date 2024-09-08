@@ -9,9 +9,10 @@
   });
   object.value = await res.text();
   setRoot("test-root", object);
+  commit();
 }
 
-commit();
+// END_FILE
 
 {
   const object = getRoot("test-root");

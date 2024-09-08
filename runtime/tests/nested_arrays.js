@@ -7,6 +7,8 @@
   commit();
 }
 
+// END_FILE
+
 {
   const object = getRoot("test-root");
   if (!object) {
@@ -20,9 +22,11 @@
   }
   if (object.value[0].length !== 3) {
     throw new Error(
-      `object.value[0].length should be 3, got ${JSON.stringify(
-        object.value[0]
-      )}`
+      `object.value[0].length should be 3, got ${
+        JSON.stringify(
+          object.value[0],
+        )
+      }`,
     );
   }
   if (object.value[0][0] !== 1) {
