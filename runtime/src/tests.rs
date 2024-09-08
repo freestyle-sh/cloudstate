@@ -71,3 +71,8 @@ js_test!(roots_same_obj_single_txn);
 js_test!(simple_objects);
 js_test!(todolist_map_internal_classes);
 js_test!(todolist_map_internal_objects);
+js_test!(v8_bigint);
+js_test!(v8_boolean);
+js_test!(v8_date);
+js_test!(v8_number);
+js_test!(v8_string);

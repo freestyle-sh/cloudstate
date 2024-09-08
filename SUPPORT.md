@@ -78,7 +78,10 @@
 
 ### BigInt
 
-✅ Unchanged from V8
+✅ [Tested](/runtime/tests/v8_bigint.js)
+
+> [!NOTE]
+> Unchanged from V8
 
 > [!NOTE]
 > BigInts are stored as a `Box<\[u64]>` in Cloudstate.
@@ -93,7 +96,10 @@
 
 ### Boolean
 
-✅ Unchanged from V8
+✅ [Tested](/runtime/tests/v8_boolean.js)
+
+> [!NOTE]
+> Unchanged from V8
 
 ### DataView
 
@@ -101,7 +107,10 @@
 
 ### Date
 
-✅ Unchanged from V8
+✅ [Tested](/runtime/tests/v8_date.js)
+
+> [!NOTE]
+> Unchanged from V8
 
 ### Error
 
@@ -176,7 +185,10 @@
 
 ### Number
 
-✅ Unchanged from V8
+✅ [Tested](/runtime/tests/v8_number.js)
+
+> [!NOTE]
+> Unchanged from V8
 
 ### Object
 
@@ -304,7 +316,10 @@
 
 ### String
 
-✅ Unchanged from V8
+✅ [Tested](/runtime/tests/v8_string.js)
+
+> [!NOTE]
+> Unchanged from V8
 
 ### Symbol
 
