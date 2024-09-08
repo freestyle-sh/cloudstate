@@ -9,6 +9,8 @@ const baseArray = [1, 2, 3, 4, 5, -10];
     commit();
 }
 
+// END_FILE
+
 {
     const root = getRoot("test-root");
     if (!root) {
@@ -61,6 +63,8 @@ const baseArray = [1, 2, 3, 4, 5, -10];
     root.value.push(-11);
     commit();
 }
+
+// END_FILE
 
 {
     const root = getRoot("test-root");

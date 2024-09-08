@@ -1,5 +1,3 @@
-const baseArray = ["a", "b", "c", "d", "e"];
-
 {
     const object = {
         value: [],
@@ -7,6 +5,8 @@ const baseArray = ["a", "b", "c", "d", "e"];
     setRoot("test-root", object);
     commit();
 }
+
+// END_FILE
 
 {
     const object = getRoot("test-root");
@@ -18,41 +18,60 @@ const baseArray = ["a", "b", "c", "d", "e"];
     commit();
 }
 
+// END_FILE
+
 {
+    const expected = ["a"];
+
     const object = getRoot("test-root");
-    if (object.value.length !== 1) {
+    if (object.value.length !== expected.length) {
         throw new Error(`Expected length to be 1, got ${object.value.length}`);
     }
-    if (object.value[0] !== "a") {
-        throw new Error(`Expected "a", got ${object.value[0]}`);
+    for (let i = 0; i < expected.length; i++) {
+        if (object.value[i] !== expected[i]) {
+            throw new Error(`Expected ${expected[i]}, got ${object.value[i]}`);
+        }
     }
 
     object.value.push(...["b", "c", "d", "e"]);
     commit();
 }
 
+// END_FILE
+
 {
+    const expected = ["a", "b", "c", "d", "e"];
+
     const object = getRoot("test-root");
-    if (object.value.length !== 5) {
+    if (object.value.length !== expected.length) {
         throw new Error(`Expected length to be 5, got ${object.value.length}`);
+    }
+    for (let i = 0; i < expected.length; i++) {
+        if (object.value[i] !== expected[i]) {
+            throw new Error(`Expected ${expected[i]}, got ${object.value[i]}`);
+        }
     }
 
     object.value.push("f");
     commit();
 }
 
+// END_FILE
+
 {
+    const expected = ["a", "b", "c", "d", "e", "f"];
+
     const object = getRoot("test-root");
-    if (object.value.length !== 6) {
-        throw new Error(`Expected length to be 6, got ${object.value.length}`);
+    if (object.value.length !== expected.length) {
+        throw new Error(
+            `Expected length to be ${expected.length}, got ${object.value.length}`,
+        );
     }
-    for (let i = 0; i < 5; i++) {
-        if (object.value[i] !== baseArray[i]) {
-            throw new Error(`Expected ${baseArray[i]}, got ${object.value[i]}`);
+    for (let i = 0; i < expected.length; i++) {
+        if (object.value[i] !== expected[i]) {
+            throw new Error(`Expected ${expected[i]}, got ${object.value[i]}`);
         }
     }
-    if (object.value[5] !== "f") {
-        throw new Error(`Expected "f", got ${object.value[5]}`);
-    }
+
     commit();
 }

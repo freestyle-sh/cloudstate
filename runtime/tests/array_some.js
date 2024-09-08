@@ -1,18 +1,23 @@
-const baseArray = [1, 2, 3, 4, 5];
-
 {
+    const base = [1, 2, 3, 4, 5];
     const object = {
-        value: baseArray,
+        value: base,
     };
 
     setRoot("test-root", object);
     commit();
 }
 
+// END_FILE
+
 {
+    const expectedArr = [1, 2, 3, 4, 5];
+
     const object = getRoot("test-root");
-    if (object.value.length !== 5) {
-        throw new Error(`Expected length to be 5, got ${object.value.length}`);
+    if (object.value.length !== expectedArr.length) {
+        throw new Error(
+            `Expected length to be ${expectedArr.length}, got ${object.value.length}`,
+        );
     }
 
     const even = object.value.some((value) => value % 2 === 0);

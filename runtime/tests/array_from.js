@@ -1,17 +1,18 @@
-// Initialize data
-const arrayLike = { 0: "a", 1: "b", 2: "c", length: 3 };
-const mapFn = (x) => x.toUpperCase();
-
 {
+    const baseArrayLike = { 0: "a", 1: "b", 2: "c", length: 3 };
     const object = {
-        objValue: arrayLike,
+        objValue: baseArrayLike,
     };
 
     setRoot("test-root", object);
     commit();
 }
 
+// END_FILE
+
 {
+    const expectedArrayLike = { 0: "a", 1: "b", 2: "c", length: 3 };
+    const mapFn = (x) => x.toUpperCase();
     const root = getRoot("test-root");
     if (!root) {
         throw new Error("root should exist");
@@ -19,29 +20,33 @@ const mapFn = (x) => x.toUpperCase();
     if (!root.objValue) {
         throw new Error("root.value should exist");
     }
-    if (root.objValue.length !== 3) {
+    if (root.objValue.length !== expectedArrayLike.length) {
         throw new Error("root.value should have length 3");
     }
 
+    const expectedArray = Array.from(expectedArrayLike, mapFn);
     const array = Array.from(root.objValue, mapFn);
-    if (array.length !== 3) {
+    if (array.length !== expectedArray.length) {
         throw new Error("array should have length 3");
     }
-    if (array[0] !== "A") {
-        throw new Error(`array[0] should be "A", got ${array[0]}`);
-    }
-    if (array[1] !== "B") {
-        throw new Error(`array[1] should be "B", got ${array[1]}`);
-    }
-    if (array[2] !== "C") {
-        throw new Error(`array[2] should be "C", got ${array[2]}`);
+    for (let i = 0; i < array.length; i++) {
+        if (array[i] !== expectedArray[i]) {
+            throw new Error(
+                `value mismatch at index ${i}: ${array[i]} !== ${
+                    expectedArray[i]
+                }`,
+            );
+        }
     }
 
     root.arrValue = array;
     commit();
 }
 
+// END_FILE
+
 {
+    const expectedArray = ["A", "B", "C"];
     const root = getRoot("test-root");
     if (!root) {
         throw new Error("root should exist");
@@ -49,22 +54,18 @@ const mapFn = (x) => x.toUpperCase();
     if (!root.arrValue) {
         throw new Error("root.arrValue should exist");
     }
-    if (root.arrValue.length !== 3) {
-        throw new Error("root.arrValue should have length 3");
-    }
-    if (root.arrValue[0] !== "A") {
+    if (root.arrValue.length !== expectedArray.length) {
         throw new Error(
-            `root.arrValue[0] should be "A", got ${root.arrValue[0]}`,
+            "root.arrValue should have length ${expectedArray.length}",
         );
     }
-    if (root.arrValue[1] !== "B") {
-        throw new Error(
-            `root.arrValue[1] should be "B", got ${root.arrValue[1]}`,
-        );
-    }
-    if (root.arrValue[2] !== "C") {
-        throw new Error(
-            `root.arrValue[2] should be "C", got ${root.arrValue[2]}`,
-        );
+    for (let i = 0; i < root.arrValue.length; i++) {
+        if (root.arrValue[i] !== expectedArray[i]) {
+            throw new Error(
+                `value mismatch at index ${i}: ${root.arrValue[i]} !== ${
+                    expectedArray[i]
+                }`,
+            );
+        }
     }
 }
