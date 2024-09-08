@@ -23,7 +23,7 @@
 | .at()                | ✅ [Tested](/runtime/tests/array_at.js)              |                                                   |
 | .concat()            | 🚧 Planned                                           |                                                   |
 | .copyWithin()        | 🚧 Planned                                           |                                                   |
-| .entries()           | 🚧 Planned                                           |                                                   |
+| .entries()           | 🙂 Not Tested                                        |                                                   |
 | .every()             | ✅ [Tested](/runtime/tests/array_every.js)           |                                                   |
 | .filter()            | ✅ [Tested](/runtime/tests/array_filter.js)          |                                                   |
 | .find()              | ✅ [Tested](/runtime/tests/array_find.js)            |                                                   |
@@ -47,7 +47,7 @@
 | .shift()             | ✅ [Tested](/runtime/tests/array_shift.js)           |                                                   |
 | .slice()             | 🚧 Planned                                           |                                                   |
 | .some()              | ✅ [Tested](/runtime/tests/array_some.js)            |                                                   |
-| .sort()              | 🚧 Planned                                           |                                                   |
+| .sort()              | ❌ [Tested](/runtime/tests/array_sort.js)            |                                                   |
 | .splice()            | 🚧 Planned                                           |                                                   |
 | \[Symbol.iterator]() | ✅ [Tested](/runtime/tests/array_iterator.js)        |                                                   |
 | .toLocaleString()    | 🚧 Planned                                           |                                                   |
@@ -63,6 +63,14 @@
 | --------------------- | ------------------------------------------- | ----- |
 | .length               | ✅ [Tested](/runtime/tests/array_length.js) |       |
 | \[Symbol.unscopables] | ❓ Unknown                                  |       |
+
+#### Known issues
+
+- No hydration for maps stored in arrays. See [#16](/../../issues/16).
+
+  | Test          | Status                                       | Notes                                 |
+  | ------------- | -------------------------------------------- | ------------------------------------- |
+  | Array of maps | ❌ [Tested](/runtime/tests/array_of_maps.js) | Panics - commented out of `tests.rs`. |
 
 ### AsyncIterator
 
