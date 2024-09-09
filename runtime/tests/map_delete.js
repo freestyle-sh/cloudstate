@@ -19,7 +19,7 @@ const baseMap = new Map([
   const a = object.value.get("a");
   if (a !== "alpha") {
     throw new Error(
-      `Expected ${JSON.stringify("alpha")}, got ${JSON.stringify(a)}`,
+      `Expected ${JSON.stringify("alpha")}, got ${JSON.stringify(a)}`
     );
   }
   if (!object.value.has("a")) {
@@ -29,9 +29,9 @@ const baseMap = new Map([
   const deletedVal = object.value.delete("a");
   if (!deletedVal) {
     throw new Error(
-      `Expected ${
-        JSON.stringify("a")
-      } to be deleted (return value should be truthy)`,
+      `Expected ${JSON.stringify(
+        "a"
+      )} to be deleted (return value should be truthy)`
     );
   }
 
@@ -51,11 +51,17 @@ const baseMap = new Map([
   const object = getRoot("test-root");
   const values = object.value.values();
   const arr = Array.from(values);
+
+  // check that a was deleted
+  if (object.value.has("a")) {
+    throw new Error(`Expected ${JSON.stringify("alpha")} to not exist`);
+  }
+
   if (arr.length !== Array.from(baseMap.values()).length - 1) {
     throw new Error(
       `Should have been arr.length = ${
         Array.from(baseMap.values()).length - 1
-      }, got ${arr.length}`,
+      }, got ${arr.length}`
     );
   }
 
