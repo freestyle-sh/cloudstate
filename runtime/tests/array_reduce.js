@@ -9,6 +9,8 @@ const baseArray = [1, 2, 3, 4, 5, -10];
     commit();
 }
 
+// END_FILE
+
 {
     const root = getRoot("test-root");
     if (!root) {
@@ -17,12 +19,14 @@ const baseArray = [1, 2, 3, 4, 5, -10];
     if (!root.value) {
         throw new Error("root.value should exist");
     }
-    if (root.value.length !== baseArray.length) {
-        throw new Error(`root.value should have length ${baseArray.length}`);
+    if (root.value.length !== 6) {
+        throw new Error(`root.value should have length 6`);
     }
-    for (let i = 0; i < root.value.length; i++) {
-        if (root.value[i] !== baseArray[i]) {
-            throw new Error(`different values at index ${i}`);
+    for (const [i, expected] of [1, 2, 3, 4, 5, -10].entries()) {
+        if (root.value[i] !== expected) {
+            throw new Error(
+                `expected ${expected} at index ${i}, got ${root.value[i]}`,
+            );
         }
     }
 
@@ -34,7 +38,10 @@ const baseArray = [1, 2, 3, 4, 5, -10];
     }, 0);
 
     // Verify the result
-    const expectedResult = baseArray.reduce((acc, value) => acc + value, 0);
+    const expectedResult = [1, 2, 3, 4, 5, -10].reduce(
+        (acc, value) => acc + value,
+        0,
+    );
     if (result !== expectedResult) {
         throw new Error(`Result mismatch: ${result} !== ${expectedResult}`);
     }
@@ -57,6 +64,8 @@ const baseArray = [1, 2, 3, 4, 5, -10];
     commit();
 }
 
+// END_FILE
+
 {
     const root = getRoot("test-root");
     if (!root) {
@@ -65,21 +74,17 @@ const baseArray = [1, 2, 3, 4, 5, -10];
     if (!root.value) {
         throw new Error("root.value should exist");
     }
-    if (root.value.length !== baseArray.length + 2) {
+    if (root.value.length !== 8) {
         throw new Error(
-            `root.value should have length ${baseArray.length + 2}`,
+            `root.value should have length 8`,
         );
     }
-    for (let i = 0; i < baseArray.length; i++) {
-        if (root.value[i] !== baseArray[i]) {
-            throw new Error(`different values at index ${i}`);
+    for (const [i, expected] of [1, 2, 3, 4, 5, -10, 6, -11].entries()) {
+        if (root.value[i] !== expected) {
+            throw new Error(
+                `expected ${expected} at index ${i}, got ${root.value[i]}`,
+            );
         }
-    }
-    if (root.value[baseArray.length] !== 6) {
-        throw new Error(`different value at index ${baseArray.length}`);
-    }
-    if (root.value[baseArray.length + 1] !== -11) {
-        throw new Error(`different value at index ${baseArray.length + 1}`);
     }
 
     // test reduce with index order verification on mutated array
@@ -90,7 +95,7 @@ const baseArray = [1, 2, 3, 4, 5, -10];
     }, 0);
 
     // Verify the result
-    const expectedResult = [...baseArray, 6, -11].reduce(
+    const expectedResult = [1, 2, 3, 4, 5, -10, 6, -11].reduce(
         (acc, value) => acc + value,
         0,
     );

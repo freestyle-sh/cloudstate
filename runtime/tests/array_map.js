@@ -1,24 +1,27 @@
-const baseArray = [1, 4, 9, 16];
 {
+    const base = [1, 4, 9, 16];
     const object = {
-        value: baseArray,
+        value: base,
     };
     setRoot("test-root", object);
     commit();
 }
 {
+    const mapFn = (element) => element * 2;
+    const expected = [1, 4, 9, 16].map(mapFn);
+
     const object = getRoot("test-root");
-    const newArray = object.value.map((element) => element * 2);
-    if (newArray.length !== 4) {
-        throw new Error(`Expected length to be 4, got ${newArray.length}`);
+    const newArray = object.value.map(mapFn);
+    if (newArray.length !== expected.length) {
+        throw new Error(
+            `Expected length to be ${expected.length}, got ${newArray.length}`,
+        );
     }
     for (let i = 0; i < newArray.length; i++) {
-        if (newArray[i] !== baseArray[i] * 2) {
+        if (newArray[i] !== expected[i]) {
             throw new Error(
-                `Expected ${JSON.stringify(baseArray[i] * 2)}, got ${
-                    JSON.stringify(
-                        newArray[i],
-                    )
+                `Expected ${JSON.stringify(expected[i])}, got ${
+                    JSON.stringify(newArray[i])
                 }`,
             );
         }

@@ -3,7 +3,8 @@ use deno_fetch::FetchPermissions;
 use deno_net::NetPermissions;
 use deno_web::{BlobStore, TimersPermission};
 use futures::future::poll_fn;
-use std::path::Path;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::Arc;
 use tracing::event;
@@ -64,9 +65,39 @@ pub fn run_script(
     anyhow::Error,
 > {
     let js_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(path);
-    let main_module = ModuleSpecifier::from_file_path(js_path).unwrap();
 
     let blob_storage = Arc::new(BlobStore::default());
+
+    let mut result = Err(anyhow::anyhow!("No files found"));
+    for (i, source) in fs::read_to_string(js_path.clone())
+        .unwrap()
+        .split("// END_FILE")
+        .enumerate()
+    {
+        result = Ok(run_script_source(
+            source,
+            cloudstate.clone(),
+            blob_storage.clone(),
+            js_path.clone(),
+        )?);
+    }
+
+    result
+}
+
+pub fn run_script_source(
+    script: &str,
+    cloudstate: Arc<std::sync::Mutex<ReDBCloudstate>>,
+    blob_storage: Arc<BlobStore>,
+    path: PathBuf,
+) -> Result<
+    (
+        Arc<std::sync::Mutex<ReDBCloudstate>>,
+        Result<(), anyhow::Error>,
+    ),
+    anyhow::Error,
+> {
+    let main_module = ModuleSpecifier::from_file_path(path).unwrap();
     let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
         module_loader: Some(Rc::new(FsModuleLoader)),
         extensions: vec![
@@ -91,22 +122,27 @@ pub fn run_script(
         .borrow_mut()
         .put(CloudstateFetchPermissions {});
 
+    let script = script.to_string();
     let future = async move {
-        let mod_id = js_runtime.load_main_es_module(&main_module).await.unwrap();
+        let mod_id = js_runtime
+            .load_main_es_module_from_code(&main_module, script.clone())
+            .await
+            .unwrap();
         let evaluation = js_runtime.mod_evaluate(mod_id);
         // let result = js_runtime.run_event_loop(Default::default()).await;
 
         let result = poll_fn(|cx| {
-            event!(tracing::Level::DEBUG, "committing");
-            let _ = js_runtime.execute_script("<handle>", "globalThis.commit();");
             event!(tracing::Level::DEBUG, "polling event loop");
-            js_runtime.poll_event_loop(
+            let poll_result = js_runtime.poll_event_loop(
                 cx,
                 PollEventLoopOptions {
                     pump_v8_message_loop: true,
                     wait_for_inspector: false,
                 },
-            )
+            );
+            event!(tracing::Level::DEBUG, "committing");
+            let _ = js_runtime.execute_script("<handle>", "globalThis.commit();");
+            poll_result
         })
         .await;
 

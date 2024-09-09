@@ -1,15 +1,16 @@
-const base = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
 {
+    const base = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     const object = {
         value: [...base],
     };
-
     setRoot("test-root", object);
     commit();
 }
 
+// END_FILE
+
 {
+    const expected = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     const root = getRoot("test-root");
     if (!root) {
         throw new Error("root should exist");
@@ -17,8 +18,8 @@ const base = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     if (!root.value) {
         throw new Error("root.value should exist");
     }
-    if (root.value.length !== base.length) {
-        throw new Error(`root.value should have length ${base.length}`);
+    if (root.value.length !== expected.length) {
+        throw new Error(`root.value should have length ${expected.length}`);
     }
     // check less than 11
     if (!root.value.every((v) => v < 11)) {

@@ -1,18 +1,22 @@
-const baseArray = ["a", "b", "c", "d", "e"];
-
 {
+    const base = ["a", "b", "c", "d", "e"];
     const object = {
-        value: baseArray,
+        value: base,
     };
-
     setRoot("test-root", object);
     commit();
 }
 
+// END_FILE
+
 {
+    const expected = ["a", "b", "c", "d", "e"];
+
     const object = getRoot("test-root");
-    if (object.value.length !== 5) {
-        throw new Error(`Expected length to be 5, got ${object.value.length}`);
+    if (object.value.length !== expected.length) {
+        throw new Error(
+            `Expected length to be ${expected.length}, got ${object.value.length}`,
+        );
     }
 
     const popped = object.value.pop();
@@ -21,23 +25,22 @@ const baseArray = ["a", "b", "c", "d", "e"];
     }
     commit();
 }
+
+// END_FILE
+
 {
+    const expected = ["a", "b", "c", "d"];
+
     const object = getRoot("test-root");
-    // console.log("4======", object.value[4]);
-    if (object.value.length !== 4) {
-        throw new Error(`Expected length to be 4, got ${object.value.length}`);
+    if (object.value.length !== expected.length) {
+        throw new Error(
+            `Expected length to be ${expected.length}, got ${object.value.length}`,
+        );
     }
-    if (object.value[0] !== "a") {
-        throw new Error(`Expected "a", got ${object.value[0]}`);
-    }
-    if (object.value[1] !== "b") {
-        throw new Error(`Expected "b", got ${object.value[1]}`);
-    }
-    if (object.value[2] !== "c") {
-        throw new Error(`Expected "c", got ${object.value[2]}`);
-    }
-    if (object.value[3] !== "d") {
-        throw new Error(`Expected "d", got ${object.value[3]}`);
+    for (let i = 0; i < expected.length; i++) {
+        if (object.value[i] !== expected[i]) {
+            throw new Error(`Expected ${expected[i]}, got ${object.value[i]}`);
+        }
     }
 
     const popped = object.value.pop();
@@ -46,19 +49,22 @@ const baseArray = ["a", "b", "c", "d", "e"];
     }
     commit();
 }
+
+// END_FILE
+
 {
+    const expected = ["a", "b", "c"];
+
     const object = getRoot("test-root");
-    if (object.value.length !== 3) {
-        throw new Error(`Expected length to be 3, got ${object.value.length}`);
+    if (object.value.length !== expected.length) {
+        throw new Error(
+            `Expected length to be ${expected.length}, got ${object.value.length}`,
+        );
     }
-    if (object.value[0] !== "a") {
-        throw new Error(`Expected "a", got ${object.value[0]}`);
-    }
-    if (object.value[1] !== "b") {
-        throw new Error(`Expected "b", got ${object.value[1]}`);
-    }
-    if (object.value[2] !== "c") {
-        throw new Error(`Expected "c", got ${object.value[2]}`);
+    for (let i = 0; i < expected.length; i++) {
+        if (object.value[i] !== expected[i]) {
+            throw new Error(`Expected ${expected[i]}, got ${object.value[i]}`);
+        }
     }
 
     const popped = object.value.pop();
@@ -67,16 +73,22 @@ const baseArray = ["a", "b", "c", "d", "e"];
     }
     commit();
 }
+
+// END_FILE
+
 {
+    const expected = ["a", "b"];
+
     const object = getRoot("test-root");
-    if (object.value.length !== 2) {
-        throw new Error(`Expected length to be 2, got ${object.value.length}`);
+    if (object.value.length !== expected.length) {
+        throw new Error(
+            `Expected length to be ${expected.length}, got ${object.value.length}`,
+        );
     }
-    if (object.value[0] !== "a") {
-        throw new Error(`Expected "a", got ${object.value[0]}`);
-    }
-    if (object.value[1] !== "b") {
-        throw new Error(`Expected "b", got ${object.value[1]}`);
+    for (let i = 0; i < expected.length; i++) {
+        if (object.value[i] !== expected[i]) {
+            throw new Error(`Expected ${expected[i]}, got ${object.value[i]}`);
+        }
     }
 
     const popped = object.value.pop();
@@ -85,13 +97,22 @@ const baseArray = ["a", "b", "c", "d", "e"];
     }
     commit();
 }
+
+// END_FILE
+
 {
+    const expected = ["a"];
+
     const object = getRoot("test-root");
-    if (object.value.length !== 1) {
-        throw new Error(`Expected length to be 1, got ${object.value.length}`);
+    if (object.value.length !== expected.length) {
+        throw new Error(
+            `Expected length to be ${expected.length}, got ${object.value.length}`,
+        );
     }
-    if (object.value[0] !== "a") {
-        throw new Error(`Expected "a", got ${object.value[0]}`);
+    for (let i = 0; i < expected.length; i++) {
+        if (object.value[i] !== expected[i]) {
+            throw new Error(`Expected ${expected[i]}, got ${object.value[i]}`);
+        }
     }
 
     const popped = object.value.pop();
@@ -100,6 +121,9 @@ const baseArray = ["a", "b", "c", "d", "e"];
     }
     commit();
 }
+
+// END_FILE
+
 {
     const object = getRoot("test-root");
     if (object.value.length !== 0) {

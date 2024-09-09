@@ -1,25 +1,31 @@
-const map = new Map([
-    ["foo", 1],
-    ["bar", 2],
-    ["baz", 3],
-]);
-
 {
+    const base = new Map([
+        ["foo", 1],
+        ["bar", 2],
+        ["baz", 3],
+    ]);
     const object = {
-        value: map,
+        value: base,
     };
-
     setRoot("test-root", object);
     commit();
 }
 
+// END_FILE
+
 {
+    const expected = new Map([
+        ["foo", 1],
+        ["bar", 2],
+        ["baz", 3],
+    ]);
+
     const object = getRoot("test-root");
-    let count = 0;
+    let iterations = 0;
     object.value.forEach((value, key) => {
-        if (map.get(key) !== value) {
+        if (expected.get(key) !== value) {
             throw new Error(
-                `Expected ${JSON.stringify(map.get(key))}, got ${
+                `Expected ${JSON.stringify(expected.get(key))}, got ${
                     JSON.stringify(value)
                 }`,
             );
@@ -31,9 +37,11 @@ const map = new Map([
                 }`,
             );
         }
-        count++;
+        iterations++;
     });
-    if (count !== 3) {
-        throw new Error(`Expected 3 iterations, got ${count}`);
+    if (iterations !== expected.size) {
+        throw new Error(
+            `Expected ${expected.size} entries, got ${iterations}`,
+        );
     }
 }

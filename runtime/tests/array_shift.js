@@ -1,17 +1,22 @@
-const baseArray = ["a", "b", "c", "d", "e"];
-
 {
+    const base = ["a", "b", "c", "d", "e"];
     const object = {
-        value: baseArray,
+        value: base,
     };
     setRoot("test-root", object);
     commit();
 }
 
+// END_FILE
+
 {
+    const expectedArr = ["a", "b", "c", "d", "e"];
+
     const object = getRoot("test-root");
-    if (object.value.length !== 5) {
-        throw new Error(`Expected length to be 5, got ${object.value.length}`);
+    if (object.value.length !== expectedArr.length) {
+        throw new Error(
+            `Expected length to be ${expectedArr.length}, got ${object.value.length}`,
+        );
     }
 
     const shifted = object.value.shift();
@@ -21,15 +26,21 @@ const baseArray = ["a", "b", "c", "d", "e"];
     commit();
 }
 
+// END_FILE
+
 {
+    const expectedArr = ["b", "c", "d", "e"];
+
     const object = getRoot("test-root");
-    if (object.value.length !== 4) {
-        throw new Error(`Expected length to be 4, got ${object.value.length}`);
+    if (object.value.length !== expectedArr.length) {
+        throw new Error(
+            `Expected length to be ${expected.length}, got ${object.value.length}`,
+        );
     }
-    for (let i = 0; i < 4; i++) {
-        if (object.value[i] !== baseArray[i + 1]) {
+    for (const [i, expected] of expectedArr.entries()) {
+        if (object.value[i] !== expected) {
             throw new Error(
-                `Expected ${baseArray[i + 1]}, got ${object.value[i]}`,
+                `Expected ${expected} at index ${i}, got ${object.value[i]}`,
             );
         }
     }
@@ -38,6 +49,8 @@ const baseArray = ["a", "b", "c", "d", "e"];
     object.value = [];
     commit();
 }
+
+// END_FILE
 
 {
     const object = getRoot("test-root");

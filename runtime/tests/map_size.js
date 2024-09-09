@@ -17,7 +17,19 @@ const baseSize = base.size;
   commit();
 }
 
+// END_FILE
+
 {
+  const expected = new Map([
+    ["a", 1],
+    ["b", 2],
+    ["c", 3],
+    ["d", "a"],
+    ["e", "b"],
+    ["f", "c"],
+  ]);
+  const expectedSize = expected.size;
+
   const root = getRoot("test-root");
   if (!root) {
     throw new Error("root should exist");
@@ -25,9 +37,9 @@ const baseSize = base.size;
   if (!root.value) {
     throw new Error("root.value should exist");
   }
-  if (root.value.size !== baseSize) {
+  if (root.value.size !== expectedSize) {
     throw new Error(
-      `root.value should have size ${baseSize}, got ${root.value.size}`,
+      `root.value should have size ${expectedSize}, got ${root.value.size}`,
     );
   }
 }

@@ -7,6 +7,8 @@
   commit();
 }
 
+// END_FILE
+
 {
   const object = getRoot("test-root");
   if (!object) {

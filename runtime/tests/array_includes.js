@@ -1,14 +1,16 @@
-const base = ["a", "b", "c", "d", "e", "f"];
 {
+  const base = ["a", "b", "c", "d", "e", "f"];
   const object = {
     value: [...base],
   };
-
   setRoot("test-root", object);
   commit();
 }
-// check includes
+
+// END_FILE
+
 {
+  const expected = ["a", "b", "c", "d", "e", "f"];
   const root = getRoot("test-root");
   if (!root) {
     throw new Error("root should exist");
@@ -16,16 +18,18 @@ const base = ["a", "b", "c", "d", "e", "f"];
   if (!root.value) {
     throw new Error("root.value should exist");
   }
-  if (root.value.length !== base.length) {
-    throw new Error(`root.value should have length ${base.length}`);
+  if (root.value.length !== expected.length) {
+    throw new Error(`root.value should have length ${expected.length}`);
   }
-  if (!root.value.includes("a")) {
-    throw new Error(`root.value should include "a"`);
+
+  for (const expectIncluded of expected) {
+    if (!root.value.includes(expectIncluded)) {
+      throw new Error(`root.value should include ${expectIncluded}`);
+    }
   }
-  if (!root.value.includes("f")) {
-    throw new Error(`root.value should include "f"`);
-  }
-  if (root.value.includes("z")) {
-    throw new Error(`root.value should not include "z"`);
+  for (const notExpectIncluded of ["z", 0, { "a": 1 }]) {
+    if (root.value.includes(notExpectIncluded)) {
+      throw new Error(`root.value should not include ${notExpectIncluded}`);
+    }
   }
 }

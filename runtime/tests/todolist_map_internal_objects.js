@@ -32,6 +32,8 @@ globalThis.cloudstate.customClasses = [TodoListCS];
   commit();
 }
 
+// END_FILE
+
 {
   const root = getRoot("test-root");
 
@@ -44,6 +46,8 @@ globalThis.cloudstate.customClasses = [TodoListCS];
   console.log("ROUND 2");
   commit();
 }
+
+// END_FILE
 
 {
   console.log("ROUND 3");

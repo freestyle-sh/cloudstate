@@ -1,15 +1,14 @@
-const inventoryRestock = [
-    { name: "bananas", type: "fruit", quantity: 5 },
-];
-const inventorySufficient = [
-    { name: "asparagus", type: "vegetables", quantity: 9 },
-    { name: "goat", type: "meat", quantity: 23 },
-    { name: "cherries", type: "fruit", quantity: 12 },
-    { name: "fish", type: "meat", quantity: 22 },
-];
-const inventory = inventoryRestock.concat(inventorySufficient);
-
 {
+    const inventoryRestock = [
+        { name: "bananas", type: "fruit", quantity: 5 },
+    ];
+    const inventorySufficient = [
+        { name: "asparagus", type: "vegetables", quantity: 9 },
+        { name: "goat", type: "meat", quantity: 23 },
+        { name: "cherries", type: "fruit", quantity: 12 },
+        { name: "fish", type: "meat", quantity: 22 },
+    ];
+    const inventory = inventoryRestock.concat(inventorySufficient);
     const object = {
         value: inventory,
     };
@@ -18,7 +17,19 @@ const inventory = inventoryRestock.concat(inventorySufficient);
     commit();
 }
 
+// END_FILE
+
 {
+    const expectedInventoryRestock = [
+        { name: "bananas", type: "fruit", quantity: 5 },
+    ];
+    const expectedInventorySufficient = [
+        { name: "asparagus", type: "vegetables", quantity: 9 },
+        { name: "goat", type: "meat", quantity: 23 },
+        { name: "cherries", type: "fruit", quantity: 12 },
+        { name: "fish", type: "meat", quantity: 22 },
+    ];
+
     const object = getRoot("test-root");
 
     const restock = { restock: true };
@@ -46,10 +57,10 @@ const inventory = inventoryRestock.concat(inventorySufficient);
         );
     }
     for (const item of result.get(restock)) {
-        if (!inventoryRestock.some(({ name }) => name === item.name)) {
+        if (!expectedInventoryRestock.some(({ name }) => name === item.name)) {
             throw new Error(`Expected ${JSON.stringify(item)} to exist`);
         }
-        const orginalItem = inventoryRestock.find(({ name }) =>
+        const orginalItem = expectedInventoryRestock.find(({ name }) =>
             name === item.name
         );
         if (orginalItem.quantity !== item.quantity) {
@@ -68,10 +79,12 @@ const inventory = inventoryRestock.concat(inventorySufficient);
         }
     }
     for (const item of result.get(sufficient)) {
-        if (!inventorySufficient.some(({ name }) => name === item.name)) {
+        if (
+            !expectedInventorySufficient.some(({ name }) => name === item.name)
+        ) {
             throw new Error(`Expected ${JSON.stringify(item)} to exist`);
         }
-        const orginalItem = inventorySufficient.find(({ name }) =>
+        const orginalItem = expectedInventorySufficient.find(({ name }) =>
             name === item.name
         );
         if (orginalItem.quantity !== item.quantity) {

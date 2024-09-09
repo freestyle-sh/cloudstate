@@ -23,7 +23,7 @@
 | .at()                | ✅ [Tested](/runtime/tests/array_at.js)              |                                                   |
 | .concat()            | 🚧 Planned                                           |                                                   |
 | .copyWithin()        | 🚧 Planned                                           |                                                   |
-| .entries()           | 🚧 Planned                                           |                                                   |
+| .entries()           | 🙂 Not Tested                                        |                                                   |
 | .every()             | ✅ [Tested](/runtime/tests/array_every.js)           |                                                   |
 | .filter()            | ✅ [Tested](/runtime/tests/array_filter.js)          |                                                   |
 | .find()              | ✅ [Tested](/runtime/tests/array_find.js)            |                                                   |
@@ -47,7 +47,7 @@
 | .shift()             | ✅ [Tested](/runtime/tests/array_shift.js)           |                                                   |
 | .slice()             | 🚧 Planned                                           |                                                   |
 | .some()              | ✅ [Tested](/runtime/tests/array_some.js)            |                                                   |
-| .sort()              | 🚧 Planned                                           |                                                   |
+| .sort()              | ❌ [Tested](/runtime/tests/array_sort.js)            |                                                   |
 | .splice()            | 🚧 Planned                                           |                                                   |
 | \[Symbol.iterator]() | ✅ [Tested](/runtime/tests/array_iterator.js)        |                                                   |
 | .toLocaleString()    | 🚧 Planned                                           |                                                   |
@@ -64,13 +64,24 @@
 | .length               | ✅ [Tested](/runtime/tests/array_length.js) |       |
 | \[Symbol.unscopables] | ❓ Unknown                                  |       |
 
+#### Known issues
+
+- No hydration for maps stored in arrays. See [#16](/../../issues/16).
+
+  | Test          | Status                                       | Notes                                 |
+  | ------------- | -------------------------------------------- | ------------------------------------- |
+  | Array of maps | ❌ [Tested](/runtime/tests/array_of_maps.js) | Panics - commented out of `tests.rs`. |
+
 ### AsyncIterator
 
 🤔 Considering
 
 ### BigInt
 
-✅ Unchanged from V8
+✅ [Tested](/runtime/tests/v8_bigint.js)
+
+> [!NOTE]
+> Unchanged from V8
 
 > [!NOTE]
 > BigInts are stored as a `Box<\[u64]>` in Cloudstate.
@@ -85,7 +96,10 @@
 
 ### Boolean
 
-✅ Unchanged from V8
+✅ [Tested](/runtime/tests/v8_boolean.js)
+
+> [!NOTE]
+> Unchanged from V8
 
 ### DataView
 
@@ -93,7 +107,10 @@
 
 ### Date
 
-✅ Unchanged from V8
+✅ [Tested](/runtime/tests/v8_date.js)
+
+> [!NOTE]
+> Unchanged from V8
 
 ### Error
 
@@ -133,9 +150,9 @@
 
 ### Map
 
-| Constructor | Status                              | Notes |
-| ----------- | ----------------------------------- | ----- |
-| Map()       | ✅ [Tested](/runtime/tests/maps.js) |       |
+| Constructor | Status                                         | Notes |
+| ----------- | ---------------------------------------------- | ----- |
+| Map()       | ✅ [Tested](/runtime/tests/map_constructor.js) |       |
 
 | Static method | Status                                      | Notes |
 | ------------- | ------------------------------------------- | ----- |
@@ -144,7 +161,7 @@
 | Instance method      | Status                                       | Notes                                                  |
 | -------------------- | -------------------------------------------- | ------------------------------------------------------ |
 | .clear()             | ✅ [Tested](/runtime/tests/map_clear.js)     |                                                        |
-| .delete()            | ✅ [Tested](/runtime/tests/map_delete.js)    |                                                        |
+| .delete()            | ❌ [Tested](/runtime/tests/map_delete.js)    |                                                        |
 | .entries()           | ✅ [Tested](/runtime/tests/map_entries.js)   |                                                        |
 | .forEach()           | ✅ [Tested](/runtime/tests/map_for_each.js)  |                                                        |
 | .get()               | ✅ [Tested](/runtime/tests/map_get.js)       |                                                        |
@@ -168,7 +185,10 @@
 
 ### Number
 
-✅ Unchanged from V8
+✅ [Tested](/runtime/tests/v8_number.js)
+
+> [!NOTE]
+> Unchanged from V8
 
 ### Object
 
@@ -296,7 +316,10 @@
 
 ### String
 
-✅ Unchanged from V8
+✅ [Tested](/runtime/tests/v8_string.js)
+
+> [!NOTE]
+> Unchanged from V8
 
 ### Symbol
 

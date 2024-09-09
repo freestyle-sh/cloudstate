@@ -11,6 +11,8 @@
   commit();
 }
 
+// END_FILE
+
 {
   const root = getRoot("test-root");
   if (!root) {
@@ -34,6 +36,8 @@
 
   commit();
 }
+
+// END_FILE
 
 {
   // delete the nested.value array, but keep the nested.value2 array, that way we can test that the garbage collector works correctly

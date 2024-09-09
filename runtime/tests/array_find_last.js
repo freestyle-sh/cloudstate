@@ -1,12 +1,13 @@
-const baseArray = [5, 12, 8, 130, 44, 5];
-
 {
+    const base = [5, 12, 8, 130, 44, 5];
     const object = {
-        value: baseArray,
+        value: base,
     };
     setRoot("test-root", object);
     commit();
 }
+
+// END_FILE
 
 {
     const object = getRoot("test-root");

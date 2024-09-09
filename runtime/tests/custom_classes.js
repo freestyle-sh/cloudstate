@@ -1,16 +1,15 @@
-class Counter {
-  count = 0;
-  increment() {
-    this.count += 1;
-  }
-  decrement() {
-    this.count -= 1;
-  }
-}
-
-globalThis.cloudstate.customClasses = [Counter];
-
 {
+  class Counter {
+    count = 0;
+    increment() {
+      this.count += 1;
+    }
+    decrement() {
+      this.count -= 1;
+    }
+  }
+  globalThis.cloudstate.customClasses = [Counter];
+
   const object = {
     counter: new Counter(),
   };
@@ -19,7 +18,20 @@ globalThis.cloudstate.customClasses = [Counter];
   commit();
 }
 
+// END_FILE
+
 {
+  class Counter {
+    count = 0;
+    increment() {
+      this.count += 1;
+    }
+    decrement() {
+      this.count -= 1;
+    }
+  }
+  globalThis.cloudstate.customClasses = [Counter];
+
   const object = getRoot("test-root");
   if (!object) {
     throw new Error("object should exist");
@@ -39,7 +51,20 @@ globalThis.cloudstate.customClasses = [Counter];
   commit();
 }
 
+// END_FILE
+
 {
+  class Counter {
+    count = 0;
+    increment() {
+      this.count += 1;
+    }
+    decrement() {
+      this.count -= 1;
+    }
+  }
+  globalThis.cloudstate.customClasses = [Counter];
+
   const object = getRoot("test-root");
   if (!object) {
     throw new Error("object should exist");
