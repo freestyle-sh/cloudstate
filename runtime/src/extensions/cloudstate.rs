@@ -239,7 +239,7 @@ fn op_cloudstate_cloudstate_get(
                 id: result.unwrap().0.value().id.clone(),
             })
         })
-        .unwrap()
+        .unwrap_or(CloudstatePrimitiveData::Undefined)
 }
 
 #[op2]

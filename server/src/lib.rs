@@ -19,6 +19,7 @@ use deno_web::BlobStore;
 use deno_web::TimersPermission;
 use futures::TryStreamExt;
 use serde::Deserialize;
+use serde_json::json;
 use std::{borrow::BorrowMut, cell::RefCell, collections::HashMap, sync::Mutex};
 use std::{rc::Rc, sync::Arc};
 use tracing::{debug, event};
@@ -276,7 +277,7 @@ async fn method_request(
     globalThis.process = {{
         env: {env_string}
     }}
-    import * as classes from './lib.js';
+    const classes = await import('./lib.js');
     globalThis.cloudstate.customClasses = Object.keys(classes).map((key) => classes[key]);
 
 
@@ -306,7 +307,13 @@ async fn method_request(
 
     const object = getRoot({id}) || getCloudstate({id});
     try {{
-       globalThis.result = {{ result: await object[{method}](...JSON.parse('{params}')) }};
+        if (!object) {{
+            globalThis.result = {{ error: {{ message: 'Object not found' }} }};
+        }} else if (!object[{method}]) {{
+            globalThis.result = {{ error: {{ message: `Method not found on class ${{object?.constructor?.name ?? 'unknown'}}` }} }};
+        }} else {{
+            globalThis.result = {{ result: await object[{method}](...JSON.parse('{params}')) }};
+        }}
     }} catch (e) {{
         globalThis.result = {{ error: {{ message: e.message, stack: e.stack }} }};
     }}
@@ -317,7 +324,11 @@ async fn method_request(
     let result = execute_script(&script.as_str(), &state.classes, state.cloudstate).await;
     event!(tracing::Level::DEBUG, "script result: {:#?}", result);
 
-    Json(serde_json::from_str(&result).unwrap())
+    Json(serde_json::from_str(&result).unwrap_or(json!({
+        "error": {
+            "message": "Error executing script",
+        }
+    })))
 }
 
 struct CloudstateTimerPermissions {}
