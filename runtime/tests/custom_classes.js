@@ -8,7 +8,8 @@
       this.count -= 1;
     }
   }
-  globalThis.cloudstate.customClasses = [Counter];
+
+  registerCustomClass(Counter);
 
   const object = {
     counter: new Counter(),
@@ -30,7 +31,8 @@
       this.count -= 1;
     }
   }
-  globalThis.cloudstate.customClasses = [Counter];
+
+  registerCustomClass(Counter);
 
   const object = getRoot("test-root");
   if (!object) {
@@ -63,7 +65,8 @@
       this.count -= 1;
     }
   }
-  globalThis.cloudstate.customClasses = [Counter];
+
+  registerCustomClass(Counter);
 
   const object = getRoot("test-root");
   if (!object) {

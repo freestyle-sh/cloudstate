@@ -23,7 +23,9 @@
       return this.counters[index];
     }
   }
-  globalThis.cloudstate.customClasses = [CounterManager, Counter];
+
+  registerCustomClass(Counter);
+  registerCustomClass(CounterManager);
 
   const root = {
     value: new CounterManager(),
@@ -60,7 +62,9 @@
       return this.counters[index];
     }
   }
-  globalThis.cloudstate.customClasses = [CounterManager, Counter];
+
+  registerCustomClass(Counter);
+  registerCustomClass(CounterManager);
 
   const root = getRoot("test-root");
   const counter = root.value.createCounter();
@@ -100,7 +104,9 @@
       return this.counters[index];
     }
   }
-  globalThis.cloudstate.customClasses = [CounterManager, Counter];
+
+  registerCustomClass(Counter);
+  registerCustomClass(CounterManager);
 
   const root = getRoot("test-root");
   const counter = root.value.getCounter(0);

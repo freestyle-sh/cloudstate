@@ -12,7 +12,7 @@ use std::sync::Arc;
 use tracing::event;
 
 use crate::extensions::bootstrap::bootstrap;
-use crate::extensions::cloudstate::{cloudstate, ReDBCloudstate};
+use crate::extensions::cloudstate::{cloudstate, ReDBCloudstate, TransactionContext};
 
 struct Permissions {}
 
@@ -58,14 +58,8 @@ impl NetPermissions for CloudstateNetPermissions {
 
 pub fn run_script(
     path: &str,
-    cloudstate: Arc<std::sync::Mutex<ReDBCloudstate>>,
-) -> Result<
-    (
-        Arc<std::sync::Mutex<ReDBCloudstate>>,
-        Result<(), anyhow::Error>,
-    ),
-    anyhow::Error,
-> {
+    cloudstate: ReDBCloudstate,
+) -> Result<(ReDBCloudstate, Result<(), anyhow::Error>), anyhow::Error> {
     let js_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(path);
 
     let blob_storage = Arc::new(BlobStore::default());
@@ -91,16 +85,10 @@ type CloudstateNodePermissions = AllowAllNodePermissions;
 
 pub fn run_script_source(
     script: &str,
-    cloudstate: Arc<std::sync::Mutex<ReDBCloudstate>>,
+    cloudstate: ReDBCloudstate,
     blob_storage: Arc<BlobStore>,
     path: PathBuf,
-) -> Result<
-    (
-        Arc<std::sync::Mutex<ReDBCloudstate>>,
-        Result<(), anyhow::Error>,
-    ),
-    anyhow::Error,
-> {
+) -> Result<(ReDBCloudstate, Result<(), anyhow::Error>), anyhow::Error> {
     let main_module = ModuleSpecifier::from_file_path(path).unwrap();
     let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
         module_loader: Some(Rc::new(FsModuleLoader)),
@@ -116,15 +104,16 @@ pub fn run_script_source(
             ),
             deno_net::deno_net::init_ops_and_esm::<CloudstateNetPermissions>(None, None),
             cloudstate::init_ops_and_esm(),
-            deno_node::deno_node::init_ops_and_esm::<CloudstateNodePermissions>(
-                None,
-                std::rc::Rc::new(InMemoryFs::default()),
-            ),
+            // deno_node::deno_node::init_ops_and_esm::<CloudstateNodePermissions>(
+            //     None,
+            //     std::rc::Rc::new(InMemoryFs::default()),
+            // ),
         ],
         ..Default::default()
     });
 
-    js_runtime.op_state().borrow_mut().put(cloudstate);
+    let transaction_context = TransactionContext::new(cloudstate.clone());
+    js_runtime.op_state().borrow_mut().put(transaction_context);
     js_runtime
         .op_state()
         .borrow_mut()
@@ -137,7 +126,6 @@ pub fn run_script_source(
             .await
             .unwrap();
         let evaluation = js_runtime.mod_evaluate(mod_id);
-        // let result = js_runtime.run_event_loop(Default::default()).await;
 
         let result = poll_fn(|cx| {
             event!(tracing::Level::DEBUG, "polling event loop");
@@ -148,8 +136,13 @@ pub fn run_script_source(
                     wait_for_inspector: false,
                 },
             );
-            event!(tracing::Level::DEBUG, "committing");
-            let _ = js_runtime.execute_script("<handle>", "globalThis.commit();");
+
+            js_runtime
+                .op_state()
+                .borrow_mut()
+                .borrow_mut::<TransactionContext>()
+                .commit_transaction();
+
             poll_result
         })
         .await;
@@ -159,16 +152,11 @@ pub fn run_script_source(
         (js_runtime, result)
     };
 
-    let (mut js_runtime, result) = tokio::runtime::Builder::new_current_thread()
+    let (_, result) = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
         .unwrap()
         .block_on(future);
-
-    let cloudstate = js_runtime
-        .op_state()
-        .borrow_mut()
-        .take::<Arc<std::sync::Mutex<ReDBCloudstate>>>();
 
     return Ok((cloudstate, result));
 }

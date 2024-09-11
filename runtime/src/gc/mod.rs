@@ -57,10 +57,7 @@ fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
             if let Ok((key, root)) = item {
                 let key = key.value();
                 let root = root.value();
-                roots.push(CloudstateObjectKey {
-                    id: root.id,
-                    namespace: key.namespace,
-                });
+                roots.push(CloudstateObjectKey { id: root.id });
             }
         }
 
@@ -105,20 +102,13 @@ fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
                                 CloudstatePrimitiveData::ObjectReference(obj_ref) => {
                                     stack.push(Pointer::Object(CloudstateObjectKey {
                                         id: obj_ref.id,
-                                        namespace: object_key.namespace.clone(),
                                     }));
                                 }
                                 CloudstatePrimitiveData::MapReference(map_ref) => {
-                                    stack.push(Pointer::Map(CloudstateObjectKey {
-                                        id: map_ref,
-                                        namespace: object_key.namespace.clone(),
-                                    }));
+                                    stack.push(Pointer::Map(CloudstateObjectKey { id: map_ref }));
                                 }
                                 CloudstatePrimitiveData::ArrayReference(arr_ref) => {
-                                    stack.push(Pointer::Array(CloudstateObjectKey {
-                                        id: arr_ref,
-                                        namespace: object_key.namespace.clone(),
-                                    }));
+                                    stack.push(Pointer::Array(CloudstateObjectKey { id: arr_ref }));
                                 }
                                 _ => {
                                     /* These don't have references so they don't need anything */
@@ -133,26 +123,21 @@ fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
                             if let Ok((key, value)) = item {
                                 let key = key.value();
                                 let value = value.value();
-                                if key.id == map_reference.id
-                                    && key.namespace == map_reference.namespace
-                                {
+                                if key.id == map_reference.id {
                                     match value.data {
                                         CloudstatePrimitiveData::ObjectReference(obj_ref) => {
                                             stack.push(Pointer::Object(CloudstateObjectKey {
                                                 id: obj_ref.id,
-                                                namespace: map_reference.namespace.clone(),
                                             }));
                                         }
                                         CloudstatePrimitiveData::MapReference(map_ref_internal) => {
                                             stack.push(Pointer::Map(CloudstateObjectKey {
                                                 id: map_ref_internal,
-                                                namespace: map_reference.namespace.clone(),
                                             }));
                                         }
                                         CloudstatePrimitiveData::ArrayReference(arr_ref) => {
                                             stack.push(Pointer::Array(CloudstateObjectKey {
                                                 id: arr_ref,
-                                                namespace: map_reference.namespace.clone(),
                                             }));
                                         }
                                         _ => {
@@ -171,18 +156,16 @@ fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
                                 let key = key.value();
                                 let value = value.value();
 
-                                if key.id == arr_ref.id && key.namespace == arr_ref.namespace {
+                                if key.id == arr_ref.id {
                                     match value.data {
                                         CloudstatePrimitiveData::ObjectReference(obj_ref) => {
                                             stack.push(Pointer::Object(CloudstateObjectKey {
                                                 id: obj_ref.id,
-                                                namespace: arr_ref.namespace.clone(),
                                             }));
                                         }
                                         CloudstatePrimitiveData::MapReference(map_ref) => {
                                             stack.push(Pointer::Map(CloudstateObjectKey {
                                                 id: map_ref,
-                                                namespace: arr_ref.namespace.clone(),
                                             }));
                                         }
                                         CloudstatePrimitiveData::ArrayReference(
@@ -190,7 +173,6 @@ fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
                                         ) => {
                                             stack.push(Pointer::Array(CloudstateObjectKey {
                                                 id: arr_ref_internal,
-                                                namespace: arr_ref.namespace.clone(),
                                             }));
                                         }
                                         _ => {
@@ -243,10 +225,7 @@ fn sweep(tx: WriteTransaction, reachable: &BTreeSet<Pointer>) -> anyhow::Result<
             if let Ok((key, _value)) = item {
                 let key = key.value();
 
-                if !reachable.contains(&Pointer::Map(CloudstateObjectKey {
-                    id: key.id.clone(),
-                    namespace: key.namespace.clone(),
-                })) {
+                if !reachable.contains(&Pointer::Map(CloudstateObjectKey { id: key.id.clone() })) {
                     to_delete.push(Pointer::MapField(key));
                 }
             }
@@ -256,10 +235,8 @@ fn sweep(tx: WriteTransaction, reachable: &BTreeSet<Pointer>) -> anyhow::Result<
             if let Ok((key, _value)) = item {
                 let key = key.value();
 
-                if !reachable.contains(&Pointer::Array(CloudstateObjectKey {
-                    id: key.id.clone(),
-                    namespace: key.namespace.clone(),
-                })) {
+                if !reachable.contains(&Pointer::Array(CloudstateObjectKey { id: key.id.clone() }))
+                {
                     to_delete.push(Pointer::ArrayItem(key));
                 }
             }

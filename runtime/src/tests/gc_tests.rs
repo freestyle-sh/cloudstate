@@ -1,6 +1,5 @@
-use std::{collections::HashMap, sync::Arc};
-
 use redb::{backends::InMemoryBackend, Database, ReadableTable};
+use std::sync::{Arc, Mutex};
 
 use crate::{
     execution::run_script, extensions::cloudstate::ReDBCloudstate, gc::mark_and_sweep, tables,
@@ -11,16 +10,11 @@ fn test_gc_objects() {
     let db = Database::builder()
         .create_with_backend(InMemoryBackend::default())
         .unwrap();
-    let cloudstate = ReDBCloudstate {
-        db,
-        transactions: HashMap::new(),
-    };
+    let cloudstate = ReDBCloudstate::new(Arc::new(Mutex::new(db)));
 
-    let cloudstate = Arc::new(std::sync::Mutex::new(cloudstate));
+    let (cloudstate, _) = run_script("tests/gc/base.js", cloudstate.clone()).unwrap();
 
-    let (cloudstate, _) = run_script("tests/gc/base.js", cloudstate).unwrap();
-
-    let db = &cloudstate.lock().unwrap().db;
+    let db = &cloudstate.get_database_mut();
     let read = db.begin_read();
     let read = match read {
         Ok(read) => read,
@@ -70,15 +64,11 @@ fn test_gc_maps() {
     let db = Database::builder()
         .create_with_backend(InMemoryBackend::default())
         .unwrap();
-    let cloudstate = ReDBCloudstate {
-        db: db,
-        transactions: HashMap::new(),
-    };
-    let cloudstate = Arc::new(std::sync::Mutex::new(cloudstate));
+    let cloudstate = ReDBCloudstate::new(Arc::new(Mutex::new(db)));
 
     let (cloudstate, _) = run_script("tests/gc/map.js", cloudstate).unwrap();
 
-    let db = &cloudstate.lock().unwrap().db;
+    let db = &cloudstate.get_database_mut();
     let read = db.begin_read();
     let read = match read {
         Ok(read) => read,
@@ -127,16 +117,11 @@ pub fn test_gc_array() {
     let db = Database::builder()
         .create_with_backend(InMemoryBackend::default())
         .unwrap();
-    let cloudstate = ReDBCloudstate {
-        db,
-        transactions: HashMap::new(),
-    };
-
-    let cloudstate = Arc::new(std::sync::Mutex::new(cloudstate));
+    let cloudstate = ReDBCloudstate::new(Arc::new(Mutex::new(db)));
 
     let (cloudstate, _) = run_script("tests/gc/array.js", cloudstate).unwrap();
 
-    let db = &cloudstate.lock().unwrap().db;
+    let db = &cloudstate.get_database_mut();
     let read = db.begin_read();
     let read = match read {
         Ok(read) => read,

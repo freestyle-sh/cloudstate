@@ -5,17 +5,16 @@ macro_rules! js_test {
         fn $name() {
             let (cs, result) = crate::execution::run_script(
                 &format!("tests/{}.js", stringify!($name)),
-                std::sync::Arc::new(std::sync::Mutex::new(
-                    crate::extensions::cloudstate::ReDBCloudstate {
-                        db: redb::Database::builder()
+                crate::extensions::cloudstate::ReDBCloudstate::new(std::sync::Arc::new(
+                    std::sync::Mutex::new(
+                        redb::Database::builder()
                             .create_with_backend(redb::backends::InMemoryBackend::default())
                             .unwrap(),
-                        transactions: std::collections::HashMap::new(),
-                    },
+                    ),
                 )),
             )
             .unwrap();
-            crate::print::print_database(&cs.lock().unwrap().db);
+            crate::print::print_database(&cs.get_database_mut());
             result.unwrap();
         }
     };

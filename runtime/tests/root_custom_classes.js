@@ -10,7 +10,8 @@
       this.count -= 1;
     }
   }
-  globalThis.cloudstate.customClasses = [Counter];
+
+  registerCustomClass(Counter);
 
   // Set root to a class directly
   setRoot("test-root", new Counter());
@@ -31,7 +32,8 @@
       this.count -= 1;
     }
   }
-  globalThis.cloudstate.customClasses = [Counter];
+
+  registerCustomClass(Counter);
 
   // Check if root still exists
   const counter = getRoot("test-root");
@@ -67,7 +69,8 @@
       this.count -= 1;
     }
   }
-  globalThis.cloudstate.customClasses = [Counter];
+
+  registerCustomClass(Counter);
 
   // Check if root still exists
   const counter = getRoot("test-root");

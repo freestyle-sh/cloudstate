@@ -3,40 +3,61 @@ use chrono::{DateTime, TimeZone, Utc};
 use deno_core::anyhow::Error;
 use deno_core::error::JsError;
 use deno_core::*;
-use redb::ReadableTable;
-use redb::{Database, WriteTransaction};
+use redb::{Database, ReadableTable, WriteTransaction};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::i32;
 use std::sync::Arc;
-use std::sync::Mutex;
-use tracing::event;
+use std::sync::{Mutex, MutexGuard};
+use tracing::{debug, event};
 use url::Url;
 use v8::GetPropertyNamesArgs;
+
+pub struct TransactionContext {
+    database: ReDBCloudstate,
+    current_transaction: Option<WriteTransaction>,
+}
+
+impl TransactionContext {
+    pub fn new(database: ReDBCloudstate) -> Self {
+        Self {
+            current_transaction: None,
+            database: database.clone(),
+        }
+    }
+
+    pub fn get_or_create_transaction_mut(&mut self) -> &WriteTransaction {
+        if self.current_transaction.is_none() {
+            let db = self.database.get_database_mut();
+            let write_txn = db.begin_write().unwrap();
+            self.current_transaction = Some(write_txn);
+
+            self.current_transaction.as_mut().unwrap()
+        } else {
+            self.current_transaction.as_mut().unwrap()
+        }
+    }
+
+    pub fn commit_transaction(&mut self) {
+        if let Some(transaction) = self.current_transaction.take() {
+            transaction.commit().unwrap();
+        }
+    }
+}
 
 #[op2]
 fn op_cloudstate_object_set(
     state: &mut OpState,
-    #[string] transaction_id: String,
-    #[string] namespace: String,
     #[string] id: String,
     #[from_v8] value: CloudstateObjectData,
 ) -> Result<(), Error> {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
-    let mut cs = cs.lock().unwrap();
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
+    let mut table = transaction.open_table(OBJECTS_TABLE).unwrap();
+    let key = CloudstateObjectKey { id };
 
-    let mut table = write_txn.open_table(OBJECTS_TABLE).unwrap();
-
-    let key = CloudstateObjectKey {
-        namespace: namespace.to_string(),
-        id: id.to_string(),
-    };
-
-    let _ = table
+    table
         .insert(&key, CloudstateObjectValue { data: value })
         .unwrap();
 
@@ -47,22 +68,13 @@ fn op_cloudstate_object_set(
 #[to_v8]
 fn op_cloudstate_object_get(
     state: &mut OpState,
-    #[string] transaction_id: String,
-    #[string] namespace: String,
     #[string] id: String,
 ) -> Result<CloudstateObjectData, Error> {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
-    let cs = cs.lock().unwrap();
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
-    let table = read_txn.open_table(OBJECTS_TABLE).unwrap();
-
-    let key = CloudstateObjectKey {
-        namespace: namespace.to_string(),
-        id: id.to_string(),
-    };
+    let table = transaction.open_table(OBJECTS_TABLE).unwrap();
+    let key = CloudstateObjectKey { id };
 
     let result = table.get(key).unwrap();
     let result = result.map(|s| s.value().data);
@@ -71,42 +83,29 @@ fn op_cloudstate_object_get(
 }
 
 #[op2(fast)]
-fn op_cloudstate_array_reverse(
-    state: &mut OpState,
-    #[string] transaction_id: String,
-    #[string] namespace: String,
-    #[string] array_id: String,
-) {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
+fn op_cloudstate_array_reverse(state: &mut OpState, #[string] array_id: String) {
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let mut cs = cs.lock().unwrap();
-
-    let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
-
-    let mut table = write_txn.open_table(ARRAYS_TABLE).unwrap();
-
+    let mut table = transaction.open_table(ARRAYS_TABLE).unwrap();
     let keys: Vec<CloudstateArrayItemKey> = table
         .iter()
         .unwrap()
         .map(|entry| entry.unwrap().0.value())
-        .filter(|key| key.id == array_id && key.namespace == namespace)
+        .filter(|key| key.id == array_id)
         .collect();
 
     let mut values = vec![];
-
     for key in &keys {
         let value = table.get(key).unwrap().unwrap().value().data;
         values.push(value);
     }
 
     for (_i, key) in keys.iter().enumerate() {
-        let value = values.pop().unwrap(); // this is where the reversal happens
+        let value = values.pop().unwrap();
         table
             .insert(
                 &CloudstateArrayItemKey {
-                    namespace: key.namespace.clone(),
                     id: key.id.clone(),
                     index: key.index,
                 },
@@ -120,23 +119,17 @@ fn op_cloudstate_array_reverse(
 #[to_v8]
 fn op_cloudstate_array_pop(
     state: &mut OpState,
-    #[string] transaction_id: String,
-    #[string] namespace: String,
     #[string] array_id: String,
 ) -> Result<CloudstatePrimitiveData, Error> {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
-    let mut cs = cs.lock().unwrap();
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
-    let mut table = write_txn.open_table(ARRAYS_TABLE).unwrap();
-
+    let mut table = transaction.open_table(ARRAYS_TABLE).unwrap();
     let keys: Vec<CloudstateArrayItemKey> = table
         .iter()
         .unwrap()
         .map(|entry| entry.unwrap().0.value())
-        .filter(|key| key.id == array_id && key.namespace == namespace)
+        .filter(|key| key.id == array_id)
         .collect();
 
     let length = keys.len() as i32;
@@ -144,39 +137,29 @@ fn op_cloudstate_array_pop(
         return Ok(CloudstatePrimitiveData::Undefined);
     }
 
-    let key = match keys.iter().find(|key| key.index == length - 1) {
-        Some(key) => key,
-        None => return Ok(CloudstatePrimitiveData::Undefined),
-    };
-
-    let value = table.remove(key).unwrap().unwrap().value().data;
-
-    Ok(value)
+    if let Some(key) = keys.iter().find(|key| key.index == length - 1) {
+        let value = table.remove(key).unwrap().unwrap().value().data;
+        return Ok(value);
+    } else {
+        return Ok(CloudstatePrimitiveData::Undefined);
+    }
 }
 
 #[op2]
 #[to_v8]
 fn op_cloudstate_array_shift(
     state: &mut OpState,
-    #[string] transaction_id: String,
-    #[string] namespace: String,
     #[string] array_id: String,
 ) -> CloudstatePrimitiveData {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let mut cs = cs.lock().unwrap();
-
-    let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
-
-    let mut table = write_txn.open_table(ARRAYS_TABLE).unwrap();
-
+    let mut table = transaction.open_table(ARRAYS_TABLE).unwrap();
     let keys: Vec<CloudstateArrayItemKey> = table
         .iter()
         .unwrap()
         .map(|entry| entry.unwrap().0.value())
-        .filter(|key| key.id == array_id && key.namespace == namespace)
+        .filter(|key| key.id == array_id)
         .collect();
 
     let mut return_value = None;
@@ -187,7 +170,6 @@ fn op_cloudstate_array_shift(
             table
                 .insert(
                     &CloudstateArrayItemKey {
-                        namespace: key.namespace.clone(),
                         id: key.id.clone(),
                         index: key.index - 1,
                     },
@@ -206,17 +188,12 @@ fn op_cloudstate_array_shift(
 #[to_v8]
 fn op_cloudstate_cloudstate_get(
     state: &mut OpState,
-    #[string] transaction_id: String,
-    #[string] _namespace: String,
     #[string] id: String,
 ) -> CloudstatePrimitiveData {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
-    let cs = cs.lock().unwrap();
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
-    let table = read_txn.open_table(OBJECTS_TABLE).unwrap();
+    let table = transaction.open_table(OBJECTS_TABLE).unwrap();
 
     let result = table.iter().unwrap().find(|value| {
         value
@@ -226,47 +203,34 @@ fn op_cloudstate_cloudstate_get(
             .value()
             .data
             .fields
-            .get(&"id".to_string())
-            .map_or_else(
-                || false,
-                |id_value| id_value == &CloudstatePrimitiveData::String(id.clone()),
-            )
+            .get("id")
+            .map_or(false, |id_value| {
+                id_value == &CloudstatePrimitiveData::String(id.clone())
+            })
     });
 
-    result
-        .map(|result| {
-            CloudstatePrimitiveData::ObjectReference(ObjectReference {
-                id: result.unwrap().0.value().id.clone(),
-            })
-        })
-        .unwrap_or(CloudstatePrimitiveData::Undefined)
+    match result {
+        Some(result) => CloudstatePrimitiveData::ObjectReference(ObjectReference {
+            id: result.unwrap().0.value().id.clone(),
+        }),
+        None => CloudstatePrimitiveData::Undefined,
+    }
 }
 
 #[op2]
 fn op_cloudstate_map_set(
     state: &mut OpState,
-    #[string] transaction_id: String,
-    #[string] namespace: String,
     #[string] id: String,
     #[string] field: String,
     #[from_v8] value: CloudstatePrimitiveData,
 ) -> Result<(), Error> {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
-    let mut cs = cs.lock().unwrap();
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
+    let mut table = transaction.open_table(MAPS_TABLE).unwrap();
+    let key = CloudstateMapFieldKey { id, field };
 
-    let mut table = write_txn.open_table(MAPS_TABLE).unwrap();
-
-    let key = CloudstateMapFieldKey {
-        namespace: namespace.to_string(),
-        id: id.to_string(),
-        field: field.to_string(),
-    };
-
-    let _ = table
+    table
         .insert(&key, CloudstateMapFieldValue { data: value })
         .unwrap();
     Ok(())
@@ -275,54 +239,33 @@ fn op_cloudstate_map_set(
 #[op2(fast)]
 fn op_cloudstate_map_delete(
     state: &mut OpState,
-    #[string] transaction_id: String,
-    #[string] namespace: String,
     #[string] map_id: String,
     #[string] key: String,
 ) -> bool {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
-    let mut cs = cs.lock().unwrap();
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
-
-    let mut table = write_txn.open_table(MAPS_TABLE).unwrap();
-
+    let mut table = transaction.open_table(MAPS_TABLE).unwrap();
     let key = CloudstateMapFieldKey {
-        namespace: namespace.to_string(),
-        id: map_id.to_string(),
-        field: key.to_string(),
+        id: map_id,
+        field: key,
     };
 
-    let did_exist = match table.remove(&key).unwrap_or(None) {
-        Some(_) => true,
-        None => false,
-    };
-    did_exist
+    let was_removed = table.remove(&key).unwrap_or(None).is_some();
+    was_removed
 }
 
 #[op2(fast)]
-fn op_cloudstate_map_clear(
-    state: &mut OpState,
-    #[string] transaction_id: String,
-    #[string] namespace: String,
-    #[string] map_id: String,
-) {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
-    let mut cs = cs.lock().unwrap();
+fn op_cloudstate_map_clear(state: &mut OpState, #[string] map_id: String) {
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
-
-    let mut table = write_txn.open_table(MAPS_TABLE).unwrap();
-
+    let mut table = transaction.open_table(MAPS_TABLE).unwrap();
     let keys: Vec<CloudstateMapFieldKey> = table
         .iter()
         .unwrap()
         .map(|entry| entry.unwrap().0.value())
-        .filter(|key| key.id == map_id && key.namespace == namespace)
+        .filter(|key| key.id == map_id)
         .collect();
 
     for key in keys {
@@ -334,109 +277,69 @@ fn op_cloudstate_map_clear(
 #[to_v8]
 fn op_cloudstate_map_get(
     state: &mut OpState,
-    #[string] transaction_id: String,
-    #[string] namespace: String,
     #[string] id: String,
     #[string] field: String,
 ) -> CloudstatePrimitiveData {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
-    let cs = cs.lock().unwrap();
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
-    let table = read_txn.open_table(MAPS_TABLE).unwrap();
+    let table = transaction.open_table(MAPS_TABLE).unwrap();
+    let key = CloudstateMapFieldKey { id, field };
 
-    let key = CloudstateMapFieldKey {
-        namespace: namespace.to_string(),
-        id: id.to_string(),
-        field: field.to_string(),
-    };
-
-    let out = match table.get(key).unwrap_or(None) {
+    let primitive = match table.get(key).unwrap_or(None) {
         Some(value) => value.value().data,
         None => CloudstatePrimitiveData::Undefined,
     };
-    out
+
+    primitive
 }
 
 #[op2]
 #[to_v8]
 fn op_cloudstate_map_has(
     state: &mut OpState,
-    #[string] transaction_id: String,
-    #[string] namespace: String,
     #[string] id: String,
     #[string] field: String,
 ) -> CloudstatePrimitiveData {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
-    let cs = cs.lock().unwrap();
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
-    let table = read_txn.open_table(MAPS_TABLE).unwrap();
+    let table = transaction.open_table(MAPS_TABLE).unwrap();
+    let key = CloudstateMapFieldKey { id, field };
 
-    let key = CloudstateMapFieldKey {
-        namespace: namespace.to_string(),
-        id: id.to_string(),
-        field: field.to_string(),
-    };
-
-    let out = match table.get(key).unwrap_or(None) {
+    let primitive = match table.get(key).unwrap_or(None) {
         Some(_) => CloudstatePrimitiveData::Boolean(true),
         None => CloudstatePrimitiveData::Boolean(false),
     };
-    out
+
+    primitive
 }
 
 #[op2]
 fn op_cloudstate_array_set(
     state: &mut OpState,
-    #[string] transaction_id: String,
-    #[string] namespace: String,
     #[string] id: String,
     index: i32,
     #[from_v8] value: CloudstatePrimitiveData,
 ) -> Result<(), Error> {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
-    let mut cs = cs.lock().unwrap();
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
+    let mut table = transaction.open_table(ARRAYS_TABLE).unwrap();
+    let key = CloudstateArrayItemKey { id, index };
 
-    let mut table = write_txn.open_table(ARRAYS_TABLE).unwrap();
-
-    let key = CloudstateArrayItemKey {
-        namespace: namespace.to_string(),
-        id: id.to_string(),
-        index: index,
-    };
-
-    let _ = table
+    table
         .insert(&key, CloudstateArrayItemValue { data: value })
         .unwrap();
     Ok(())
 }
 
 #[op2(fast)]
-fn op_cloudstate_array_length(
-    state: &mut OpState,
-    #[string] transaction_id: String,
-    #[string] id: String,
-) -> i32 {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
-    let cs = cs.lock().unwrap();
+fn op_cloudstate_array_length(state: &mut OpState, #[string] id: String) -> i32 {
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let read_txn = cs
-        .transactions
-        .get(transaction_id.as_str())
-        .expect("There should always be a transaction open");
-
-    let table = read_txn.open_table(ARRAYS_TABLE).unwrap();
+    let table = transaction.open_table(ARRAYS_TABLE).unwrap();
 
     let count = table
         .iter()
@@ -451,24 +354,14 @@ fn op_cloudstate_array_length(
 #[to_v8]
 fn op_cloudstate_array_get(
     state: &mut OpState,
-    #[string] transaction_id: String,
-    #[string] namespace: String,
     #[string] id: String,
     index: i32,
 ) -> CloudstatePrimitiveData {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
-    let cs = cs.lock().unwrap();
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
-    let table = read_txn.open_table(ARRAYS_TABLE).unwrap();
-
-    let key = CloudstateArrayItemKey {
-        namespace: namespace.to_string(),
-        id: id.to_string(),
-        index: index,
-    };
+    let table = transaction.open_table(ARRAYS_TABLE).unwrap();
+    let key = CloudstateArrayItemKey { id, index };
 
     let result = table.get(key).unwrap();
     let result = result.map(|s| s.value().data);
@@ -477,20 +370,11 @@ fn op_cloudstate_array_get(
 }
 
 #[op2(fast)]
-// #[to_v8]
-fn op_cloudstate_map_size(
-    state: &mut OpState,
-    #[string] transaction_id: String,
-    #[string] map_id: String,
-) -> Result<i32, Error> {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
-    let cs = cs.lock().unwrap();
+fn op_cloudstate_map_size(state: &mut OpState, #[string] map_id: String) -> Result<i32, Error> {
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
-    let table = read_txn.open_table(MAPS_TABLE).unwrap();
-
+    let table = transaction.open_table(MAPS_TABLE).unwrap();
     let count = table
         .iter()
         .unwrap()
@@ -505,21 +389,14 @@ fn op_cloudstate_map_size(
 #[string]
 fn op_cloudstate_object_root_get(
     state: &mut OpState,
-    #[string] transaction_id: String,
-    #[string] namespace: String,
     #[string] alias: String,
 ) -> Result<Option<String>, Error> {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
-    let cs = cs.lock().unwrap();
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
-    let table = read_txn.open_table(ROOTS_TABLE).unwrap();
-    let key = CloudstateRootKey {
-        namespace: namespace.to_string(),
-        alias: alias.to_string(),
-    };
+    let table = transaction.open_table(ROOTS_TABLE).unwrap();
+    let key = CloudstateRootKey { alias };
+
     let result = table.get(key).unwrap();
     let result = result.map(|s| s.value().id);
     Ok(result)
@@ -528,85 +405,38 @@ fn op_cloudstate_object_root_get(
 #[op2(fast)]
 fn op_cloudstate_object_root_set(
     state: &mut OpState,
-    #[string] transaction_id: String,
-    #[string] namespace: String,
     #[string] alias: String,
     #[string] id: String,
 ) -> Result<(), Error> {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
-    let mut cs = cs.lock().unwrap();
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
+    let mut table = transaction.open_table(ROOTS_TABLE).unwrap();
+    let key = CloudstateRootKey { alias };
 
-    let mut table = write_txn.open_table(ROOTS_TABLE).unwrap();
-
-    let key = CloudstateRootKey {
-        namespace: namespace.to_string(),
-        alias: alias.to_string(),
-    };
-
-    let _ = table.insert(&key, CloudstateRootValue { id: id }).unwrap();
+    table.insert(&key, CloudstateRootValue { id }).unwrap();
     Ok(())
 }
 
 #[op2(fast)]
-#[string]
-fn op_cloudstate_create_transaction(
-    state: &mut OpState,
-    #[string] id: String,
-) -> Result<(), Error> {
-    event!(tracing::Level::DEBUG, "Creating transaction");
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
-    let mut cs = cs.lock().unwrap();
-
-    event!(tracing::Level::DEBUG, "Opening write transaction");
-    let write_txn = cs.db.begin_write().unwrap();
-
-    event!(tracing::Level::DEBUG, "Inserting transaction");
-    // cs.transactions.ins
-    cs.transactions.insert(id, write_txn);
-    Ok(())
-}
-
-#[op2(fast)]
-fn op_cloudstate_commit_transaction(
-    state: &mut OpState,
-    #[string] id: String,
-) -> Result<(), Error> {
+fn op_cloudstate_commit_transaction(state: &mut OpState) -> Result<(), Error> {
     event!(tracing::Level::DEBUG, "Committing transaction");
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
-    let mut cs = cs.lock().unwrap();
-    let write_txn = cs.transactions.remove(&id).unwrap();
-    write_txn.commit().unwrap();
-    event!(tracing::Level::DEBUG, "Transaction committed");
-
+    let cs = state.borrow_mut::<TransactionContext>();
+    cs.commit_transaction();
+    debug!("Transaction committed");
     Ok(())
 }
 
-//TODO: Lazy iterator?
 #[op2]
 #[to_v8]
 fn op_cloudstate_map_values(
     state: &mut OpState,
-    #[string] transaction_id: String,
     #[string] map_id: String,
 ) -> Result<CloudstatePrimitiveDataVec, Error> {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let cs = cs.lock().unwrap();
-
-    let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
-
-    let table = read_txn.open_table(MAPS_TABLE).unwrap();
-
+    let table = transaction.open_table(MAPS_TABLE).unwrap();
     let mut values = vec![];
 
     for entry in table.iter().unwrap() {
@@ -628,17 +458,12 @@ fn op_cloudstate_array_sort<'a>(
     state: &mut OpState,
     scope: &mut v8::HandleScope<'a>,
     #[string] transaction_id: String,
-    #[string] namespace: String,
     #[string] array_id: String,
     compare_fn: Option<&v8::Function>,
 ) -> CloudstatePrimitiveData {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
+    let cs = state.borrow_mut::<TransactionContext>();
 
-    let mut cs = cs.lock().unwrap();
-
-    let write_txn = cs.transactions.get_mut(&transaction_id).unwrap();
+    let write_txn = cs.get_or_create_transaction_mut();
 
     let mut table = write_txn.open_table(ARRAYS_TABLE).unwrap();
 
@@ -679,7 +504,7 @@ fn op_cloudstate_array_sort<'a>(
         .iter()
         .unwrap()
         .map(|entry| entry.unwrap().0.value())
-        .filter(|key| key.id == array_id && key.namespace == namespace)
+        .filter(|key| key.id == array_id)
         .collect();
 
     let mut values = vec![];
@@ -702,7 +527,6 @@ fn op_cloudstate_array_sort<'a>(
         table
             .insert(
                 &CloudstateArrayItemKey {
-                    namespace: key.namespace.clone(),
                     id: key.id.clone(),
                     index: key.index,
                 },
@@ -718,19 +542,12 @@ fn op_cloudstate_array_sort<'a>(
 #[to_v8]
 fn op_cloudstate_map_keys(
     state: &mut OpState,
-    #[string] transaction_id: String,
     #[string] map_id: String,
 ) -> Result<CloudstatePrimitiveDataVec, Error> {
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let cs = cs.lock().unwrap();
-
-    let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
-
-    let table = read_txn.open_table(MAPS_TABLE).unwrap();
-
+    let table = transaction.open_table(MAPS_TABLE).unwrap();
     let mut keys = vec![];
 
     for entry in table.iter().unwrap() {
@@ -748,23 +565,13 @@ fn op_cloudstate_map_keys(
 #[to_v8]
 fn op_cloudstate_map_entries(
     state: &mut OpState,
-    #[string] transaction_id: String,
     #[string] map_id: String,
 ) -> Result<CloudstateEntriesVec, Error> {
     event!(tracing::Level::DEBUG, "Getting map entries");
-    let cs = state
-        .try_borrow_mut::<Arc<Mutex<ReDBCloudstate>>>()
-        .unwrap();
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
 
-    let cs = cs.lock().unwrap();
-
-    let read_txn = cs
-        .transactions
-        .get(&transaction_id)
-        .expect("There should always be a transaction open");
-
-    let table = read_txn.open_table(MAPS_TABLE).unwrap();
-
+    let table = transaction.open_table(MAPS_TABLE).unwrap();
     let mut entries: Vec<Vec<CloudstatePrimitiveData>> = vec![];
 
     for entry in table.iter().unwrap() {
@@ -779,14 +586,24 @@ fn op_cloudstate_map_entries(
 
     Ok(CloudstateEntriesVec::from(entries))
 }
+
+#[derive(Clone)]
 pub struct ReDBCloudstate {
-    pub db: Database,
-    pub transactions: HashMap<String, WriteTransaction>,
+    db: Arc<Mutex<Database>>,
+}
+
+impl ReDBCloudstate {
+    pub fn new(db: Arc<Mutex<Database>>) -> Self {
+        Self { db }
+    }
+
+    pub fn get_database_mut(&self) -> MutexGuard<Database> {
+        self.db.lock().unwrap()
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CloudstateRootKey {
-    pub namespace: String,
     pub alias: String,
 }
 
@@ -797,7 +614,6 @@ pub struct CloudstateRootValue {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct CloudstateObjectKey {
-    pub namespace: String,
     pub id: String,
 }
 
@@ -1214,7 +1030,6 @@ impl FromV8<'_> for CloudstatePrimitiveData {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct CloudstateMapFieldKey {
-    pub namespace: String,
     pub id: String,
     pub field: String,
 }
@@ -1226,7 +1041,6 @@ pub struct CloudstateMapFieldValue {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct CloudstateArrayItemKey {
-    pub namespace: String,
     pub id: String,
     pub index: i32,
 }
@@ -1248,7 +1062,6 @@ deno_core::extension!(
     op_cloudstate_array_sort,
     op_cloudstate_cloudstate_get,
     op_cloudstate_commit_transaction,
-    op_cloudstate_create_transaction,
     op_cloudstate_map_clear,
     op_cloudstate_map_delete,
     op_cloudstate_map_entries,

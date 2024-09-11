@@ -63,11 +63,11 @@ js_test!(nested_objects);
 js_test!(objects_and_arrays);
 js_test!(push_to_arrays);
 js_test!(root_custom_classes);
-js_test!(roots_same_obj_multi_txns); // TODO: ERR
+js_test!(roots_same_obj_multi_txns);
 js_test!(roots_same_obj_single_txn);
 js_test!(simple_objects);
 js_test!(todolist_map_internal_classes);
-// js_test!(todolist_map_internal_objects); // TODO: ERR (hangs indefinitely at create transaction ROUND 3 getRoot())
+js_test!(todolist_map_internal_objects);
 js_test!(v8_bigint);
 js_test!(v8_boolean);
 js_test!(v8_date);

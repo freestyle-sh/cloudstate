@@ -24,7 +24,8 @@
       return Array.from(this.items.values());
     }
   }
-  globalThis.cloudstate.customClasses = [TodoListCS, TodoItem];
+  registerCustomClass(TodoListCS);
+  registerCustomClass(TodoItem);
 
   const root = {
     value: new TodoListCS(),
@@ -61,7 +62,8 @@
       return Array.from(this.items.values());
     }
   }
-  globalThis.cloudstate.customClasses = [TodoListCS, TodoItem];
+  registerCustomClass(TodoListCS);
+  registerCustomClass(TodoItem);
 
   const root = getRoot("test-root");
 
@@ -102,7 +104,8 @@
       return Array.from(this.items.values());
     }
   }
-  globalThis.cloudstate.customClasses = [TodoListCS, TodoItem];
+  registerCustomClass(TodoListCS);
+  registerCustomClass(TodoItem);
 
   console.log("ROUND 3");
   const root = getRoot("test-root");

@@ -7,7 +7,8 @@
       this.count += 1;
     }
   }
-  globalThis.cloudstate.customClasses = [CounterCS];
+
+  registerCustomClass(CounterCS);
 
   const object = {
     counter: new CounterCS(),
@@ -28,7 +29,8 @@
       this.count += 1;
     }
   }
-  globalThis.cloudstate.customClasses = [CounterCS];
+
+  registerCustomClass(CounterCS);
 
   const counter = getCloudstate("counter");
   if (!counter) {

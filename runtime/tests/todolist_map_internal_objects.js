@@ -1,40 +1,64 @@
-class TodoListCS {
-  constructor() {
-    this.items = new Map();
-  }
-
-  addItem(title) {
-    let item = {
-      title: title,
-      completed: false,
-    };
-    this.items.set(item.title, item);
-    return item;
-  }
-
-  getItemsKeys() {
-    return Array.from(this.items.keys());
-  }
-
-  getItems() {
-    return Array.from(this.items.values());
-  }
-}
-
-globalThis.cloudstate.customClasses = [TodoListCS];
-
 {
+  class TodoListCS {
+    constructor() {
+      this.items = new Map();
+    }
+
+    addItem(title) {
+      let item = {
+        title: title,
+        completed: false,
+      };
+      this.items.set(item.title, item);
+      return item;
+    }
+
+    getItemsKeys() {
+      return Array.from(this.items.keys());
+    }
+
+    getItems() {
+      return Array.from(this.items.values());
+    }
+  }
+
+  registerCustomClass(TodoListCS);
+
   const root = {
     value: new TodoListCS(),
   };
 
   setRoot("test-root", root);
-  commit();
 }
 
 // END_FILE
 
 {
+  class TodoListCS {
+    constructor() {
+      this.items = new Map();
+    }
+
+    addItem(title) {
+      let item = {
+        title: title,
+        completed: false,
+      };
+      this.items.set(item.title, item);
+      return item;
+    }
+
+    getItemsKeys() {
+      return Array.from(this.items.keys());
+    }
+
+    getItems() {
+      return Array.from(this.items.values());
+    }
+  }
+
+  registerCustomClass(TodoListCS);
+
   const root = getRoot("test-root");
 
   const item = root.value.addItem("First item");
@@ -50,6 +74,31 @@ globalThis.cloudstate.customClasses = [TodoListCS];
 // END_FILE
 
 {
+  class TodoListCS {
+    constructor() {
+      this.items = new Map();
+    }
+
+    addItem(title) {
+      let item = {
+        title: title,
+        completed: false,
+      };
+      this.items.set(item.title, item);
+      return item;
+    }
+
+    getItemsKeys() {
+      return Array.from(this.items.keys());
+    }
+
+    getItems() {
+      return Array.from(this.items.values());
+    }
+  }
+
+  registerCustomClass(TodoListCS);
+
   console.log("ROUND 3");
   const root = getRoot("test-root");
 
