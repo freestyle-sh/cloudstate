@@ -431,7 +431,11 @@ fn op_cloudstate_array_length(
         .unwrap();
     let cs = cs.lock().unwrap();
 
-    let read_txn = cs.transactions.get(transaction_id.as_str()).unwrap();
+    let read_txn = cs
+        .transactions
+        .get(transaction_id.as_str())
+        .expect("There should always be a transaction open");
+
     let table = read_txn.open_table(ARRAYS_TABLE).unwrap();
 
     let count = table
@@ -754,7 +758,10 @@ fn op_cloudstate_map_entries(
 
     let cs = cs.lock().unwrap();
 
-    let read_txn = cs.transactions.get(&transaction_id).unwrap();
+    let read_txn = cs
+        .transactions
+        .get(&transaction_id)
+        .expect("There should always be a transaction open");
 
     let table = read_txn.open_table(MAPS_TABLE).unwrap();
 

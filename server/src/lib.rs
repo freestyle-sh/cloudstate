@@ -14,7 +14,9 @@ use deno_core::{
 };
 use deno_core::{url::Url, JsRuntime};
 use deno_fetch::FetchPermissions;
+use deno_fs::InMemoryFs;
 use deno_net::NetPermissions;
+use deno_node::AllowAllNodePermissions;
 use deno_web::BlobStore;
 use deno_web::TimersPermission;
 use futures::TryStreamExt;
@@ -69,7 +71,55 @@ impl CloudstateServer {
     ) -> Self {
         // tracing_subscriber::fmt::init();
 
-        execute_script(include_str!("./initialize.js"), classes, cloudstate.clone()).await;
+        let env_string = serde_json::to_string(&env).unwrap();
+
+        execute_script(
+            //             "
+            // console.log('running initialize script');
+
+            // globalThis.process = {{
+            //   env: { env_string },
+            // }};
+
+            // console.log('set environment variables');
+
+            // const classes = await import('./lib.js').catch((e) => {{
+            //   console.error('Error importing classes', e);
+            //   throw e;
+            // }});
+
+            // console.log('imported classes');
+
+            // globalThis.cloudstate.customClasses = Object.keys(classes).map(
+            //   (key) => classes[key]
+            // );
+
+            // console.log('initializing roots');
+
+            // for (const className of Object.keys(classes)) {{
+            //   const klass = classes[className];
+            //   console.log('found exported class', className);
+            //     if (klass.id) {{
+            //         console.log('checking root', klass.id);
+            //         const object = getRoot(klass.id);
+
+            //         if (object) {{
+            //         console.log(`root ${klass.id} already exists`);
+            //         }}
+
+            //         if (!object) {{
+            //         console.log(`initializing root ${klass.id} with class ${className}`);
+            //         const root = new klass();
+            //         setRoot(klass.id, root);
+            //         }}
+            //     }}
+            // }}
+            //         ",
+            &include_str!("./initialize.js").replace("env_string", &env_string),
+            classes,
+            cloudstate.clone(),
+        )
+        .await;
 
         let app = Router::new()
             .route(
@@ -274,12 +324,22 @@ async fn method_request(
     // TODO: fix injection vulnerability
     let script = format!(
         "
+    console.log('executing script');
+    
     globalThis.process = {{
         env: {env_string}
-    }}
-    const classes = await import('./lib.js');
-    globalThis.cloudstate.customClasses = Object.keys(classes).map((key) => classes[key]);
+    }};
 
+    console.log('set environment variables');
+    
+    const classes = await import('./lib.js').catch(e => {{
+        console.error('Error importing classes', e);
+        throw e;
+    }});
+    
+    console.log('imported classes');
+    globalThis.cloudstate.customClasses = Object.keys(classes).map((key) => classes[key]);
+    console.log('set custom classes');
 
     // temporary hack to be compatible with legacy freestyle apis
     globalThis.requestContext = {{
@@ -305,7 +365,17 @@ async fn method_request(
         }}
     }}
 
-    const object = getRoot({id}) || getCloudstate({id});
+    console.log('getRoot or getCloudstate');
+    let object;
+
+    try {{
+        object = getRoot({id}) || getCloudstate({id});
+    }} catch (e) {{
+        console.error('Error getting root or cloudstate', e);
+        throw e;
+    }}
+
+    console.log('object', object);
     try {{
         if (!object) {{
             globalThis.result = {{ error: {{ message: 'Object not found' }} }};
@@ -405,6 +475,8 @@ pub async fn execute_script(
     .unwrap()
 }
 
+type CloudstateNodePermissions = AllowAllNodePermissions;
+
 #[tokio::main(flavor = "current_thread")]
 pub async fn execute_script_internal(
     script: &str,
@@ -428,6 +500,10 @@ pub async fn execute_script_internal(
             ),
             deno_net::deno_net::init_ops_and_esm::<CloudstateNetPermissions>(None, None),
             cloudstate::init_ops_and_esm(),
+            // deno_node::deno_node::init_ops_and_esm::<CloudstateNodePermissions>(
+            //     None,
+            //     std::rc::Rc::new(InMemoryFs::default()),
+            // ),
         ],
         ..Default::default()
     });
@@ -441,6 +517,7 @@ pub async fn execute_script_internal(
     .unwrap();
 
     RefCell::borrow_mut(&js_runtime.op_state()).put(CloudstateFetchPermissions {});
+    // RefCell::borrow_mut(&js_runtime.op_state()).put(CloudstateNodePermissions {});
 
     let script = script.to_string();
     let future = async move {
@@ -454,11 +531,9 @@ pub async fn execute_script_internal(
 
         event!(tracing::Level::DEBUG, "starting polling");
         let result = poll_fn(|cx| {
+            // let _ = js_runtime.execute_script("<handle>", "globalThis.ensureTransaction();");
             let poll_result = js_runtime.poll_event_loop(cx, Default::default());
-            let _ = js_runtime.execute_script(
-                "<handle>",
-                "globalThis.commit(); globalThis.ensureTransaction();",
-            );
+            let _ = js_runtime.execute_script("<handle>", "globalThis.commit();");
             poll_result
         })
         .await;

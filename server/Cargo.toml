@@ -4,23 +4,27 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.86"
-axum = "0.7.5"
 cloudstate = { path = "../runtime" }
-deno_console = "0.164.0"
-deno_crypto = "0.178.0"
-deno_core = "0.299.0"
-deno_webidl = "0.164.0"
-deno_url = "0.164.0"
+
+anyhow.workspace = true
+axum = "0.7.5"
+serde.workspace = true
 redb = "2.1.1"
 tokio = "1.39.3"
-deno_web = "0.195.0"
-serde = "1.0.209"
 serde_json = "1.0.127"
-deno_net = "0.156.0"
-deno_fetch = "0.188.0"
 tower-http = { version = "0.5.2", features = ["trace"] }
 tower = { version = "0.5.0", features = ["util"] }
 http-body-util = "0.1.2"
 mime = "0.3.17"
 tracing = "0.1.40"
+
+deno_url.workspace = true
+deno_console.workspace = true
+deno_core.workspace = true
+deno_webidl.workspace = true
+deno_web.workspace = true
+deno_crypto.workspace = true
+deno_fetch.workspace = true
+deno_net.workspace = true
+deno_node.workspace = true
+deno_fs.workspace = true

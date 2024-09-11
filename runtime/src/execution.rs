@@ -1,6 +1,8 @@
 use deno_core::*;
 use deno_fetch::FetchPermissions;
+use deno_fs::InMemoryFs;
 use deno_net::NetPermissions;
+use deno_node::AllowAllNodePermissions;
 use deno_web::{BlobStore, TimersPermission};
 use futures::future::poll_fn;
 use std::fs;
@@ -85,6 +87,8 @@ pub fn run_script(
     result
 }
 
+type CloudstateNodePermissions = AllowAllNodePermissions;
+
 pub fn run_script_source(
     script: &str,
     cloudstate: Arc<std::sync::Mutex<ReDBCloudstate>>,
@@ -112,6 +116,10 @@ pub fn run_script_source(
             ),
             deno_net::deno_net::init_ops_and_esm::<CloudstateNetPermissions>(None, None),
             cloudstate::init_ops_and_esm(),
+            deno_node::deno_node::init_ops_and_esm::<CloudstateNodePermissions>(
+                None,
+                std::rc::Rc::new(InMemoryFs::default()),
+            ),
         ],
         ..Default::default()
     });
