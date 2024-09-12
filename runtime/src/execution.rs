@@ -147,6 +147,12 @@ pub fn run_script_source(
         })
         .await;
 
+        js_runtime
+            .op_state()
+            .borrow_mut()
+            .borrow_mut::<TransactionContext>()
+            .commit_transaction();
+
         let _ = evaluation.await;
 
         (js_runtime, result)

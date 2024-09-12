@@ -12,9 +12,10 @@ const classes = await import("./lib.js").catch((e) => {
 });
 console.log("imported classes");
 
-globalThis.cloudstate.customClasses = Object.keys(classes).map(
-  (key) => classes[key]
-);
+for (const className of Object.keys(classes)) {
+  const klass = classes[className];
+  registerCustomClass(klass);
+}
 
 console.log("initializing roots");
 for (const className of Object.keys(classes)) {

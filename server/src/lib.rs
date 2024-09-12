@@ -5,7 +5,10 @@ use axum::{
     routing::{get, post},
     Json, RequestExt, Router,
 };
-use cloudstate_runtime::extensions::{bootstrap::bootstrap, cloudstate::cloudstate};
+use cloudstate_runtime::extensions::{
+    bootstrap::bootstrap,
+    cloudstate::{cloudstate, TransactionContext},
+};
 use cloudstate_runtime::{extensions::cloudstate::ReDBCloudstate, v8_string_key};
 use deno_core::*;
 use deno_core::{
@@ -65,7 +68,7 @@ impl ModuleLoader for CloudstateModuleLoader {
 
 impl CloudstateServer {
     pub async fn new(
-        cloudstate: Arc<Mutex<ReDBCloudstate>>,
+        cloudstate: ReDBCloudstate,
         classes: &str,
         env: HashMap<String, String>,
     ) -> Self {
@@ -74,47 +77,6 @@ impl CloudstateServer {
         let env_string = serde_json::to_string(&env).unwrap();
 
         execute_script(
-            //             "
-            // console.log('running initialize script');
-
-            // globalThis.process = {{
-            //   env: { env_string },
-            // }};
-
-            // console.log('set environment variables');
-
-            // const classes = await import('./lib.js').catch((e) => {{
-            //   console.error('Error importing classes', e);
-            //   throw e;
-            // }});
-
-            // console.log('imported classes');
-
-            // globalThis.cloudstate.customClasses = Object.keys(classes).map(
-            //   (key) => classes[key]
-            // );
-
-            // console.log('initializing roots');
-
-            // for (const className of Object.keys(classes)) {{
-            //   const klass = classes[className];
-            //   console.log('found exported class', className);
-            //     if (klass.id) {{
-            //         console.log('checking root', klass.id);
-            //         const object = getRoot(klass.id);
-
-            //         if (object) {{
-            //         console.log(`root ${klass.id} already exists`);
-            //         }}
-
-            //         if (!object) {{
-            //         console.log(`initializing root ${klass.id} with class ${className}`);
-            //         const root = new klass();
-            //         setRoot(klass.id, root);
-            //         }}
-            //     }}
-            // }}
-            //         ",
             &include_str!("./initialize.js").replace("env_string", &env_string),
             classes,
             cloudstate.clone(),
@@ -207,7 +169,11 @@ async fn fetch_request(
     let script = format!(
         "
     import * as classes from './lib.js';
-    globalThis.cloudstate.customClasses = Object.keys(classes).map((key) => classes[key]);
+    
+    for (const className of Object.keys(classes)) {{
+        const klass = classes[className];
+        registerCustomClass(klass);
+    }}
 
     let bytes = new Uint8Array({bytes});
 
@@ -272,7 +238,7 @@ async fn fetch_request(
 
 #[derive(Clone)]
 struct AppState {
-    cloudstate: Arc<Mutex<ReDBCloudstate>>,
+    cloudstate: ReDBCloudstate,
     classes: String,
     env: HashMap<String, String>,
 }
@@ -338,7 +304,12 @@ async fn method_request(
     }});
     
     console.log('imported classes');
-    globalThis.cloudstate.customClasses = Object.keys(classes).map((key) => classes[key]);
+
+    for (const className of Object.keys(classes)) {{
+        const klass = classes[className];
+        registerCustomClass(klass);
+    }}
+
     console.log('set custom classes');
 
     // temporary hack to be compatible with legacy freestyle apis
@@ -459,11 +430,7 @@ impl NetPermissions for CloudstateNetPermissions {
     }
 }
 
-pub async fn execute_script(
-    script: &str,
-    classes_script: &str,
-    cs: Arc<Mutex<ReDBCloudstate>>,
-) -> String {
+pub async fn execute_script(script: &str, classes_script: &str, cs: ReDBCloudstate) -> String {
     let script_string = script.to_string();
     let classes_script_string = classes_script.to_string();
 
@@ -481,7 +448,7 @@ type CloudstateNodePermissions = AllowAllNodePermissions;
 pub async fn execute_script_internal(
     script: &str,
     classes_script: &str,
-    cs: Arc<Mutex<ReDBCloudstate>>,
+    cs: ReDBCloudstate,
 ) -> String {
     let blob_storage = Arc::new(BlobStore::default());
     let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
@@ -509,7 +476,7 @@ pub async fn execute_script_internal(
     });
     debug!("initializing runtime");
 
-    RefCell::borrow_mut(&js_runtime.op_state()).put(cs);
+    RefCell::borrow_mut(&js_runtime.op_state()).put(cs.clone());
 
     let main_module = ModuleSpecifier::from_file_path(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/main.js"),
@@ -517,6 +484,8 @@ pub async fn execute_script_internal(
     .unwrap();
 
     RefCell::borrow_mut(&js_runtime.op_state()).put(CloudstateFetchPermissions {});
+    let transaction_context = TransactionContext::new(cs.clone());
+    RefCell::borrow_mut(&js_runtime.op_state()).put(transaction_context);
     // RefCell::borrow_mut(&js_runtime.op_state()).put(CloudstateNodePermissions {});
 
     let script = script.to_string();
@@ -531,14 +500,21 @@ pub async fn execute_script_internal(
 
         event!(tracing::Level::DEBUG, "starting polling");
         let result = poll_fn(|cx| {
-            // let _ = js_runtime.execute_script("<handle>", "globalThis.ensureTransaction();");
             let poll_result = js_runtime.poll_event_loop(cx, Default::default());
-            let _ = js_runtime.execute_script("<handle>", "globalThis.commit();");
+
+            RefCell::borrow_mut(&js_runtime.op_state())
+                .try_borrow_mut::<TransactionContext>()
+                .unwrap()
+                .commit_transaction();
+
             poll_result
         })
         .await;
 
-        let _ = js_runtime.execute_script("<handle>", "globalThis.commit();");
+        RefCell::borrow_mut(&js_runtime.op_state())
+            .try_borrow_mut::<TransactionContext>()
+            .unwrap()
+            .commit_transaction();
 
         let _ = evaluation.await;
         (js_runtime, result)

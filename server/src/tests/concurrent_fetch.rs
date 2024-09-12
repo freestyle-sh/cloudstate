@@ -14,12 +14,11 @@ use tower::{util::ServiceExt, Service};
 #[tokio::test]
 async fn test_concurrent_fetch() {
     let mut router = crate::CloudstateServer::new(
-        Arc::new(Mutex::new(ReDBCloudstate {
-            db: redb::Database::builder()
+        ReDBCloudstate::new(Arc::new(Mutex::new(
+            redb::Database::builder()
                 .create_with_backend(redb::backends::InMemoryBackend::default())
                 .unwrap(),
-            transactions: std::collections::HashMap::new(),
-        })),
+        ))),
         r"export class FetcherCS {
             static id = 'test';
             count = 0;

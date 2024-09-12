@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::i32;
 use std::sync::Arc;
 use std::sync::{Mutex, MutexGuard};
+use tracing::field::debug;
 use tracing::{debug, event};
 use url::Url;
 use v8::GetPropertyNamesArgs;
@@ -39,6 +40,7 @@ impl TransactionContext {
     }
 
     pub fn commit_transaction(&mut self) {
+        debug!("Committing transaction");
         if let Some(transaction) = self.current_transaction.take() {
             transaction.commit().unwrap();
         }

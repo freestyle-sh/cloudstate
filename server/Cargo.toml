@@ -28,3 +28,4 @@ deno_fetch.workspace = true
 deno_net.workspace = true
 deno_node.workspace = true
 deno_fs.workspace = true
+tracing-subscriber = "0.3.18"
