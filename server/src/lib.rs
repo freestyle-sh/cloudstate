@@ -17,7 +17,6 @@ use deno_core::{
 };
 use deno_core::{url::Url, JsRuntime};
 use deno_fetch::FetchPermissions;
-use deno_fs::InMemoryFs;
 use deno_net::NetPermissions;
 use deno_node::AllowAllNodePermissions;
 use deno_web::BlobStore;
@@ -25,7 +24,7 @@ use deno_web::TimersPermission;
 use futures::TryStreamExt;
 use serde::Deserialize;
 use serde_json::json;
-use std::{borrow::BorrowMut, cell::RefCell, collections::HashMap, sync::Mutex};
+use std::{borrow::BorrowMut, cell::RefCell, collections::HashMap};
 use std::{rc::Rc, sync::Arc};
 use tracing::{debug, event};
 
@@ -496,25 +495,17 @@ pub async fn execute_script_internal(
             .unwrap();
 
         let evaluation = js_runtime.mod_evaluate(mod_id);
-        // let result = js_runtime.run_event_loop(Default::default()).await;
 
-        event!(tracing::Level::DEBUG, "starting polling");
+        debug!("starting js event loop polling");
         let result = poll_fn(|cx| {
             let poll_result = js_runtime.poll_event_loop(cx, Default::default());
-
-            RefCell::borrow_mut(&js_runtime.op_state())
-                .try_borrow_mut::<TransactionContext>()
-                .unwrap()
-                .commit_transaction();
-
+            let _ = js_runtime.execute_script("<handle>", "globalThis.commit();");
             poll_result
         })
         .await;
+        debug!("ending js event loop polling");
 
-        RefCell::borrow_mut(&js_runtime.op_state())
-            .try_borrow_mut::<TransactionContext>()
-            .unwrap()
-            .commit_transaction();
+        let _ = js_runtime.execute_script("<handle>", "globalThis.commit();");
 
         let _ = evaluation.await;
         (js_runtime, result)

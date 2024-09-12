@@ -2,7 +2,7 @@ use axum::{
     body::Body,
     http::{self, Request, StatusCode},
 };
-use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
+use cloudstate_runtime::{extensions::cloudstate::ReDBCloudstate, print::print_database};
 use http_body_util::BodyExt;
 use serde_json::json;
 use std::{
@@ -11,17 +11,20 @@ use std::{
 };
 use tower::{util::ServiceExt, Service};
 
-mod concurrent_fetch;
+// mod concurrency;
 
 #[tokio::test]
 async fn test_fetch() {
     tracing_subscriber::fmt::init();
+
+    let cloudstate = ReDBCloudstate::new(Arc::new(Mutex::new(
+        redb::Database::builder()
+            .create_with_backend(redb::backends::InMemoryBackend::default())
+            .unwrap(),
+    )));
+
     let mut router = crate::CloudstateServer::new(
-        ReDBCloudstate::new(Arc::new(Mutex::new(
-            redb::Database::builder()
-                .create_with_backend(redb::backends::InMemoryBackend::default())
-                .unwrap(),
-        ))),
+        cloudstate.clone(),
         r"export class CounterCS {
             static id = 'counter';
             count = 0;
@@ -33,10 +36,12 @@ async fn test_fetch() {
     )
     .await;
 
+    print_database(&cloudstate.get_database_mut());
+
     let response = ServiceExt::<Request<Body>>::ready(&mut router.router)
         .await
         .unwrap()
-        .oneshot(
+        .call(
             Request::builder()
                 .uri("/cloudstate/instances/counter/increment")
                 .method("POST")
@@ -68,7 +73,7 @@ async fn test_fetch() {
     let response = ServiceExt::<Request<Body>>::ready(&mut router.router)
         .await
         .unwrap()
-        .oneshot(
+        .call(
             Request::builder()
                 .uri("/cloudstate/instances/counter/increment")
                 .method("POST")

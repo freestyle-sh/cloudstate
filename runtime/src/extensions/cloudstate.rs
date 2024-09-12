@@ -28,21 +28,27 @@ impl TransactionContext {
     }
 
     pub fn get_or_create_transaction_mut(&mut self) -> &WriteTransaction {
+        debug!("Checking for existing transaction");
         if self.current_transaction.is_none() {
+            debug!("Creating new transaction");
             let db = self.database.get_database_mut();
             let write_txn = db.begin_write().unwrap();
             self.current_transaction = Some(write_txn);
 
             self.current_transaction.as_mut().unwrap()
         } else {
+            debug!("Using existing transaction");
             self.current_transaction.as_mut().unwrap()
         }
     }
 
     pub fn commit_transaction(&mut self) {
-        debug!("Committing transaction");
+        debug!("Checking for transaction to commit");
         if let Some(transaction) = self.current_transaction.take() {
+            debug!("Committing transaction");
             transaction.commit().unwrap();
+        } else {
+            debug!("No transaction to commit");
         }
     }
 }
