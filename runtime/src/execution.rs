@@ -1,6 +1,5 @@
 use deno_core::*;
 use deno_fetch::FetchPermissions;
-use deno_fs::InMemoryFs;
 use deno_net::NetPermissions;
 use deno_node::AllowAllNodePermissions;
 use deno_web::{BlobStore, TimersPermission};

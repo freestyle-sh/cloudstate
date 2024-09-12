@@ -2,7 +2,7 @@ use axum::{body::Body, extract::Request, routing::get};
 use tokio::{runtime::Runtime, sync::RwLock}; // 0.3.5
 
 use clap::ValueHint;
-use cloudstate_runtime::{extensions::cloudstate::ReDBCloudstate, print};
+use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
 use notify::Watcher;
 use redb::{
     backends::{self},

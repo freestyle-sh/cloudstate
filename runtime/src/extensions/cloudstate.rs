@@ -9,7 +9,6 @@ use std::collections::HashMap;
 use std::i32;
 use std::sync::Arc;
 use std::sync::{Mutex, MutexGuard};
-use tracing::field::debug;
 use tracing::{debug, event};
 use url::Url;
 use v8::GetPropertyNamesArgs;

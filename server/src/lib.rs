@@ -18,7 +18,6 @@ use deno_core::{
 use deno_core::{url::Url, JsRuntime};
 use deno_fetch::FetchPermissions;
 use deno_net::NetPermissions;
-use deno_node::AllowAllNodePermissions;
 use deno_web::BlobStore;
 use deno_web::TimersPermission;
 use futures::TryStreamExt;
