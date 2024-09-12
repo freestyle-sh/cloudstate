@@ -59,8 +59,6 @@ const cloudstateObjects = new Map();
 const customClasses = [];
 
 function hydrate(object, key, value) {
-  console.log("hydrating some object");
-
   if (value instanceof CloudstateObjectReference) {
     Object.defineProperty(object, key, {
       get: () => {
@@ -134,7 +132,6 @@ function hydrate(object, key, value) {
 }
 
 function commit() {
-  console.log("Committing");
   for (const value of objects.values()) {
     setObject(value);
   }
@@ -205,9 +202,6 @@ function getMap(objectId) {
       return Deno.core.ops.op_cloudstate_map_size(objectId);
     },
   });
-
-  console.log("GETTING MAP entries()", Array.from(map.entries()));
-  console.log("GETTING MAP size", map.size);
 
   return map;
 }
@@ -341,7 +335,6 @@ function setObject(object) {
     const flatObject = isArray ? [] : {};
     Object.setPrototypeOf(flatObject, object.constructor.prototype);
 
-    console.log("flattening object");
     for (let [key, value] of Object.entries(object)) {
       if (isArray) key = parseInt(key);
       if (value === undefined) continue;
@@ -374,7 +367,6 @@ function setObject(object) {
         throw new Error(`${typeof value} cannot be serialized`);
       }
     }
-    console.log("flattening object done");
 
     if (flatObject instanceof Array) {
       flatObject.forEach((item, i) => {
@@ -438,7 +430,6 @@ function getArray(id) {
 }
 
 function exportObject(object, data) {
-  console.log("exporting object");
   const existingId = objectIds.get(object);
   if (!existingId) {
     const id = uuidv4();
@@ -447,7 +438,6 @@ function exportObject(object, data) {
     objects.set(id, object);
     return id;
   } else {
-    console.log("existingId", existingId);
     Deno.core.ops.op_cloudstate_object_set(existingId, data);
     return existingId;
   }

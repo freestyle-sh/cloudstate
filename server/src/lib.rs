@@ -441,7 +441,7 @@ pub async fn execute_script(script: &str, classes_script: &str, cs: ReDBCloudsta
     .unwrap()
 }
 
-type CloudstateNodePermissions = AllowAllNodePermissions;
+// type CloudstateNodePermissions = AllowAllNodePermissions;
 
 #[tokio::main(flavor = "current_thread")]
 pub async fn execute_script_internal(

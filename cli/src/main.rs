@@ -19,13 +19,13 @@ use std::{
 };
 use tokio::net::TcpListener;
 use tower::Service;
-use tracing::{debug, event};
+use tracing::{debug, info};
 
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    event!(tracing::Level::DEBUG, "Starting cloudstate");
+    debug!("Starting cloudstate");
 
     let filename_arg = clap::Arg::new("filename")
         .help("The filename to serve")
@@ -80,15 +80,7 @@ async fn main() {
                 Database::create("./cloudstate").unwrap()
             };
 
-            execute_script(
-                &script,
-                &"",
-                Arc::new(Mutex::new(ReDBCloudstate {
-                    db: db,
-                    transactions: HashMap::new(),
-                })),
-            )
-            .await;
+            execute_script(&script, &"", ReDBCloudstate::new(Arc::new(Mutex::new(db)))).await;
         }
         Some(("serve", serve_matches)) => {
             let serve_matches = serve_matches.clone();
@@ -107,17 +99,14 @@ async fn main() {
 
             let classes = fs::read_to_string(&filename).unwrap_or("".to_string());
             let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-            let cloudstate = Arc::new(Mutex::new(ReDBCloudstate {
-                db: db,
-                transactions: HashMap::new(),
-            }));
+            let cloudstate = ReDBCloudstate::new(Arc::new(Mutex::new(db)));
             let server = CloudstateServer::new(cloudstate.clone(), &classes, env.clone()).await;
 
             let app_state = Arc::new(RwLock::new(server));
 
             let cloned = Arc::clone(&app_state);
             let other_thread = tokio::spawn(async move {
-                event!(tracing::Level::INFO, "Starting server");
+                info!("Starting server");
                 let _ = run_server(cloned, listener).await;
             });
 
@@ -136,7 +125,7 @@ async fn main() {
                             notify::EventKind::Other => false,
                         };
                         if should_reload {
-                            event!(tracing::Level::INFO, "Reloading file");
+                            info!("Reloading file");
 
                             Runtime::new().unwrap().block_on(async {
                                 if let Ok(new_classes) = fs::read_to_string(&pre_cloned_filename) {
@@ -175,19 +164,17 @@ async fn main() {
             }
         }
         _ => {
-            event!(tracing::Level::INFO, "No subcommand found");
+            info!("No subcommand found");
         }
     }
 }
 
 async fn run_server(server: Arc<RwLock<CloudstateServer>>, listener: TcpListener) {
     let handle = |req: Request| async move {
+        debug!("{}: {}", req.method().to_string(), req.uri().to_string());
         tokio::task::spawn_blocking(move || handler(server.clone(), req))
             .await
             .unwrap()
-        // let response = std::thread::spawn(move || handler(server.clone(), req))
-        //     .join()
-        //     .unwrap();
     };
 
     let svr = axum::Router::new().fallback(
@@ -208,7 +195,7 @@ async fn handler(
     server: Arc<RwLock<CloudstateServer>>,
     req: Request<Body>,
 ) -> axum::http::Response<Body> {
-    event!(tracing::Level::INFO, "Pulling service");
+    info!("Pulling service");
 
     let server = server.read().await;
     let router = server.router.clone();
@@ -217,7 +204,7 @@ async fn handler(
 
     let mut service: axum::routing::RouterIntoService<Body> = router.into_service();
 
-    event!(tracing::Level::DEBUG, "Preparing service");
+    debug!("Preparing service");
 
     poll_fn(|cx: &mut std::task::Context<'_>| {
         <axum::routing::RouterIntoService<Body>>::poll_ready(&mut service, cx)
@@ -225,11 +212,11 @@ async fn handler(
     .await
     .unwrap();
 
-    event!(tracing::Level::DEBUG, "Calling service");
+    debug!("Calling service");
 
     let response = service.call(req).await.unwrap();
 
-    event!(tracing::Level::DEBUG, "Returning response");
+    debug!("Returning response");
 
     return response;
 }
