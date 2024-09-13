@@ -1,4 +1,5 @@
 use crate::tables::{ARRAYS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
+use crate::v8_string_key;
 use chrono::{DateTime, TimeZone, Utc};
 use deno_core::anyhow::Error;
 use deno_core::error::JsError;
@@ -686,12 +687,21 @@ impl FromV8<'_> for CloudstateObjectData {
             fields.insert(key.to_rust_string_lossy(scope), value);
         }
 
+        let constructor_key = v8_string_key!(scope, "constructor");
+        let name_key = v8_string_key!(scope, "name");
         Ok(CloudstateObjectData {
             fields,
-            constructor_name: match object
-                .get_constructor_name()
-                .to_rust_string_lossy(scope)
-                .as_str()
+            constructor_name: match v8::Local::<v8::Object>::try_from(
+                object
+                    // .get_constructor_name()
+                    .get(scope, constructor_key)
+                    .unwrap(),
+            )
+            .unwrap()
+            .get(scope, name_key)
+            .unwrap()
+            .to_rust_string_lossy(scope)
+            .as_str()
             {
                 "Object" => None,
                 constructor_name => Some(constructor_name.to_string()),

@@ -166,19 +166,60 @@ async fn fetch_request(
     // TODO: fix injection vulnerability
     let script = format!(
         "
-    import * as classes from './lib.js';
+    console.log('executing script');
+
+    // todo environment variables
+
+    console.log('set environment variables');
     
+    const classes = await import('./lib.js').catch(e => {{
+        console.error('Error importing classes', e);
+        throw e;
+    }});
+    
+    console.log('imported classes');
+
     for (const className of Object.keys(classes)) {{
         const klass = classes[className];
         registerCustomClass(klass);
     }}
 
-    let bytes = new Uint8Array({bytes});
+    console.log('set custom classes');
 
-    const method =  {method};
+    // temporary hack to be compatible with legacy freestyle apis
+    globalThis.requestContext = {{
+        getStore: () => {{
+            return {{
+                request: new Request({uri}, {{
+                    headers: new Headers({headers}),
+                }}),
+                env: {{
+                    invalidateMethod: (rawMethod) => {{
+                        const method = rawMethod.toJSON();
+                        fetch(`http://localhost:8910/__invalidate__/${{method.instance}}/${{method.method}}`, {{
+                            method: 'POST',
+                            headers: {{
+                                'Content-Type': 'application/json',
+                            }}
+                        }}).catch(e => {{
+                            console.error(e);
+                        }});
+                    }},
+                }}
+            }}
+        }}
+    }}
 
+    console.log('getRoot or getCloudstate');
+    let object;
 
-    const object = getRoot({id});
+    try {{
+        object = getRoot({id}) || getCloudstate({id});
+    }} catch (e) {{
+        console.error('Error getting root or cloudstate', e);
+        throw e;
+    }}
+
     try {{
         const req = new Request({uri},
             {{
@@ -213,15 +254,15 @@ async fn fetch_request(
     ",
     );
 
-    event!(tracing::Level::DEBUG, "executing script");
+    debug!("executing script");
 
     let result = execute_script(&script.as_str(), &state.classes, state.cloudstate).await;
 
-    event!(tracing::Level::DEBUG, "script finished");
+    debug!("script finished");
 
     let json = serde_json::from_str::<ScriptResponseResult>(&result).unwrap();
 
-    event!(tracing::Level::DEBUG, "json: {:#?}", json);
+    debug!("json: {:#?}", json);
 
     let mut builder = Response::builder();
     for (key, value) in json.result.headers {
@@ -344,7 +385,6 @@ async fn method_request(
         throw e;
     }}
 
-    console.log('object', object);
     try {{
         if (!object) {{
             globalThis.result = {{ error: {{ message: 'Object not found' }} }};
@@ -359,9 +399,9 @@ async fn method_request(
     ",
     );
 
-    event!(tracing::Level::DEBUG, "executing script");
+    debug!("executing script");
     let result = execute_script(&script.as_str(), &state.classes, state.cloudstate).await;
-    event!(tracing::Level::DEBUG, "script result: {:#?}", result);
+    debug!("script result: {:#?}", result);
 
     Json(serde_json::from_str(&result).unwrap_or(json!({
         "error": {

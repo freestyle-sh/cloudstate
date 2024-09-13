@@ -215,13 +215,17 @@ function getObject(id) {
   const object = Deno.core.ops.op_cloudstate_object_get(id);
 
   if (object.__cloudstate__constructorName) {
-    Object.setPrototypeOf(
-      object,
-      customClasses.find(
-        (klass) =>
-          klass.name === object.__cloudstate__constructorName.replace("_", "")
-      ).prototype
+    const klass = customClasses.find(
+      (klass) =>
+        klass.name === object.__cloudstate__constructorName.replace("_", "")
     );
+    if (klass) {
+      Object.setPrototypeOf(object, klass.prototype);
+    } else {
+      throw new Error(
+        `Custom class ${object.__cloudstate__constructorName} not found`
+      );
+    }
     delete object.__cloudstate__constructorName;
   }
 
@@ -655,6 +659,10 @@ function handleArrayMethods(key, array, id) {
           yield [i, array[i]];
         }
       };
+    }
+    case "then": {
+      // I think this is called when sometime tries to await an array
+      return undefined;
     }
     default: {
       throw new Error(`Array.${key} is not supported`);
