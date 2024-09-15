@@ -1,5 +1,6 @@
 use crate::tables::{ARRAYS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
 use crate::v8_string_key;
+use anyhow::anyhow;
 use chrono::{DateTime, TimeZone, Utc};
 use deno_core::anyhow::Error;
 use deno_core::error::JsError;
@@ -88,6 +89,31 @@ fn op_cloudstate_object_get(
     let result = result.map(|s| s.value().data);
 
     Ok(result.unwrap())
+}
+
+#[op2]
+fn op_cloudstate_object_set_property(
+    state: &mut OpState,
+    #[string] id: String,
+    #[string] property: String,
+    #[from_v8] value: CloudstatePrimitiveData,
+) -> Result<(), Error> {
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
+
+    let mut table = transaction.open_table(OBJECTS_TABLE).unwrap();
+    let key = CloudstateObjectKey { id };
+
+    let mut object = table
+        .get(key.clone())?
+        .ok_or(anyhow!("Object not found"))?
+        .value();
+
+    object.data.fields.insert(property, value);
+
+    table.insert(key, object.clone())?;
+
+    Ok(())
 }
 
 #[op2(fast)]
@@ -625,12 +651,12 @@ pub struct CloudstateObjectKey {
     pub id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct CloudstateObjectValue {
     pub data: CloudstateObjectData,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct CloudstateObjectData {
     pub fields: HashMap<String, CloudstatePrimitiveData>,
     pub constructor_name: Option<String>,
@@ -1091,7 +1117,8 @@ deno_core::extension!(
     op_cloudstate_object_get,
     op_cloudstate_object_root_get,
     op_cloudstate_object_root_set,
-    op_cloudstate_object_set
+    op_cloudstate_object_set,
+    op_cloudstate_object_set_property
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],
