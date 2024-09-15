@@ -4,8 +4,10 @@
         value: base,
     };
     setRoot("test-root", object);
-    commit();
 }
+
+// END_FILE
+
 {
     const mapFn = (element) => element * 2;
     const expected = [1, 4, 9, 16].map(mapFn);
@@ -21,7 +23,9 @@
         if (newArray[i] !== expected[i]) {
             throw new Error(
                 `Expected ${JSON.stringify(expected[i])}, got ${
-                    JSON.stringify(newArray[i])
+                    JSON.stringify(
+                        newArray[i],
+                    )
                 }`,
             );
         }
