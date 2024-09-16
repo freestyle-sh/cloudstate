@@ -144,6 +144,9 @@ function getMap(objectId) {
   const mapGet = map.get;
 
   objectIds.set(map, objectId);
+  map[Symbol.iterator] = () => {
+    return Deno.core.ops.op_cloudstate_map_entries(objectId).values();
+  };
   map["values"] = () => {
     let map_values = Deno.core.ops.op_cloudstate_map_values(objectId);
     return map_values.map((value) => unpackFromReference(value)).values();
