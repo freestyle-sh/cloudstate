@@ -66,7 +66,7 @@ function hydrate(object, key, value) {
 
         if (value.constructorName) {
           const constructor = customClasses.find(
-            (klass) => klass.name === value.constructorName
+            (klass) => klass.name === value.constructorName,
           );
 
           if (!constructor) {
@@ -217,16 +217,15 @@ function getObject(id) {
 
   const object = Deno.core.ops.op_cloudstate_object_get(id);
 
+  let klass = undefined;
   if (object.__cloudstate__constructorName) {
-    const klass = customClasses.find(
+    klass = customClasses.find(
       (klass) =>
-        klass.name === object.__cloudstate__constructorName.replace("_", "")
+        klass.name === object.__cloudstate__constructorName.replace("_", ""),
     );
-    if (klass) {
-      Object.setPrototypeOf(object, klass.prototype);
-    } else {
+    if (!klass) {
       throw new Error(
-        `Custom class ${object.__cloudstate__constructorName} not found`
+        `Custom class ${object.__cloudstate__constructorName} not found`,
       );
     }
     delete object.__cloudstate__constructorName;
@@ -234,18 +233,80 @@ function getObject(id) {
 
   if (!object) return undefined;
 
-  for (const [key, value] of Object.entries(object)) {
-    hydrate(object, key, value);
-  }
+  // for (const [key, value] of Object.entries(object)) {
+  //   hydrate(object, key, value);
+  // }
 
-  objectIds.set(object, id);
-  objects.set(id, object);
+  // objectIds.set(object, id);
+  // objects.set(id, object);
 
-  if (object.id && customClasses.includes(object.constructor)) {
-    cloudstateObjects.set(object.id, object);
-  }
+  // if (object.id && customClasses.includes(object.constructor)) {
+  //   cloudstateObjects.set(object.id, object);
+  // }
 
-  return object;
+  const proxyObject = new Proxy(
+    {},
+    {
+      getPrototypeOf() {
+        return klass?.prototype || Object.prototype;
+      },
+      ownKeys(target) {
+        let object = Deno.core.ops.op_cloudstate_object_get(id);
+        delete object["__cloudstate__constructorName"];
+        return Object.keys(object);
+      },
+      getOwnPropertyDescriptor(target, key) {
+        return {
+          enumerable: true,
+          configurable: true,
+          value: proxyObject[key],
+        };
+      },
+      get(target, key) {
+        // to make sure we have the latest values
+        // todo: only load the keys we need
+        const object = Deno.core.ops.op_cloudstate_object_get(id);
+
+        delete object["__cloudstate__constructorName"];
+
+        for (const [key, value] of Object.entries(object)) {
+          hydrate(object, key, value);
+        }
+
+        if (key === "__proto__") {
+          return Object.prototype;
+        }
+
+        if (key === "constructor") {
+          return klass;
+        }
+
+        if (klass?.prototype && key in klass?.prototype) {
+          return klass.prototype[key].bind(proxyObject);
+        }
+
+        if (key in Object.prototype) {
+          return Object.prototype[key].bind(proxyObject);
+        }
+
+        return object[key];
+      },
+      set(target, key, value) {
+        Deno.core.ops.op_cloudstate_object_set_property(
+          id,
+          key,
+          packToReferenceOrPrimitive(value),
+        );
+
+        return true;
+      },
+    },
+  );
+
+  objects.set(id, proxyObject);
+  objectIds.set(proxyObject, id);
+
+  return proxyObject;
 }
 
 function packToReferenceOrPrimitive(value) {
@@ -271,7 +332,7 @@ function packToReferenceOrPrimitive(value) {
     value instanceof CloudstateBlobReference
   ) {
     console.error(
-      `${value.objectId} is already a reference: packToReferenceOrPrimitive is unnecessary`
+      `${value.objectId} is already a reference: packToReferenceOrPrimitive is unnecessary`,
     );
     return value;
   }
@@ -324,14 +385,14 @@ function setObject(object) {
           Deno.core.ops.op_cloudstate_map_set(
             objectIds.get(object),
             key,
-            value
+            value,
           );
         } else {
           const id = setObject(value);
           Deno.core.ops.op_cloudstate_map_set(
             objectIds.get(object),
             key,
-            new CloudstateObjectReference(id)
+            new CloudstateObjectReference(id),
           );
         }
       }
@@ -340,7 +401,10 @@ function setObject(object) {
 
     const isArray = object instanceof Array;
     const flatObject = isArray ? [] : {};
-    Object.setPrototypeOf(flatObject, object.constructor.prototype);
+
+    if (object.constructor) {
+      Object.setPrototypeOf(flatObject, object.constructor.prototype);
+    }
 
     for (let [key, value] of Object.entries(object)) {
       if (isArray) key = parseInt(key);
@@ -363,7 +427,7 @@ function setObject(object) {
             id,
             [Object, Array, Map].includes(value.constructor)
               ? undefined
-              : value.constructor.name
+              : value.constructor?.name,
           );
         }
         if (!visited.has(value)) {
@@ -422,10 +486,10 @@ function getArray(id) {
         Deno.core.ops.op_cloudstate_array_set(
           id,
           key,
-          packToReferenceOrPrimitive(value)
+          packToReferenceOrPrimitive(value),
         );
       },
-    }
+    },
   );
 
   Object.setPrototypeOf(array, Array.prototype);
@@ -548,7 +612,7 @@ function handleArrayMethods(key, array, id) {
           Deno.core.ops.op_cloudstate_array_set(
             id,
             length,
-            packToReferenceOrPrimitive(arg)
+            packToReferenceOrPrimitive(arg),
           );
           length++;
         }
