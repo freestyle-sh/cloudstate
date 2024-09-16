@@ -1,6 +1,5 @@
 use axum::{body::Body, extract::Request, routing::get};
-use tokio::{runtime::Runtime, sync::RwLock}; // 0.3.5
-
+use tokio::{runtime::Runtime, sync::RwLock};
 use clap::ValueHint;
 use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
 use notify::Watcher;
@@ -20,6 +19,9 @@ use std::{
 use tokio::net::TcpListener;
 use tower::Service;
 use tracing::{debug, info};
+
+#[cfg(test)]
+mod debug;
 
 #[tokio::main]
 async fn main() {
