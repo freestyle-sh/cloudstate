@@ -20,8 +20,8 @@ use tokio::net::TcpListener;
 use tower::Service;
 use tracing::{debug, info};
 
-#[cfg(test)]
-mod debug;
+// #[cfg(test)]
+// mod debug;
 
 #[tokio::main]
 async fn main() {
