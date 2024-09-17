@@ -4,6 +4,8 @@ use crate::{
         CloudstateArrayItemKey, CloudstateArrayItemValue, CloudstateMapFieldKey,
         CloudstateMapFieldValue, CloudstateObjectKey, CloudstateObjectValue, CloudstateRootKey,
         CloudstateRootValue,
+        CloudstateBlobValue,
+        CloudstateBlobKey
     },
 };
 
@@ -26,3 +28,8 @@ pub const ARRAYS_TABLE: TableDefinition<
     Bincode<CloudstateArrayItemKey>,
     Bincode<CloudstateArrayItemValue>,
 > = TableDefinition::new("arrays");
+
+pub const BLOBS_TABLE: TableDefinition<
+    Bincode<CloudstateBlobKey>,
+    Bincode<CloudstateBlobValue>,
+> = TableDefinition::new("blobs");

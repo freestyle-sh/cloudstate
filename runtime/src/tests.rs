@@ -33,6 +33,7 @@ js_test!(array_some);
 js_test!(array_sort_single_item);
 // js_test!(array_sort); // TODO: ERR
 js_test!(array_to_reversed);
+js_test!(blob_create);
 js_test!(counter_class);
 js_test!(counter_manager_class);
 js_test!(custom_classes);

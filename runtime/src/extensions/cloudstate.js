@@ -34,7 +34,7 @@ class CloudstateArrayReference {
 globalThis.CloudstateMapReference = CloudstateMapReference;
 globalThis.CloudstateObjectReference = CloudstateObjectReference;
 globalThis.CloudstateArrayReference = CloudstateArrayReference;
-globalThis.CloudstateBlob = CloudstateBlobReference;
+globalThis.CloudstateBlobReference = CloudstateBlobReference;
 
 function isPrimitive(value) {
   return (
@@ -90,20 +90,24 @@ function hydrate(object, key, value) {
     const blob = new Blob();
 
     blob["text"] = async () => {
-      return Deno.core.ops.op_cloudstate_blob_text(value.blobId);
+      return Deno.core.ops.op_cloudstate_blob_get_data(value.blobId);
     };
 
     blob["arrayBuffer"] = async () => {
-      return Deno.core.ops.op_cloudstate_blob_array_buffer(value.blobId);
+      const text = Deno.core.ops.op_cloudstate_blob_get_data(value.blobId);
+      const encoder = new TextEncoder();
+      return encoder.encode(text).buffer;
     };
 
     blob["bytes"] = async () => {
-      return Deno.core.ops.op_cloudstate_blob_bytes(value.blobId);
+      const text = Deno.core.ops.op_cloudstate_blob_get_data(value.blobId);
+      const encoder = new TextEncoder();
+      return encoder.encode(text);
     };
 
     Object.defineProperty(blob, "size", {
       get: () => {
-        return Deno.core.ops.op_cloudstate_blob_size(value.blobId);
+        return Deno.core.ops.op_cloudstate_blob_get_size(value.blobId);
       },
     });
 
@@ -414,14 +418,21 @@ function setObject(object) {
         flatObject[key] = value;
       } else if (typeof value === "object") {
         let id = objectIds.get(value);
+
         if (!id) {
           id = uuidv4();
           objectIds.set(value, id);
         }
+
         if (value instanceof Map) {
           flatObject[key] = new CloudstateMapReference(id);
         } else if (value instanceof Array) {
           flatObject[key] = new CloudstateArrayReference(id);
+        } else if (value instanceof Blob) {
+          flatObject[key] = new CloudstateBlobReference(id);
+          value.text().then((text) => {
+            Deno.core.ops.op_cloudstate_blob_set(id, value.type, text);
+          });
         } else {
           flatObject[key] = new CloudstateObjectReference(
             id,
