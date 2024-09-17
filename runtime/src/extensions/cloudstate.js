@@ -120,6 +120,9 @@ function hydrate(object, key, value) {
     Object.defineProperty(object, key, {
       value: blob,
     });
+
+    objectIds.set(blob, value.blobId);
+    objects.set(value.blobId, blob);
   }
 
   if (value instanceof CloudstateArrayReference) {
@@ -383,6 +386,28 @@ function setObject(object) {
   while (stack.length > 0) {
     const object = stack.pop();
 
+    if (object instanceof Blob) {
+      let id = objectIds.get(object);
+      if (!id) {
+        id = uuidv4();
+        objectIds.set(object, id);
+        objects.set(id, object);
+
+        object.text().then((text) => {
+          Deno.core.ops.op_cloudstate_blob_set(id, object.type, text);
+          console.log("set blob " + id);
+        });
+      }
+
+      if (!rootObject) {
+        rootObject = id;
+      }
+
+      visited.add(object);
+
+      continue;
+    }
+
     if (object instanceof Map) {
       for (const [key, value] of object.entries()) {
         if (isPrimitive(value)) {
@@ -400,6 +425,12 @@ function setObject(object) {
           );
         }
       }
+
+      // todo: why does this break things?
+      // if (!rootObject) {
+      //   rootObject = id;
+      // }
+
       continue;
     }
 
@@ -422,6 +453,14 @@ function setObject(object) {
         if (!id) {
           id = uuidv4();
           objectIds.set(value, id);
+          objects.set(id, value);
+
+          if (value instanceof Blob) {
+            value.text().then((text) => {
+              Deno.core.ops.op_cloudstate_blob_set(id, value.type, text);
+              console.log("set blob " + id);
+            });
+          }
         }
 
         if (value instanceof Map) {
@@ -430,9 +469,6 @@ function setObject(object) {
           flatObject[key] = new CloudstateArrayReference(id);
         } else if (value instanceof Blob) {
           flatObject[key] = new CloudstateBlobReference(id);
-          value.text().then((text) => {
-            Deno.core.ops.op_cloudstate_blob_set(id, value.type, text);
-          });
         } else {
           flatObject[key] = new CloudstateObjectReference(
             id,
@@ -441,12 +477,17 @@ function setObject(object) {
               : value.constructor?.name,
           );
         }
+
+        if (value instanceof Blob) continue;
+
         if (!visited.has(value)) {
           visited.add(value);
           stack.push(value);
         }
       } else {
-        throw new Error(`${typeof value} cannot be serialized`);
+        throw new Error(
+          `property ${key} of type ${typeof value} on object ${object} cannot be serialized`,
+        );
       }
     }
 

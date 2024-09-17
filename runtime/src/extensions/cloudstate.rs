@@ -150,6 +150,23 @@ fn op_cloudstate_array_reverse(state: &mut OpState, #[string] array_id: String) 
 }
 
 #[op2]
+#[serde]
+fn op_cloudstate_list_roots(state: &mut OpState) -> Result<Vec<String>, Error> {
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
+
+    let table = transaction.open_table(ROOTS_TABLE).unwrap();
+    let mut roots: Vec<String> = Vec::new();
+
+    for entry in table.iter().unwrap() {
+        let (key, _value) = entry.unwrap();
+        roots.push(key.value().alias);
+    }
+
+    Ok(roots)
+}
+
+#[op2]
 #[to_v8]
 fn op_cloudstate_array_pop(
     state: &mut OpState,
@@ -1208,7 +1225,8 @@ deno_core::extension!(
     op_cloudstate_blob_get_data,
     op_cloudstate_blob_set,
     op_cloudstate_blob_get_size,
-    op_cloudstate_blob_get_type
+    op_cloudstate_blob_get_type,
+    op_cloudstate_list_roots
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],

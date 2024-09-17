@@ -24,6 +24,10 @@ js_test!(array_of_num_objects);
 // js_test!(array_pop_object); // TODO: ERR
 // js_test!(array_pop); // TODO: ERR
 js_test!(array_push);
+js_test!(array_push_in_class_in_map);
+js_test!(array_push_object);
+js_test!(array_push_in_class);
+js_test!(array_push_inside_map);
 js_test!(array_reduce_right);
 js_test!(array_reduce);
 js_test!(array_reverse);
@@ -34,6 +38,7 @@ js_test!(array_sort_single_item);
 // js_test!(array_sort); // TODO: ERR
 js_test!(array_to_reversed);
 js_test!(blob_create);
+js_test!(class_getters);
 js_test!(counter_class);
 js_test!(counter_manager_class);
 js_test!(custom_classes);

@@ -1,5 +1,4 @@
 use axum::{body::Body, extract::Request, routing::get};
-use tokio::{runtime::Runtime, sync::RwLock};
 use clap::ValueHint;
 use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
 use notify::Watcher;
@@ -17,6 +16,7 @@ use std::{
     time::Duration,
 };
 use tokio::net::TcpListener;
+use tokio::{runtime::Runtime, sync::RwLock};
 use tower::Service;
 use tracing::{debug, info};
 
@@ -197,7 +197,7 @@ async fn handler(
     server: Arc<RwLock<CloudstateServer>>,
     req: Request<Body>,
 ) -> axum::http::Response<Body> {
-    info!("Pulling service");
+    debug!("Pulling service");
 
     let server = server.read().await;
     let router = server.router.clone();
