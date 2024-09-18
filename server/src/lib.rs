@@ -132,7 +132,6 @@ async fn fetch_request(
     let id = serde_json::to_string(&id).unwrap();
     let (parts, body) = request.into_parts();
 
-    let method = serde_json::to_string(&parts.method.to_string()).unwrap();
     let headers = parts.headers;
     // TODO: find a way to not need the http:// prefix
     let uri = format!("http://{}{}", host, parts.uri.path());
@@ -167,98 +166,16 @@ async fn fetch_request(
             .collect::<Vec<String>>()
             .join(", ")
     );
-    // // body: new Uint8Array({bytes}).buffer,
-    // // headers: new Headers({headers}),
-    // let headers = headers.to_string();
 
-    //headers: new Headers({headers}),
-    // method: '{method}',
-    //{url},
-    // TODO: fix injection vulnerability
-
+    let env_string = serde_json::to_string(&state.env).unwrap();
     let invalidate_endpoint = state.invalidate_endpoint.clone();
 
-    let script = format!(
-        "
-
-    // todo environment variables
-
-    
-    const classes = await import('./lib.js').catch(e => {{
-        console.error('Error importing classes', e);
-        throw e;
-    }});
-    
-    for (const className of Object.keys(classes)) {{
-        const klass = classes[className];
-        registerCustomClass(klass);
-    }}
-
-    // temporary hack to be compatible with legacy freestyle apis
-    globalThis.requestContext = {{
-        getStore: () => {{
-            return {{
-                request: new Request({uri}, {{
-                    headers: new Headers({headers}),
-                }}),
-                env: {{
-                    invalidateMethod: (rawMethod) => {{
-                        const method = rawMethod.toJSON();
-                        fetch(`{invalidate_endpoint}/${{method.instance}}/${{method.method}}`, {{
-                            method: 'POST',
-                            headers: {{
-                                'Content-Type': 'application/json',
-                            }}
-                        }}).catch(e => {{
-                            console.error(e);
-                        }});
-                    }},
-                }}
-            }}
-        }}
-    }}
-
-    let object;
-
-    try {{
-        object = getRoot({id}) || getCloudstate({id});
-    }} catch (e) {{
-        console.error('Error getting root or cloudstate', e);
-        throw e;
-    }}
-
-    try {{
-        const req = new Request({uri},
-            {{
-                method,
-                headers: new Headers({headers}),
-                body: ['GET', 'HEAD'].includes(method) ? undefined : bytes.buffer
-            }}
-        );
-
-        let out = object['fetch'](req);
-
-        if (out instanceof Promise) {{
-            out = await out;
-        }}
-
-        if (out instanceof Response) {{
-            const body = await out.bytes();
-            const headers = [...out.headers.entries()];
-
-            // uint8array to array
-            let bytes = Array.from(body);
-
-
-
-            globalThis.result = {{ result: {{ bytes, headers }} }};
-        }}
-
-    }} catch (e) {{
-        globalThis.result = {{ error: {{ message: e.message, stack: e.stack }} }};
-    }}
-    ",
-    );
+    let script = include_str!("./fetch_request.js")
+        .replace("$ENV_STRING", &env_string)
+        .replace("$INVALIDATE_ENDPOINT", &invalidate_endpoint)
+        .replace("$URI", &uri)
+        .replace("$ID", &id)
+        .replace("$HEADERS", &headers);
 
     debug!("executing script");
 
@@ -343,75 +260,18 @@ async fn method_request(
     let run_script = &params.params.first().map(|p| p.as_str());
 
     let params = serde_json::to_string(&params.params).unwrap();
-
     let env_string = serde_json::to_string(&state.env).unwrap();
-
     let invalidate_endpoint = state.invalidate_endpoint.clone();
 
     // TODO: fix injection vulnerability
-    let script = format!(
-        "
-    globalThis.process = {{
-        env: {env_string}
-    }};
-
-    const classes = await import('./lib.js').catch(e => {{
-        console.error('Error importing classes', e);
-        throw e;
-    }});
-
-    
-    for (const className of Object.keys(classes)) {{
-        const klass = classes[className];
-        registerCustomClass(klass);
-    }}
-
-    // temporary hack to be compatible with legacy freestyle apis
-    globalThis.requestContext = {{
-        getStore: () => {{
-            return {{
-                request: new Request({uri}, {{
-                    headers: new Headers({headers}),
-                }}),
-                env: {{
-                    invalidateMethod: (rawMethod) => {{
-                        const method = rawMethod.toJSON();
-                        fetch(`{invalidate_endpoint}/${{method.instance}}/${{method.method}}`, {{
-                            method: 'POST',
-                            headers: {{
-                                'Content-Type': 'application/json',
-                            }}
-                        }}).catch(e => {{
-                            console.error(e);
-                        }});
-                    }},
-                }}
-            }}
-        }}
-    }}
-
-    let object;
-
-    try {{
-        object = getRoot({id}) || getCloudstate({id});
-    }} catch (e) {{
-        console.error('Error getting root or cloudstate', e);
-        throw e;
-    }}
-
-    try {{
-        if (!object) {{
-            globalThis.result = {{ error: {{ message: 'Object not found' }} }};
-        }} else if (!object[{method}]) {{
-            globalThis.result = {{ error: {{ message: `Method not found on class ${{object?.constructor?.name ?? 'unknown'}}` }} }};
-        }} else {{
-            globalThis.result = {{ result: await object[{method}](...JSON.parse('{params}')) }};
-        }}
-    }} catch (e) {{
-        globalThis.result = {{ error: {{ message: e.message, stack: e.stack }} }};
-    }}
-    ",
-    );
+    let script = include_str!("./method_request.js")
+        .replace("$ENV_STRING", &env_string)
+        .replace("$URI", &uri)
+        .replace("$HEADERS", &headers)
+        .replace("$INVALIDATE_ENDPOINT", &invalidate_endpoint)
+        .replace("$ID", &id)
+        .replace("$METHOD", &method)
+        .replace("$PARAMS", &params);
 
     debug!("executing script");
     let result = if id == "\"inspection\"" && method == "\"run\"" {
