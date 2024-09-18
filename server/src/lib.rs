@@ -176,6 +176,8 @@ async fn fetch_request(
     //{url},
     // TODO: fix injection vulnerability
 
+    let invalidate_endpoint = state.invalidate_endpoint.clone();
+
     let script = format!(
         "
 
@@ -202,7 +204,7 @@ async fn fetch_request(
                 env: {{
                     invalidateMethod: (rawMethod) => {{
                         const method = rawMethod.toJSON();
-                        fetch(`${{state.invalidate_endpoint}}/${{method.instance}}/${{method.method}}`, {{
+                        fetch(`{invalidate_endpoint}/${{method.instance}}/${{method.method}}`, {{
                             method: 'POST',
                             headers: {{
                                 'Content-Type': 'application/json',
@@ -344,6 +346,8 @@ async fn method_request(
 
     let env_string = serde_json::to_string(&state.env).unwrap();
 
+    let invalidate_endpoint = state.invalidate_endpoint.clone();
+
     // TODO: fix injection vulnerability
     let script = format!(
         "
@@ -372,7 +376,7 @@ async fn method_request(
                 env: {{
                     invalidateMethod: (rawMethod) => {{
                         const method = rawMethod.toJSON();
-                        fetch(`${{state.invalidate_endpoint}}/${{method.instance}}/${{method.method}}`, {{
+                        fetch(`{invalidate_endpoint}/${{method.instance}}/${{method.method}}`, {{
                             method: 'POST',
                             headers: {{
                                 'Content-Type': 'application/json',
@@ -415,7 +419,8 @@ async fn method_request(
         execute_script(
             &include_str!("./inspection_run.js")
                 .replace("env_string", &env_string)
-                .replace("run_script", run_script),
+                .replace("run_script", run_script)
+                .replace("invalidate_endpoint", &invalidate_endpoint),
             &state.classes,
             state.cloudstate,
         )
