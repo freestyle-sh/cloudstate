@@ -1,6 +1,7 @@
 use axum::{body::Body, extract::Request, routing::get, Json};
-use tokio::{runtime::Runtime, sync::RwLock}; // 0.3.5
+use tokio::runtime::Runtime; // 0.3.5
 
+use axum::extract::DefaultBodyLimit;
 use clap::ValueHint;
 use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
 use notify::Watcher;
@@ -18,8 +19,12 @@ use std::{
     time::Duration,
 };
 use tokio::net::TcpListener;
+use tokio::sync::RwLock;
 use tower::Service;
 use tracing::{debug, info};
+
+// #[cfg(test)]
+// mod debug;
 
 #[tokio::main]
 async fn main() {
@@ -141,6 +146,7 @@ async fn main() {
                                         cloudstate.clone(),
                                         &new_classes,
                                         env.clone(),
+                                        "http://localhost:8910/__invalidate__".to_string(),
                                     )
                                     .await;
 
@@ -191,7 +197,8 @@ async fn run_server(server: Arc<RwLock<CloudstateServer>>, listener: TcpListener
                 .delete(handle.clone())
                 .put(handle.clone())
                 .patch(handle.clone()),
-        );
+        )
+        .layer(DefaultBodyLimit::disable());
 
     let out = axum::serve(listener, svr);
 
@@ -203,7 +210,7 @@ async fn handler(
     server: Arc<RwLock<CloudstateServer>>,
     req: Request<Body>,
 ) -> axum::http::Response<Body> {
-    info!("Pulling service");
+    debug!("Pulling service");
 
     let server = server.read().await;
     let router = server.router.clone();

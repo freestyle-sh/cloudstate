@@ -1,7 +1,16 @@
 {
     "rust-analyzer.runnables.extraEnv": {
-            "RUST_BACKTRACE": "0",
-            "RUST_LOG": "debug"
+        "RUST_BACKTRACE": "0",
+        "RUST_LOG": "debug"
     },
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "[typescript]": {
+        "editor.defaultFormatter": "denoland.vscode-deno"
+    },
+    "[javascript]": {
+        "editor.defaultFormatter": "denoland.vscode-deno"
+    },
+    "[rust]": {
+        "editor.defaultFormatter": "rust-lang.rust-analyzer"
+    }
 }

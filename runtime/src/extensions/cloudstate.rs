@@ -1,4 +1,4 @@
-use crate::tables::{ARRAYS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
+use crate::tables::{ARRAYS_TABLE, BLOBS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
 use crate::v8_string_key;
 use anyhow::anyhow;
 use chrono::{DateTime, TimeZone, Utc};
@@ -147,6 +147,23 @@ fn op_cloudstate_array_reverse(state: &mut OpState, #[string] array_id: String) 
             )
             .unwrap();
     }
+}
+
+#[op2]
+#[serde]
+fn op_cloudstate_list_roots(state: &mut OpState) -> Result<Vec<String>, Error> {
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
+
+    let table = transaction.open_table(ROOTS_TABLE).unwrap();
+    let mut roots: Vec<String> = Vec::new();
+
+    for entry in table.iter().unwrap() {
+        let (key, _value) = entry.unwrap();
+        roots.push(key.value().alias);
+    }
+
+    Ok(roots)
 }
 
 #[op2]
@@ -491,7 +508,6 @@ fn op_cloudstate_map_values(
 fn op_cloudstate_array_sort<'a>(
     state: &mut OpState,
     scope: &mut v8::HandleScope<'a>,
-    #[string] transaction_id: String,
     #[string] array_id: String,
     compare_fn: Option<&v8::Function>,
 ) -> CloudstatePrimitiveData {
@@ -619,6 +635,95 @@ fn op_cloudstate_map_entries(
     }
 
     Ok(CloudstateEntriesVec::from(entries))
+}
+
+#[op2(fast)]
+fn op_cloudstate_blob_set(
+    state: &mut OpState,
+    #[string] blob_id: String,
+    #[string] blob_type: String,
+    #[string] blob_text: String,
+) -> Result<(), Error> {
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
+
+    let mut table = transaction.open_table(BLOBS_TABLE).unwrap();
+    let key = CloudstateBlobKey { id: blob_id };
+
+    let _ = table
+        .insert(
+            &key,
+            CloudstateBlobValue {
+                data: blob_text,
+                type_: blob_type,
+            },
+        )
+        .unwrap();
+    Ok(())
+}
+
+#[op2]
+#[string]
+fn op_cloudstate_blob_get_data(
+    state: &mut OpState,
+    #[string] blob_id: String,
+) -> Result<String, Error> {
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
+
+    let table = transaction.open_table(BLOBS_TABLE).unwrap();
+    let key = CloudstateBlobKey { id: blob_id };
+
+    let result = table.get(key).unwrap();
+    let result = result.map(|s| s.value().data);
+
+    Ok(result.unwrap())
+}
+
+#[op2(fast)]
+fn op_cloudstate_blob_get_size(
+    state: &mut OpState,
+    #[string] blob_id: String,
+) -> Result<i32, Error> {
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
+
+    let table = transaction.open_table(BLOBS_TABLE).unwrap();
+    let key = CloudstateBlobKey { id: blob_id };
+
+    let result = table.get(key).unwrap();
+    let result = result.map(|s| s.value().data.len() as i32);
+
+    Ok(result.unwrap())
+}
+
+#[op2]
+#[string]
+fn op_cloudstate_blob_get_type(
+    state: &mut OpState,
+    #[string] blob_id: String,
+) -> Result<String, Error> {
+    let cs = state.borrow_mut::<TransactionContext>();
+    let transaction = cs.get_or_create_transaction_mut();
+
+    let table = transaction.open_table(BLOBS_TABLE).unwrap();
+    let key = CloudstateBlobKey { id: blob_id };
+
+    let result = table.get(key).unwrap();
+    let result = result.map(|s| s.value().type_.clone());
+
+    Ok(result.unwrap())
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub struct CloudstateBlobKey {
+    pub id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub struct CloudstateBlobValue {
+    pub data: String,
+    pub type_: String,
 }
 
 #[derive(Clone)]
@@ -875,11 +980,9 @@ impl ToV8<'_> for CloudstatePrimitiveData {
 
                 let object = v8::Object::new(scope);
                 object.set_prototype(scope, prototype).unwrap();
-
                 let key = v8::String::new(scope, "blobId").unwrap().into();
                 let value = v8::String::new(scope, &value.id).unwrap().into();
                 object.set(scope, key, value);
-
                 object.into()
             }
             // CloudstatePrimitiveData::Error(value) => v8::Error::new(scope, value.clone()).into(),
@@ -1118,7 +1221,12 @@ deno_core::extension!(
     op_cloudstate_object_root_get,
     op_cloudstate_object_root_set,
     op_cloudstate_object_set,
-    op_cloudstate_object_set_property
+    op_cloudstate_object_set_property,
+    op_cloudstate_blob_get_data,
+    op_cloudstate_blob_set,
+    op_cloudstate_blob_get_size,
+    op_cloudstate_blob_get_type,
+    op_cloudstate_list_roots
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],

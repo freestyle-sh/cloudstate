@@ -35,9 +35,13 @@ import * as crypto from "ext:deno_crypto/00_crypto.js";
 import * as console from "ext:deno_console/01_console.js";
 
 Object.defineProperty(globalThis, "console", {
-  value: new console.Console((msg, level) =>
-    globalThis.Deno.core.print(msg, level > 1)
-  ),
+  value: new console.Console((msg, level) => {
+    try {
+      globalThis.Deno.core.print(msg, level > 1);
+    } catch (e) {
+      console.error(e);
+    }
+  }),
   enumerable: false,
   configurable: true,
   writable: true,

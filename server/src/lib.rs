@@ -82,6 +82,15 @@ impl CloudstateServer {
         )
         .await;
 
+        execute_script(
+            "
+            import { CloudstateInspectionCS } from './lib.js';
+            setRoot('inspection', new CloudstateInspectionCS());",
+            &include_str!("./inspection.js"),
+            cloudstate.clone(),
+        )
+        .await;
+
         let app = Router::new()
             .route(
                 "/cloudstate/instances/:id",
@@ -169,25 +178,19 @@ async fn fetch_request(
 
     let script = format!(
         "
-    console.log('executing script');
 
     // todo environment variables
 
-    console.log('set environment variables');
     
     const classes = await import('./lib.js').catch(e => {{
         console.error('Error importing classes', e);
         throw e;
     }});
     
-    console.log('imported classes');
-
     for (const className of Object.keys(classes)) {{
         const klass = classes[className];
         registerCustomClass(klass);
     }}
-
-    console.log('set custom classes');
 
     // temporary hack to be compatible with legacy freestyle apis
     globalThis.requestContext = {{
@@ -213,7 +216,6 @@ async fn fetch_request(
         }}
     }}
 
-    console.log('getRoot or getCloudstate');
     let object;
 
     try {{
@@ -235,7 +237,6 @@ async fn fetch_request(
         let out = object['fetch'](req);
 
         if (out instanceof Promise) {{
-            console.log('fetch is a promise');
             out = await out;
         }}
 
@@ -259,7 +260,16 @@ async fn fetch_request(
 
     debug!("executing script");
 
-    let result = execute_script(&script.as_str(), &state.classes, state.cloudstate).await;
+    let result = execute_script(
+        &script.as_str(),
+        if id == "\"inspection\"" {
+            &include_str!("./inspection.js")
+        } else {
+            &state.classes
+        },
+        state.cloudstate,
+    )
+    .await;
 
     debug!("script finished");
 
@@ -326,6 +336,10 @@ async fn method_request(
     let headers = format!("{{{}}}", headers);
 
     let Json::<MethodParams>(params) = request.extract().await.unwrap();
+
+    // only used for inspection api
+    let run_script = &params.params.first().map(|p| p.as_str());
+
     let params = serde_json::to_string(&params.params).unwrap();
 
     let env_string = serde_json::to_string(&state.env).unwrap();
@@ -333,27 +347,20 @@ async fn method_request(
     // TODO: fix injection vulnerability
     let script = format!(
         "
-    console.log('executing script');
-    
     globalThis.process = {{
         env: {env_string}
     }};
 
-    console.log('set environment variables');
-    
     const classes = await import('./lib.js').catch(e => {{
         console.error('Error importing classes', e);
         throw e;
     }});
-    
-    console.log('imported classes');
 
+    
     for (const className of Object.keys(classes)) {{
         const klass = classes[className];
         registerCustomClass(klass);
     }}
-
-    console.log('set custom classes');
 
     // temporary hack to be compatible with legacy freestyle apis
     globalThis.requestContext = {{
@@ -379,7 +386,6 @@ async fn method_request(
         }}
     }}
 
-    console.log('getRoot or getCloudstate');
     let object;
 
     try {{
@@ -404,7 +410,28 @@ async fn method_request(
     );
 
     debug!("executing script");
-    let result = execute_script(&script.as_str(), &state.classes, state.cloudstate).await;
+    let result = if id == "\"inspection\"" && method == "\"run\"" {
+        let run_script = run_script.unwrap().unwrap();
+        execute_script(
+            &include_str!("./inspection_run.js")
+                .replace("env_string", &env_string)
+                .replace("run_script", run_script),
+            &state.classes,
+            state.cloudstate,
+        )
+        .await
+    } else {
+        execute_script(
+            &script.as_str(),
+            if id == "\"inspection\"" {
+                &include_str!("./inspection.js")
+            } else {
+                &state.classes
+            },
+            state.cloudstate,
+        )
+        .await
+    };
     debug!("script result: {:#?}", result);
 
     Json(serde_json::from_str(&result).unwrap_or(json!({

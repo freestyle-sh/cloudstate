@@ -34,7 +34,7 @@ class CloudstateArrayReference {
 globalThis.CloudstateMapReference = CloudstateMapReference;
 globalThis.CloudstateObjectReference = CloudstateObjectReference;
 globalThis.CloudstateArrayReference = CloudstateArrayReference;
-globalThis.CloudstateBlob = CloudstateBlobReference;
+globalThis.CloudstateBlobReference = CloudstateBlobReference;
 
 function isPrimitive(value) {
   return (
@@ -90,20 +90,24 @@ function hydrate(object, key, value) {
     const blob = new Blob();
 
     blob["text"] = async () => {
-      return Deno.core.ops.op_cloudstate_blob_text(value.blobId);
+      return Deno.core.ops.op_cloudstate_blob_get_data(value.blobId);
     };
 
     blob["arrayBuffer"] = async () => {
-      return Deno.core.ops.op_cloudstate_blob_array_buffer(value.blobId);
+      const text = Deno.core.ops.op_cloudstate_blob_get_data(value.blobId);
+      const encoder = new TextEncoder();
+      return encoder.encode(text).buffer;
     };
 
     blob["bytes"] = async () => {
-      return Deno.core.ops.op_cloudstate_blob_bytes(value.blobId);
+      const text = Deno.core.ops.op_cloudstate_blob_get_data(value.blobId);
+      const encoder = new TextEncoder();
+      return encoder.encode(text);
     };
 
     Object.defineProperty(blob, "size", {
       get: () => {
-        return Deno.core.ops.op_cloudstate_blob_size(value.blobId);
+        return Deno.core.ops.op_cloudstate_blob_get_size(value.blobId);
       },
     });
 
@@ -116,6 +120,9 @@ function hydrate(object, key, value) {
     Object.defineProperty(object, key, {
       value: blob,
     });
+
+    objectIds.set(blob, value.blobId);
+    objects.set(value.blobId, blob);
   }
 
   if (value instanceof CloudstateArrayReference) {
@@ -379,6 +386,28 @@ function setObject(object) {
   while (stack.length > 0) {
     const object = stack.pop();
 
+    if (object instanceof Blob) {
+      let id = objectIds.get(object);
+      if (!id) {
+        id = uuidv4();
+        objectIds.set(object, id);
+        objects.set(id, object);
+
+        object.text().then((text) => {
+          Deno.core.ops.op_cloudstate_blob_set(id, object.type, text);
+          console.log("set blob " + id);
+        });
+      }
+
+      if (!rootObject) {
+        rootObject = id;
+      }
+
+      visited.add(object);
+
+      continue;
+    }
+
     if (object instanceof Map) {
       for (const [key, value] of object.entries()) {
         if (isPrimitive(value)) {
@@ -396,6 +425,12 @@ function setObject(object) {
           );
         }
       }
+
+      // todo: why does this break things?
+      // if (!rootObject) {
+      //   rootObject = id;
+      // }
+
       continue;
     }
 
@@ -414,14 +449,26 @@ function setObject(object) {
         flatObject[key] = value;
       } else if (typeof value === "object") {
         let id = objectIds.get(value);
+
         if (!id) {
           id = uuidv4();
           objectIds.set(value, id);
+          objects.set(id, value);
+
+          if (value instanceof Blob) {
+            value.text().then((text) => {
+              Deno.core.ops.op_cloudstate_blob_set(id, value.type, text);
+              console.log("set blob " + id);
+            });
+          }
         }
+
         if (value instanceof Map) {
           flatObject[key] = new CloudstateMapReference(id);
         } else if (value instanceof Array) {
           flatObject[key] = new CloudstateArrayReference(id);
+        } else if (value instanceof Blob) {
+          flatObject[key] = new CloudstateBlobReference(id);
         } else {
           flatObject[key] = new CloudstateObjectReference(
             id,
@@ -430,12 +477,17 @@ function setObject(object) {
               : value.constructor?.name,
           );
         }
+
+        if (value instanceof Blob) continue;
+
         if (!visited.has(value)) {
           visited.add(value);
           stack.push(value);
         }
       } else {
-        throw new Error(`${typeof value} cannot be serialized`);
+        throw new Error(
+          `property ${key} of type ${typeof value} on object ${object} cannot be serialized`,
+        );
       }
     }
 

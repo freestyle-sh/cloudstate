@@ -32,3 +32,4 @@ tokio.workspace = true
 
 tracing = "0.1"
 url.workspace = true
+tracing-subscriber = "0.3.18"
