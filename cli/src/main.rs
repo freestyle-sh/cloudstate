@@ -1,4 +1,8 @@
-use axum::{body::Body, extract::Request, routing::get};
+use axum::{
+    body::Body,
+    extract::{DefaultBodyLimit, Request},
+    routing::get,
+};
 use clap::ValueHint;
 use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
 use notify::Watcher;
@@ -179,13 +183,15 @@ async fn run_server(server: Arc<RwLock<CloudstateServer>>, listener: TcpListener
             .unwrap()
     };
 
-    let svr = axum::Router::new().fallback(
-        get(handle.clone())
-            .post(handle.clone())
-            .delete(handle.clone())
-            .put(handle.clone())
-            .patch(handle.clone()),
-    );
+    let svr = axum::Router::new()
+        .fallback(
+            get(handle.clone())
+                .post(handle.clone())
+                .delete(handle.clone())
+                .put(handle.clone())
+                .patch(handle.clone()),
+        )
+        .layer(DefaultBodyLimit::disable());
 
     let out = axum::serve(listener, svr);
 
