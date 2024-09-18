@@ -1,4 +1,4 @@
-use axum::{body::Body, extract::Request, routing::get};
+use axum::{body::Body, extract::Request, routing::get, Json};
 use tokio::{runtime::Runtime, sync::RwLock}; // 0.3.5
 
 use clap::ValueHint;
@@ -100,13 +100,19 @@ async fn main() {
             let classes = fs::read_to_string(&filename).unwrap_or("".to_string());
             let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
             let cloudstate = ReDBCloudstate::new(Arc::new(Mutex::new(db)));
-            let server = CloudstateServer::new(cloudstate.clone(), &classes, env.clone()).await;
+            let server = CloudstateServer::new(
+                cloudstate.clone(),
+                &classes,
+                env.clone(),
+                "http://localhost:8910/__invalidate__".to_string(),
+            )
+            .await;
 
             let app_state = Arc::new(RwLock::new(server));
 
             let cloned = Arc::clone(&app_state);
             let other_thread = tokio::spawn(async move {
-                info!("Starting server");
+                info!("Starting server on {:?}", listener.local_addr().unwrap());
                 let _ = run_server(cloned, listener).await;
             });
 
@@ -177,13 +183,15 @@ async fn run_server(server: Arc<RwLock<CloudstateServer>>, listener: TcpListener
             .unwrap()
     };
 
-    let svr = axum::Router::new().fallback(
-        get(handle.clone())
-            .post(handle.clone())
-            .delete(handle.clone())
-            .put(handle.clone())
-            .patch(handle.clone()),
-    );
+    let svr = axum::Router::new()
+        .route("/cloudstate/status", get(|| async { Json("OK") }))
+        .fallback(
+            get(handle.clone())
+                .post(handle.clone())
+                .delete(handle.clone())
+                .put(handle.clone())
+                .patch(handle.clone()),
+        );
 
     let out = axum::serve(listener, svr);
 

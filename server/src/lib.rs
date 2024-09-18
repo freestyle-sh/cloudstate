@@ -69,6 +69,7 @@ impl CloudstateServer {
         cloudstate: ReDBCloudstate,
         classes: &str,
         env: HashMap<String, String>,
+        invalidate_endpoint: String,
     ) -> Self {
         // tracing_subscriber::fmt::init();
 
@@ -94,7 +95,8 @@ impl CloudstateServer {
             .with_state(AppState {
                 cloudstate: cloudstate.clone(),
                 classes: classes.to_string(),
-                env: env,
+                env,
+                invalidate_endpoint,
             });
 
         CloudstateServer { router: app }
@@ -164,6 +166,7 @@ async fn fetch_request(
     // method: '{method}',
     //{url},
     // TODO: fix injection vulnerability
+
     let script = format!(
         "
     console.log('executing script');
@@ -196,7 +199,7 @@ async fn fetch_request(
                 env: {{
                     invalidateMethod: (rawMethod) => {{
                         const method = rawMethod.toJSON();
-                        fetch(`http://localhost:8910/__invalidate__/${{method.instance}}/${{method.method}}`, {{
+                        fetch(`${{state.invalidate_endpoint}}/${{method.instance}}/${{method.method}}`, {{
                             method: 'POST',
                             headers: {{
                                 'Content-Type': 'application/json',
@@ -280,6 +283,7 @@ struct AppState {
     cloudstate: ReDBCloudstate,
     classes: String,
     env: HashMap<String, String>,
+    invalidate_endpoint: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -361,7 +365,7 @@ async fn method_request(
                 env: {{
                     invalidateMethod: (rawMethod) => {{
                         const method = rawMethod.toJSON();
-                        fetch(`http://localhost:8910/__invalidate__/${{method.instance}}/${{method.method}}`, {{
+                        fetch(`${{state.invalidate_endpoint}}/${{method.instance}}/${{method.method}}`, {{
                             method: 'POST',
                             headers: {{
                                 'Content-Type': 'application/json',
