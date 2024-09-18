@@ -33,6 +33,7 @@ async fn test_fetch() {
             }
         }",
         HashMap::new(),
+        "http://localhost:8910/__invalidate__".to_string(),
     )
     .await;
 
@@ -121,6 +122,7 @@ async fn test_async_write() {
             }
         }"#,
         HashMap::new(),
+        "http://localhost:8910/__invalidate__".to_string(),
     )
     .await;
 
