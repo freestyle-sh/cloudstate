@@ -61,7 +61,7 @@ try {
         };
     } else {
         globalThis.result = {
-            result: await object[$METHOD](...JSON.parse("$PARAMS")),
+            result: await object[$METHOD](...JSON.parse(`$PARAMS`)),
         };
     }
 } catch (e) {
