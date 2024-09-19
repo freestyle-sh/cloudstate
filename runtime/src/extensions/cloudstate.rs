@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::i32;
 use std::sync::Arc;
 use std::sync::{Mutex, MutexGuard};
-use tracing::{debug, event};
+use tracing::{debug, error, event};
 use url::Url;
 use v8::GetPropertyNamesArgs;
 
@@ -1199,6 +1199,7 @@ pub struct CloudstateArrayItemValue {
 deno_core::extension!(
   cloudstate,
   ops = [
+
     op_cloudstate_array_get,
     op_cloudstate_array_length,
     op_cloudstate_array_pop,
@@ -1230,4 +1231,18 @@ deno_core::extension!(
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],
+  middleware = |op| match op.name {
+    "op_print" => op_print_with_tracing(),
+    _ => op,
+  },
 );
+
+#[op2(fast)]
+pub fn op_print_with_tracing(_state: &mut OpState, #[string] msg: &str, is_err: bool) -> () {
+    // tracing
+    if is_err {
+        error!("{}", msg);
+    } else {
+        debug!("{}", msg);
+    }
+}
