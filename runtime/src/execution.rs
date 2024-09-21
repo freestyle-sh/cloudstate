@@ -1,14 +1,14 @@
 use deno_core::*;
 use deno_fetch::FetchPermissions;
 use deno_net::NetPermissions;
-use deno_node::AllowAllNodePermissions;
+// use deno_node::AllowAllNodePermissions;
 use deno_web::{BlobStore, TimersPermission};
 use futures::future::poll_fn;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::Arc;
-use tracing::event;
+use tracing::{debug, event};
 
 use crate::extensions::bootstrap::bootstrap;
 use crate::extensions::cloudstate::{cloudstate, ReDBCloudstate, TransactionContext};
@@ -25,12 +25,17 @@ struct CloudstateFetchPermissions {}
 
 impl FetchPermissions for CloudstateFetchPermissions {
     fn check_net_url(&mut self, _url: &url::Url, _api_name: &str) -> Result<(), error::AnyError> {
-        event!(tracing::Level::DEBUG, "checking net url fetch permission");
+        debug!("checking net url fetch permission");
         Ok(())
     }
-    fn check_read(&mut self, _p: &Path, _api_name: &str) -> Result<(), error::AnyError> {
-        event!(tracing::Level::DEBUG, "checking read fetch permission");
-        Ok(())
+
+    fn check_read<'a>(
+        &mut self,
+        p: &'a Path,
+        api_name: &str,
+    ) -> Result<std::borrow::Cow<'a, Path>, error::AnyError> {
+        debug!("checking read fetch permission");
+        Ok(p.to_path_buf().into())
     }
 }
 
@@ -42,16 +47,27 @@ impl NetPermissions for CloudstateNetPermissions {
         _host: &(T, Option<u16>),
         _api_name: &str,
     ) -> Result<(), error::AnyError> {
-        event!(tracing::Level::DEBUG, "checking net permission");
+        debug!("checking net permission");
         Ok(())
     }
-    fn check_read(&mut self, _p: &Path, _api_name: &str) -> Result<(), error::AnyError> {
-        event!(tracing::Level::DEBUG, "checking read permission");
-        Ok(())
+
+    fn check_read(&mut self, p: &str, api_name: &str) -> Result<PathBuf, error::AnyError> {
+        debug!("checking read permission");
+        Ok(p.to_string().into())
     }
-    fn check_write(&mut self, _p: &Path, _api_name: &str) -> Result<(), error::AnyError> {
-        event!(tracing::Level::DEBUG, "checking write permission");
-        Ok(())
+
+    fn check_write(&mut self, p: &str, api_name: &str) -> Result<PathBuf, error::AnyError> {
+        debug!("checking write permission");
+        Ok(p.to_string().into())
+    }
+
+    fn check_write_path<'a>(
+        &mut self,
+        p: &'a std::path::Path,
+        api_name: &str,
+    ) -> Result<std::borrow::Cow<'a, std::path::Path>, error::AnyError> {
+        debug!("checking write path permission");
+        Ok(p.to_path_buf().into())
     }
 }
 
@@ -80,7 +96,7 @@ pub fn run_script(
     result
 }
 
-type CloudstateNodePermissions = AllowAllNodePermissions;
+// type CloudstateNodePermissions = AllowAllNodePermissions;
 
 pub fn run_script_source(
     script: &str,

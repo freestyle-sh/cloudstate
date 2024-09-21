@@ -1,6 +1,6 @@
 use axum::{
     body::Body,
-    extract::{Host, Path, Request, State},
+    extract::{Host, Request, State},
     http::Response,
     routing::{get, post},
     Json, RequestExt, Router,
@@ -10,12 +10,12 @@ use cloudstate_runtime::extensions::{
     cloudstate::{cloudstate, TransactionContext},
 };
 use cloudstate_runtime::{extensions::cloudstate::ReDBCloudstate, v8_string_key};
+use deno_core::JsRuntime;
 use deno_core::*;
 use deno_core::{
     futures::future::poll_fn, resolve_import, ModuleLoadResponse, ModuleLoader, ModuleSource,
     ModuleSourceCode, ModuleSpecifier, ModuleType, ResolutionKind,
 };
-use deno_core::{url::Url, JsRuntime};
 use deno_fetch::FetchPermissions;
 use deno_net::NetPermissions;
 use deno_web::BlobStore;
@@ -23,7 +23,12 @@ use deno_web::TimersPermission;
 use futures::TryStreamExt;
 use serde::Deserialize;
 use serde_json::json;
-use std::{borrow::BorrowMut, cell::RefCell, collections::HashMap};
+use std::{
+    borrow::BorrowMut,
+    cell::RefCell,
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 use std::{rc::Rc, sync::Arc};
 use tracing::{debug, event};
 
@@ -124,7 +129,7 @@ struct ResponseData {
 }
 
 async fn fetch_request(
-    Path(id): Path<String>,
+    axum::extract::Path(id): axum::extract::Path<String>,
     State(state): State<AppState>,
     Host(host): Host,
     request: Request,
@@ -221,7 +226,7 @@ struct MethodParams {
 }
 
 async fn method_request(
-    Path((id, method)): Path<(String, String)>,
+    axum::extract::Path((id, method)): axum::extract::Path<(String, String)>,
     State(state): State<AppState>,
     request: Request<Body>,
 ) -> axum::response::Json<serde_json::Value> {
@@ -317,21 +322,18 @@ impl TimersPermission for CloudstateTimerPermissions {
 struct CloudstateFetchPermissions {}
 
 impl FetchPermissions for CloudstateFetchPermissions {
-    fn check_net_url(
-        &mut self,
-        _url: &Url,
-        _api_name: &str,
-    ) -> Result<(), deno_core::error::AnyError> {
-        event!(tracing::Level::DEBUG, "checking net url fetch permission");
+    fn check_net_url(&mut self, _url: &url::Url, _api_name: &str) -> Result<(), error::AnyError> {
+        debug!("checking net url fetch permission");
         Ok(())
     }
-    fn check_read(
+
+    fn check_read<'a>(
         &mut self,
-        _p: &std::path::Path,
-        _api_name: &str,
-    ) -> Result<(), deno_core::error::AnyError> {
-        event!(tracing::Level::DEBUG, "checking read fetch permission");
-        Ok(())
+        p: &'a Path,
+        api_name: &str,
+    ) -> Result<std::borrow::Cow<'a, Path>, error::AnyError> {
+        debug!("checking read fetch permission");
+        Ok(p.to_path_buf().into())
     }
 }
 
@@ -342,25 +344,28 @@ impl NetPermissions for CloudstateNetPermissions {
         &mut self,
         _host: &(T, Option<u16>),
         _api_name: &str,
-    ) -> Result<(), deno_core::error::AnyError> {
-        event!(tracing::Level::DEBUG, "checking net permission");
+    ) -> Result<(), error::AnyError> {
+        debug!("checking net permission");
         Ok(())
     }
-    fn check_read(
-        &mut self,
-        _p: &std::path::Path,
-        _api_name: &str,
-    ) -> Result<(), deno_core::error::AnyError> {
-        event!(tracing::Level::DEBUG, "checking read permission");
-        Ok(())
+
+    fn check_read(&mut self, p: &str, api_name: &str) -> Result<PathBuf, error::AnyError> {
+        debug!("checking read permission");
+        Ok(p.to_string().into())
     }
-    fn check_write(
+
+    fn check_write(&mut self, p: &str, api_name: &str) -> Result<PathBuf, error::AnyError> {
+        debug!("checking write permission");
+        Ok(p.to_string().into())
+    }
+
+    fn check_write_path<'a>(
         &mut self,
-        _p: &std::path::Path,
-        _api_name: &str,
-    ) -> Result<(), deno_core::error::AnyError> {
-        event!(tracing::Level::DEBUG, "checking write permission");
-        Ok(())
+        p: &'a std::path::Path,
+        api_name: &str,
+    ) -> Result<std::borrow::Cow<'a, std::path::Path>, error::AnyError> {
+        debug!("checking write path permission");
+        Ok(p.to_path_buf().into())
     }
 }
 

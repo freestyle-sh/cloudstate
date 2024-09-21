@@ -10,7 +10,7 @@ anyhow.workspace = true
 axum = "0.7.5"
 serde.workspace = true
 redb = "2.1.1"
-tokio = "1.39.3"
+tokio.workspace = true
 serde_json = "1.0.127"
 tower-http = { version = "0.5.2", features = ["trace"] }
 tower = { version = "0.5.0", features = ["util"] }

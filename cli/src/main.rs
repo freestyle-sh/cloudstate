@@ -1,3 +1,7 @@
+// #[cfg(feature = "dhat-heap")]
+// #[global_allocator]
+// static ALLOC: dhat::Alloc = dhat::Alloc;
+
 use axum::{body::Body, extract::Request, routing::get, Json};
 use tokio::runtime::Runtime; // 0.3.5
 
@@ -28,6 +32,9 @@ use tracing::{debug, info};
 
 #[tokio::main]
 async fn main() {
+    // #[cfg(feature = "dhat-heap")]
+    // let _profiler = dhat::Profiler::new_heap();
+
     tracing_subscriber::fmt::init();
 
     debug!("Starting cloudstate");
