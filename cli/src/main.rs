@@ -27,8 +27,8 @@ use tokio::sync::RwLock;
 use tower::Service;
 use tracing::{debug, info};
 
-// #[cfg(test)]
-// mod debug;
+#[cfg(test)]
+mod debug;
 
 #[tokio::main]
 async fn main() {
@@ -143,7 +143,7 @@ async fn main() {
                             notify::EventKind::Other => false,
                         };
                         if should_reload {
-                            info!("Reloading file");
+                            info!("Reloading Cloudstate");
 
                             Runtime::new().unwrap().block_on(async {
                                 if let Ok(new_classes) = fs::read_to_string(&pre_cloned_filename) {

@@ -8,7 +8,7 @@ package.rust-version = "1.80.1"
 url = { version = "< 2.5.0", features = ["serde", "expose_internals"] }
 redb = "2.1.1"
 serde = "1.0.208"
-tokio = "1.36.0"
+tokio = { version = "1.36.0", features = ["full"] }
 
 deno_core = "0.311.0"
 deno_console = "0.168.0"

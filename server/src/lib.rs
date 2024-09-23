@@ -90,7 +90,11 @@ impl CloudstateServer {
         execute_script(
             "
             import { CloudstateInspectionCS } from './lib.js';
-            setRoot('inspection', new CloudstateInspectionCS());",
+            registerCustomClass(CloudstateInspectionCS);
+            if (getRoot('inspection') === undefined) {{
+                setRoot('inspection', new CloudstateInspectionCS());
+            }}
+            ",
             &include_str!("./inspection.js"),
             cloudstate.clone(),
         )
@@ -265,6 +269,7 @@ async fn method_request(
     let run_script = &params.params.first().map(|p| p.as_str());
 
     let params = serde_json::to_string(&params.params).unwrap();
+    let params = serde_json::to_string(&params).unwrap();
     let env_string = serde_json::to_string(&state.env).unwrap();
     let invalidate_endpoint = state.invalidate_endpoint.clone();
 
@@ -413,6 +418,7 @@ pub async fn execute_script_internal(
         ],
         ..Default::default()
     });
+
     debug!("initializing runtime");
 
     RefCell::borrow_mut(&js_runtime.op_state()).put(cs.clone());
