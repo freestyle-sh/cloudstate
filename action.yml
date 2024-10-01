@@ -1,0 +1,38 @@
+name: Freestyle Deploy
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+
+    - name: Get OIDC token and set OIDC_TOKEN environment variable
+      run: |
+        OIDC_TOKEN=$(curl -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" -H "Accept: application/json; api-version=2.0" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://freestyle.sh" | jq -r ".value")
+
+        if [ -z "$OIDC_TOKEN" ]; then
+          echo "Failed to retrieve OIDC token."
+          exit 1
+        fi
+
+        echo "OIDC_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
+        echo "::add-mask::$OIDC_TOKEN"
+
+    - name: Install Node.js packages
+      run: npm install
+
+    - name: Build
+      run: npx freestyle build
+
+    - name: Deploy to production
+      if: github.ref_name == 'main'
+      run: npx freestyle deploy
+
+    - name: Deploy to staging
+      if: github.ref_name != 'main'
+      run: npx freestyle deploy --branch ${{ github.ref_name }}
