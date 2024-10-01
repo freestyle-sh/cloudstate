@@ -22,17 +22,22 @@ runs:
 
         echo "OIDC_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
         echo "::add-mask::$OIDC_TOKEN"
+      shell: bash
 
     - name: Install Node.js packages
       run: npm install
+      shell: bash
 
     - name: Build
       run: npx freestyle build
+      shell: bash
 
     - name: Deploy to production
       if: github.ref_name == 'main'
       run: npx freestyle deploy
+      shell: bash
 
     - name: Deploy to staging
       if: github.ref_name != 'main'
       run: npx freestyle deploy --branch ${{ github.ref_name }}
+      shell: bash
