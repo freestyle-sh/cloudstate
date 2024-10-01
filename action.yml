@@ -24,14 +24,6 @@ runs:
         echo "::add-mask::$OIDC_TOKEN"
       shell: bash
 
-    - name: Install Node.js packages
-      run: npm install
-      shell: bash
-
-    - name: Build
-      run: npx freestyle build
-      shell: bash
-
     - name: Deploy to production
       if: github.ref_name == 'main'
       run: npx freestyle deploy
