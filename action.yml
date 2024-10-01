@@ -1,9 +1,5 @@
 name: Freestyle Deploy
 
-permissions:
-  id-token: write
-  contents: read
-
 runs:
   using: composite
   steps:
