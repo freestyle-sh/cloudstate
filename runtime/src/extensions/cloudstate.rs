@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::i32;
 use std::sync::Arc;
 use std::sync::{Mutex, MutexGuard};
-use tracing::{debug, error, event};
+use tracing::{debug, error, event, info};
 use url::Url;
 use v8::GetPropertyNamesArgs;
 
@@ -1243,6 +1243,6 @@ pub fn op_print_with_tracing(_state: &mut OpState, #[string] msg: &str, is_err: 
     if is_err {
         error!("{}", msg);
     } else {
-        debug!("{}", msg);
+        info!("{}", msg);
     }
 }
