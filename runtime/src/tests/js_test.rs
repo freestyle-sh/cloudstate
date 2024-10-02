@@ -4,7 +4,10 @@ macro_rules! js_test {
         #[test]
         fn $name() {
             let subscriber = tracing_subscriber::FmtSubscriber::new();
-            tracing::subscriber::set_global_default(subscriber).unwrap();
+            match tracing::subscriber::set_global_default(subscriber) {
+                Ok(_) => {}
+                Err(_) => {}
+            };
 
             let (cs, result) = crate::execution::run_script(
                 &format!("tests/{}.js", stringify!($name)),
