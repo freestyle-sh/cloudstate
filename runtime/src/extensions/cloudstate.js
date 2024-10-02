@@ -1,7 +1,7 @@
 function uuidv4() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
-    var r = (Math.random() * 16) | 0,
-      v = c == "x" ? r : (r & 0x3) | 0x8;
+    var r = (Math.random() * 16) | 0;
+    var v = c == "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
 }
@@ -139,7 +139,13 @@ function hydrate(object, key, value) {
 }
 
 function commit() {
+  // console.log("commiting");
+  // const length = Array.from(objects.values()).length;
+  // let i = 0;
   for (const value of objects.values()) {
+    // if (i++ % 100 === 0) {
+    //   console.log(`${i}/${length}`);
+    // }
     setObject(value);
   }
   Deno.core.ops.op_cloudstate_commit_transaction();
@@ -299,11 +305,15 @@ function getObject(id) {
         return object[key];
       },
       set(target, key, value) {
+        console.log("key", typeof key, key);
+        const packed = packToReferenceOrPrimitive(value);
+        console.log("packed", typeof packed, packed);
         Deno.core.ops.op_cloudstate_object_set_property(
           id,
           key,
-          packToReferenceOrPrimitive(value),
+          packed,
         );
+        console.log("set", typeof key, key);
 
         return true;
       },
@@ -320,10 +330,8 @@ function packToReferenceOrPrimitive(value) {
   if (isPrimitive(value)) {
     return value;
   }
-  if (value instanceof Object) {
-    return new CloudstateObjectReference(setObject(value));
-  }
   if (value instanceof Array) {
+    console.log("isArray");
     return new CloudstateArrayReference(setObject(value));
   }
   if (value instanceof Map) {
@@ -342,6 +350,9 @@ function packToReferenceOrPrimitive(value) {
       `${value.objectId} is already a reference: packToReferenceOrPrimitive is unnecessary`,
     );
     return value;
+  }
+  if (value instanceof Object) {
+    return new CloudstateObjectReference(setObject(value));
   }
   throw new Error(`${typeof value} cannot be serialized`);
 }
@@ -376,11 +387,10 @@ function getCloudstate(id) {
   }
 }
 
-function setObject(object) {
+function setObject(object, visited = new Set()) {
   if (typeof object !== "object") throw new Error("object must be an object");
-
+  visited.add(object);
   const stack = [object];
-  const visited = new Set();
 
   let rootObject = undefined;
   while (stack.length > 0) {
@@ -417,7 +427,7 @@ function setObject(object) {
             value,
           );
         } else {
-          const id = setObject(value);
+          const id = setObject(value, visited);
           Deno.core.ops.op_cloudstate_map_set(
             objectIds.get(object),
             key,
@@ -430,6 +440,8 @@ function setObject(object) {
       // if (!rootObject) {
       //   rootObject = id;
       // }
+
+      visited.add(object);
 
       continue;
     }
@@ -492,9 +504,18 @@ function setObject(object) {
     }
 
     if (flatObject instanceof Array) {
+      let id = objectIds.get(object);
+      if (!id) {
+        id = uuidv4();
+        objectIds.set(object, id);
+      }
+
       flatObject.forEach((item, i) => {
-        Deno.core.ops.op_cloudstate_array_set(objectIds.get(object), i, item);
+        Deno.core.ops.op_cloudstate_array_set(id, i, item);
       });
+      if (!rootObject) {
+        rootObject = id;
+      }
     } else {
       const id = exportObject(object, flatObject);
       if (!rootObject) {
