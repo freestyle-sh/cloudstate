@@ -1,0 +1,39 @@
+name: Freestyle Deploy
+
+inputs:
+  root:
+    required: false
+    default: .
+    description: The root directory of the project.
+  production_branch:
+    required: false
+    default: ${{ github.event.repository.default_branch }}
+    description: The branch to deploy to production.
+
+runs:
+  using: composite
+  steps:
+    - name: Get OIDC token and set OIDC_TOKEN environment variable
+      run: |
+        OIDC_TOKEN=$(curl -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" -H "Accept: application/json; api-version=2.0" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://freestyle.sh" | jq -r ".value")
+
+        if [ -z "$OIDC_TOKEN" ]; then
+          echo "Failed to retrieve OIDC token."
+          exit 1
+        fi
+
+        echo "OIDC_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
+        echo "::add-mask::$OIDC_TOKEN"
+      shell: bash
+
+    - name: Deploy to production
+      if: github.ref_name == inputs.production_branch
+      run: npx freestyle deploy
+      shell: bash
+      working-directory: ${{ inputs.root }}
+
+    - name: Deploy to staging
+      if: github.ref_name != inputs.production_branch
+      run: npx freestyle deploy --branch ${{ github.ref_name }}
+      shell: bash
+      working-directory: ${{ inputs.root }}
