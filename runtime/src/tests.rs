@@ -2,10 +2,9 @@ use crate::js_test;
 mod js_test;
 
 // mod gc_tests; // TODO: ERR
-
 js_test!(array_at);
 js_test!(array_every);
-// js_test!(array_from); // TODO: ERR
+js_test!(array_from); // TODO: ERR
 js_test!(array_filter);
 js_test!(array_find_index);
 js_test!(array_find_last_index);
@@ -23,6 +22,8 @@ js_test!(array_of_maps);
 js_test!(array_of_num_objects);
 // js_test!(array_pop_object); // TODO: ERR
 // js_test!(array_pop); // TODO: ERR
+js_test!(array_on_object_reference);
+
 js_test!(array_push);
 js_test!(array_push_in_class_in_map);
 js_test!(array_push_object);

@@ -3,6 +3,9 @@ macro_rules! js_test {
     ($name:ident) => {
         #[test]
         fn $name() {
+            let subscriber = tracing_subscriber::FmtSubscriber::new();
+            tracing::subscriber::set_global_default(subscriber).unwrap();
+
             let (cs, result) = crate::execution::run_script(
                 &format!("tests/{}.js", stringify!($name)),
                 crate::extensions::cloudstate::ReDBCloudstate::new(std::sync::Arc::new(
