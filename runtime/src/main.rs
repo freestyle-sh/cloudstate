@@ -9,7 +9,7 @@ fn main() {
     tracing_subscriber::fmt::init();
 
     let (cs, result) = crate::execution::run_script(
-        &format!("tests/{}.js", "array_push_object"),
+        &format!("tests/{}.js", "array_on_object_reference"),
         crate::extensions::cloudstate::ReDBCloudstate::new(std::sync::Arc::new(
             std::sync::Mutex::new(
                 redb::Database::builder()

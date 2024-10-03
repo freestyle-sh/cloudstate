@@ -305,15 +305,12 @@ function getObject(id) {
         return object[key];
       },
       set(target, key, value) {
-        console.log("key", typeof key, key);
         const packed = packToReferenceOrPrimitive(value);
-        console.log("packed", typeof packed, packed);
         Deno.core.ops.op_cloudstate_object_set_property(
           id,
           key,
           packed,
         );
-        console.log("set", typeof key, key);
 
         return true;
       },
@@ -331,7 +328,6 @@ function packToReferenceOrPrimitive(value) {
     return value;
   }
   if (value instanceof Array) {
-    console.log("isArray");
     return new CloudstateArrayReference(setObject(value));
   }
   if (value instanceof Map) {
@@ -543,6 +539,10 @@ function getArray(id) {
               yield array[i];
             }
           };
+        }
+
+        if (key === Symbol.toStringTag) {
+          return `Array(${array.length})`;
         }
 
         let index = parseInt(key);

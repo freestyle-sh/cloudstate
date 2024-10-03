@@ -92,7 +92,26 @@ async fn main() {
                 Database::create("./cloudstate").unwrap()
             };
 
-            execute_script(&script, &"", ReDBCloudstate::new(Arc::new(Mutex::new(db)))).await;
+            // todo get output
+            let result = execute_script(
+                &format!(
+                    "try {{
+                    {script}
+                }} catch (e) {{
+                    globalThis.result = {{
+                        error: {{
+                            message: e.message,
+                            stack: e.stack,
+                        }}
+                    }}
+                }}"
+                ),
+                &"",
+                ReDBCloudstate::new(Arc::new(Mutex::new(db))),
+            )
+            .await;
+
+            debug!("{result}");
         }
         Some(("serve", serve_matches)) => {
             let serve_matches = serve_matches.clone();

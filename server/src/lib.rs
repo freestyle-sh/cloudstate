@@ -440,6 +440,7 @@ pub async fn execute_script_internal(
             .await
             .unwrap();
 
+        debug!("evaluating module");
         let evaluation = js_runtime.mod_evaluate(mod_id);
 
         debug!("starting js event loop polling");
@@ -451,7 +452,7 @@ pub async fn execute_script_internal(
         .await;
         debug!("ending js event loop polling");
 
-        let _ = js_runtime.execute_script("<handle>", "globalThis.commit();");
+        // let _ = js_runtime.execute_script("<handle>", "globalThis.commit();");
 
         let _ = evaluation.await;
         (js_runtime, result)
@@ -468,7 +469,19 @@ pub async fn execute_script_internal(
     let key = v8_string_key!(scope, "result");
     let local_value = global.get(scope, key).unwrap();
 
-    let json_value = v8::json::stringify(scope, local_value).unwrap();
+    let json_value = v8::json::stringify(scope, local_value).unwrap_or(
+        v8::String::new(
+            scope,
+            &json!({
+                "error": {
+                    "message": "Result could not be stringified",
+                    "stack": "Result could not be stringified",
+                }
+            })
+            .to_string(),
+        )
+        .unwrap(),
+    );
     let json_str = json_value.to_rust_string_lossy(scope);
     json_str
 }
