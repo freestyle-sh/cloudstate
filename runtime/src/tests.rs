@@ -21,7 +21,7 @@ js_test!(array_map);
 js_test!(array_of_maps);
 js_test!(array_of_num_objects);
 // js_test!(array_pop_object); // TODO: ERR
-// js_test!(array_pop); // TODO: ERR
+js_test!(array_pop); // TODO: ERR
 js_test!(array_on_object_reference);
 
 js_test!(array_push);

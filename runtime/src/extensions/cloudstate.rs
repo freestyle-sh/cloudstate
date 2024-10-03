@@ -417,7 +417,10 @@ fn op_cloudstate_array_get(
     let result = table.get(key).unwrap();
     let result = result.map(|s| s.value().data);
 
-    result.unwrap()
+    match result {
+        Some(result) => result,
+        None => CloudstatePrimitiveData::Undefined,
+    }
 }
 
 #[op2(fast)]
