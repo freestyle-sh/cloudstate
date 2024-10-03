@@ -1,6 +1,6 @@
 [workspace]
 
-members = ["runtime", "server", "cli"]
+members = ["runtime", "server", "cli", "graph"]
 resolver = "2"
 package.rust-version = "1.80.1"
 

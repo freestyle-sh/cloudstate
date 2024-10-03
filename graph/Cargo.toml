@@ -1,0 +1,12 @@
+[package]
+name = "graph"
+version = "0.1.0"
+edition = "2021"
+rust-version.workspace = true
+
+[dependencies]
+deno_graph = "0.83.1"
+deno_semver = "0.5.14"
+futures = "0.3.30"
+indexmap = "2.6.0"
+url = { version = "*" }
