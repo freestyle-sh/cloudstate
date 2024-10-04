@@ -20,8 +20,8 @@ js_test!(array_length);
 js_test!(array_map);
 js_test!(array_of_maps);
 js_test!(array_of_num_objects);
-// js_test!(array_pop_object); // TODO: ERR
-js_test!(array_pop); // TODO: ERR
+js_test!(array_pop_object);
+js_test!(array_pop);
 js_test!(array_on_object_reference);
 
 js_test!(array_push);
@@ -47,7 +47,7 @@ js_test!(fetch);
 js_test!(get_cloudstate);
 js_test!(map_clear);
 js_test!(map_constructor);
-// js_test!(map_delete); // TODO: ERR
+js_test!(map_delete);
 js_test!(map_empty_get_set);
 js_test!(map_empty_set);
 js_test!(map_entries);

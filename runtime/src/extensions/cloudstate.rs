@@ -303,6 +303,7 @@ fn op_cloudstate_map_delete(
     };
 
     let was_removed = table.remove(&key).unwrap_or(None).is_some();
+    println!("{:?} was_removed: {}", key.field, was_removed);
     was_removed
 }
 

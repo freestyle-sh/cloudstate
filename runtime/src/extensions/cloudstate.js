@@ -175,7 +175,6 @@ function getMap(objectId) {
       .values();
   };
   map["delete"] = (key) => {
-    map.delete(key);
     return Deno.core.ops.op_cloudstate_map_delete(objectId, key);
   };
 
@@ -675,7 +674,8 @@ function handleArrayMethods(key, array, id) {
     }
     case "pop": {
       return () => {
-        return Deno.core.ops.op_cloudstate_array_pop(id);
+        const raw = Deno.core.ops.op_cloudstate_array_pop(id);
+        return unpackFromReference(raw);
       };
     }
     case "push": {
