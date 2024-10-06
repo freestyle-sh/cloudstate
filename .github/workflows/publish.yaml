@@ -1,0 +1,19 @@
+name: "Publish Artifacts"
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish-macos-arm64:
+    name: "Publish macOS arm64"
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - run: cargo build --release --target aarch64-apple-darwin
+      - name: Upload macOS arm64 binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: macos-arm64
+
