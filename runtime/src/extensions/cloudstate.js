@@ -702,7 +702,22 @@ function handleArrayMethods(key, array, id) {
     }
     case "sort": {
       return (fn) => {
-        Deno.core.ops.op_cloudstate_array_sort(id, fn);
+        for (let i = 0; i < array.length; i++) {
+          for (let j = i + 1; j < array.length; j++) {
+            if (fn(array[i], array[j]) > 0) {
+              let temp = array[i];
+              array[i] = array[j];
+              array[j] = temp;
+            }
+          }
+        }
+      };
+    }
+    case "forEach": {
+      return (fn) => {
+        for (let i = 0; i < array.length; i++) {
+          fn(array[i], i, array);
+        }
       };
     }
     case "findIndex": {

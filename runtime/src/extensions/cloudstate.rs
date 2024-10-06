@@ -509,91 +509,6 @@ fn op_cloudstate_map_values(
 
 #[op2]
 #[to_v8]
-fn op_cloudstate_array_sort<'a>(
-    state: &mut OpState,
-    scope: &mut v8::HandleScope<'a>,
-    #[string] array_id: String,
-    compare_fn: Option<&v8::Function>,
-) -> CloudstatePrimitiveData {
-    let cs = state.borrow_mut::<TransactionContext>();
-
-    let write_txn = cs.get_or_create_transaction_mut();
-
-    let mut table = write_txn.open_table(ARRAYS_TABLE).unwrap();
-
-    //TODO: Pull global scope instead of using empty one
-    let object = v8::Object::new(scope);
-
-    let mut compare_fn: Box<dyn FnMut(&CloudstatePrimitiveData, &CloudstatePrimitiveData) -> bool> =
-        match compare_fn {
-            Some(compare_fn) => {
-                Box::new(|a: &CloudstatePrimitiveData, b: &CloudstatePrimitiveData| {
-                    // hydrate them
-
-                    let a = a.clone().to_v8(scope).unwrap();
-                    let b = b.clone().to_v8(scope).unwrap();
-
-                    // hydrate them
-
-                    // run compare_fn
-                    let args = [a, b];
-
-                    let result = compare_fn.call(scope, object.into(), &args).unwrap();
-
-                    let result = result.to_boolean(scope);
-
-                    return result.boolean_value(scope);
-                })
-            }
-            None => Box::new(|a: &CloudstatePrimitiveData, b: &CloudstatePrimitiveData| {
-                // default compare_fn
-                let a = a.clone().to_v8(scope).unwrap();
-                let b = b.clone().to_v8(scope).unwrap();
-
-                a.uint32_value(scope) < b.uint32_value(scope)
-            }),
-        };
-
-    let keys: Vec<CloudstateArrayItemKey> = table
-        .iter()
-        .unwrap()
-        .map(|entry| entry.unwrap().0.value())
-        .filter(|key| key.id == array_id)
-        .collect();
-
-    let mut values = vec![];
-
-    for key in &keys {
-        let value = table.get(key).unwrap().unwrap().value().data;
-        values.push(value);
-    }
-
-    values.sort_by(|a, b| {
-        if compare_fn(a, b) {
-            std::cmp::Ordering::Less
-        } else {
-            std::cmp::Ordering::Greater
-        }
-    });
-
-    for (i, key) in keys.iter().enumerate() {
-        let value = values[i].clone();
-        table
-            .insert(
-                &CloudstateArrayItemKey {
-                    id: key.id.clone(),
-                    index: key.index,
-                },
-                CloudstateArrayItemValue { data: value },
-            )
-            .unwrap();
-    }
-
-    return CloudstatePrimitiveData::Undefined;
-}
-
-#[op2]
-#[to_v8]
 fn op_cloudstate_map_keys(
     state: &mut OpState,
     #[string] map_id: String,
@@ -1210,7 +1125,6 @@ deno_core::extension!(
     op_cloudstate_array_reverse,
     op_cloudstate_array_set,
     op_cloudstate_array_shift,
-    op_cloudstate_array_sort,
     op_cloudstate_cloudstate_get,
     op_cloudstate_commit_transaction,
     op_cloudstate_map_clear,

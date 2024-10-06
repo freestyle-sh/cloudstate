@@ -13,7 +13,7 @@ js_test!(array_find);
 js_test!(array_from_map);
 js_test!(array_includes);
 js_test!(array_index_of);
-js_test!(array_iterator); // TODO: ERR (0 iterations)
+js_test!(array_iterator);
 js_test!(array_join);
 js_test!(array_last_index_of);
 js_test!(array_length);
@@ -32,9 +32,9 @@ js_test!(array_push_inside_map);
 js_test!(array_reduce_right);
 js_test!(array_reduce);
 js_test!(array_reverse);
-// js_test!(array_shift); // TODO: ERR
+js_test!(array_shift);
 js_test!(array_some);
-// js_test!(array_sort_objects); // TODO: ERR
+js_test!(array_sort_objects); // TODO: ERR
 js_test!(array_sort_single_item);
 // js_test!(array_sort); // TODO: ERR
 js_test!(array_to_reversed);
