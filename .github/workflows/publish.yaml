@@ -25,12 +25,15 @@ jobs:
           echo _auth=$NPM_PUBLSH_KEY >> .npmrc
           echo email=ben@freestyle.sh >> .npmrc
           echo always-auth=true >> .npmrc
-      - name: "Publish"
+      - name: "Version"
         working-directory: _package
         run: |
           npm version --no-git-tag-version $(npm view cloudstate-darwin-arm64@latest version)
           npm version --no-git-tag-version prerelease
-          npm publish --tag beta
+      - name: "Publish"
+        working-directory: _package
+        run: |
+          npm publish
 
 
       # - name: Upload macOS arm64 binary
