@@ -12,19 +12,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - run: cargo build --release --target aarch64-apple-darwin
-      - run: mkdir _package && mkdir _package/bin
-      - run: cp target/aarch64-apple-darwin/release/cloudstate _package/bin/cloudstate
-      - run: cp cli/package.json/macos-package.json _package/package.json
-      
-
-      - run: echo _auth=$NPM_PUBLSH_KEY >> .npmrc
-      - run: echo email=ben@freestyle.sh >> .npmrc
-      - run: echo always-auth=true >> .npmrc
+      - name: Build macOS arm64 binary
+        run: cargo build --release --target aarch64-apple-darwin
+      - name: "Create package"
+        run: |
+          mkdir _package
+          mkdir _package/bin
+          cp target/aarch64-apple-darwin/release/cloudstate _package/bin/cloudstate
+          cp cli/package.json/darwin-package.json _package/package.json
+      - name: "Setup NPM"
+        run: |
+          echo _auth=$NPM_PUBLSH_KEY >> .npmrc
+          echo email=ben@freestyle.sh >> .npmrc
+          echo always-auth=true >> .npmrc
       - name: "Publish"
         working-directory: _package
         run: |
-          npm version --no-git-tag-version $(npm view cloudstate-macos-arm64@latest version)
+          npm version --no-git-tag-version $(npm view cloudstate-darwin-arm64@latest version)
           npm version --no-git-tag-version prerelease
           npm publish --tag beta
 

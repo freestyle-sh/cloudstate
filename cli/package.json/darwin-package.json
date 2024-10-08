@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package",
-  "name": "cloudstate-macos-arm64",
+  "name": "cloudstate-darwin-arm64",
   "os": ["darwin"],
   "cpu": ["arm64"],
   "bin": "bin/cloudstate",
