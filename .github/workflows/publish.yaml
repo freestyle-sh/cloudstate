@@ -14,7 +14,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - run: cargo build --release --target aarch64-apple-darwin
       - run: mkdir _package && mkdir _package/bin
-      - run: cp target/release/cloudstate _package/bin/cloudstate
+      - run: cp target/aarch64-apple-darwin/release/cloudstate _package/bin/cloudstate
       - run: cp cli/package.json/macos-package.json _package/package.json
       
 
