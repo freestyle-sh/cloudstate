@@ -55,7 +55,7 @@ fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
 
         for item in roots_table.iter()? {
             if let Ok((key, root)) = item {
-                let key = key.value();
+                let _key = key.value();
                 let root = root.value();
                 roots.push(CloudstateObjectKey { id: root.id });
             }

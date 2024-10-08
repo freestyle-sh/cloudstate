@@ -772,7 +772,7 @@ pub enum CloudstatePrimitiveData {
     Null,
     Date(DateTime<Utc>),
     Blob(Blob),
-    URL(Url),
+    Url(Url),
     // Error(JsError),
     ObjectReference(ObjectReference),
     MapReference(String),
@@ -785,7 +785,7 @@ pub struct ObjectReference {
 }
 
 impl ObjectReference {
-    pub fn hydrate(&self) {}
+    pub fn _hydrate(&self) {}
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
@@ -875,7 +875,7 @@ impl ToV8<'_> for CloudstatePrimitiveData {
             }
             CloudstatePrimitiveData::Undefined => v8::undefined(scope).into(),
             CloudstatePrimitiveData::Null => v8::null(scope).into(),
-            CloudstatePrimitiveData::URL(value) => {
+            CloudstatePrimitiveData::Url(value) => {
                 v8::String::new(scope, value.as_str()).unwrap().into()
             }
             CloudstatePrimitiveData::Blob(value) => {

@@ -167,7 +167,7 @@ async fn fetch_request(
         bytes.extend_from_slice(&chunk);
     }
 
-    let bytes = format!(
+    let _bytes = format!(
         "[{}]",
         bytes
             .iter()
@@ -211,7 +211,6 @@ async fn fetch_request(
     }
 
     let body = Body::from(json.result.bytes);
-    
 
     builder.body(body).unwrap()
 }
@@ -335,7 +334,7 @@ impl FetchPermissions for CloudstateFetchPermissions {
     fn check_read<'a>(
         &mut self,
         p: &'a Path,
-        api_name: &str,
+        _api_name: &str,
     ) -> Result<std::borrow::Cow<'a, Path>, error::AnyError> {
         debug!("checking read fetch permission");
         Ok(p.to_path_buf().into())
@@ -354,12 +353,12 @@ impl NetPermissions for CloudstateNetPermissions {
         Ok(())
     }
 
-    fn check_read(&mut self, p: &str, api_name: &str) -> Result<PathBuf, error::AnyError> {
+    fn check_read(&mut self, p: &str, _api_name: &str) -> Result<PathBuf, error::AnyError> {
         debug!("checking read permission");
         Ok(p.to_string().into())
     }
 
-    fn check_write(&mut self, p: &str, api_name: &str) -> Result<PathBuf, error::AnyError> {
+    fn check_write(&mut self, p: &str, _api_name: &str) -> Result<PathBuf, error::AnyError> {
         debug!("checking write permission");
         Ok(p.to_string().into())
     }
@@ -367,7 +366,7 @@ impl NetPermissions for CloudstateNetPermissions {
     fn check_write_path<'a>(
         &mut self,
         p: &'a std::path::Path,
-        api_name: &str,
+        _api_name: &str,
     ) -> Result<std::borrow::Cow<'a, std::path::Path>, error::AnyError> {
         debug!("checking write path permission");
         Ok(p.to_path_buf().into())
@@ -482,6 +481,6 @@ pub async fn execute_script_internal(
         )
         .unwrap(),
     );
-    
+
     json_value.to_rust_string_lossy(scope)
 }

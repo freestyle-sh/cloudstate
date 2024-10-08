@@ -32,7 +32,7 @@ impl FetchPermissions for CloudstateFetchPermissions {
     fn check_read<'a>(
         &mut self,
         p: &'a Path,
-        api_name: &str,
+        _api_name: &str,
     ) -> Result<std::borrow::Cow<'a, Path>, error::AnyError> {
         debug!("checking read fetch permission");
         Ok(p.to_path_buf().into())
@@ -51,12 +51,12 @@ impl NetPermissions for CloudstateNetPermissions {
         Ok(())
     }
 
-    fn check_read(&mut self, p: &str, api_name: &str) -> Result<PathBuf, error::AnyError> {
+    fn check_read(&mut self, p: &str, _api_name: &str) -> Result<PathBuf, error::AnyError> {
         debug!("checking read permission");
         Ok(p.to_string().into())
     }
 
-    fn check_write(&mut self, p: &str, api_name: &str) -> Result<PathBuf, error::AnyError> {
+    fn check_write(&mut self, p: &str, _api_name: &str) -> Result<PathBuf, error::AnyError> {
         debug!("checking write permission");
         Ok(p.to_string().into())
     }
@@ -64,7 +64,7 @@ impl NetPermissions for CloudstateNetPermissions {
     fn check_write_path<'a>(
         &mut self,
         p: &'a std::path::Path,
-        api_name: &str,
+        _api_name: &str,
     ) -> Result<std::borrow::Cow<'a, std::path::Path>, error::AnyError> {
         debug!("checking write path permission");
         Ok(p.to_path_buf().into())
@@ -80,7 +80,7 @@ pub fn run_script(
     let blob_storage = Arc::new(BlobStore::default());
 
     let mut result = Err(anyhow::anyhow!("No files found"));
-    for (i, source) in fs::read_to_string(js_path.clone())
+    for (_i, source) in fs::read_to_string(js_path.clone())
         .unwrap()
         .split("// END_FILE")
         .enumerate()
