@@ -95,7 +95,7 @@ impl CloudstateServer {
                 setRoot('inspection', new CloudstateInspectionCS());
             }}
             ",
-            &include_str!("./inspection.js"),
+            include_str!("./inspection.js"),
             cloudstate.clone(),
         )
         .await;
@@ -189,9 +189,9 @@ async fn fetch_request(
     debug!("executing script");
 
     let result = execute_script(
-        &script.as_str(),
+        script.as_str(),
         if id == "\"inspection\"" {
-            &include_str!("./inspection.js")
+            include_str!("./inspection.js")
         } else {
             &state.classes
         },
@@ -211,9 +211,9 @@ async fn fetch_request(
     }
 
     let body = Body::from(json.result.bytes);
-    let builder = builder.body(body).unwrap();
+    
 
-    builder
+    builder.body(body).unwrap()
 }
 
 #[derive(Clone)]
@@ -297,9 +297,9 @@ async fn method_request(
         .await
     } else {
         execute_script(
-            &script.as_str(),
+            script.as_str(),
             if id == "\"inspection\"" {
-                &include_str!("./inspection.js")
+                include_str!("./inspection.js")
             } else {
                 &state.classes
             },
@@ -482,6 +482,6 @@ pub async fn execute_script_internal(
         )
         .unwrap(),
     );
-    let json_str = json_value.to_rust_string_lossy(scope);
-    json_str
+    
+    json_value.to_rust_string_lossy(scope)
 }

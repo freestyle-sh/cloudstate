@@ -84,7 +84,7 @@ async fn main() {
             let memory_only = run_matches.get_one::<bool>("memory-only").unwrap();
             let script = fs::read_to_string(filename).unwrap();
 
-            let db = if memory_only.clone() {
+            let db = if *memory_only {
                 Database::builder()
                     .create_with_backend(backends::InMemoryBackend::default())
                     .unwrap()
@@ -106,7 +106,7 @@ async fn main() {
                     }}
                 }}"
                 ),
-                &"",
+                "",
                 ReDBCloudstate::new(Arc::new(Mutex::new(db))),
             )
             .await;
@@ -120,7 +120,7 @@ async fn main() {
             let memory_only = serve_matches.get_one::<bool>("memory-only").unwrap();
             let env: HashMap<String, String> = std::env::vars().collect();
 
-            let db = if memory_only.clone() {
+            let db = if *memory_only {
                 Database::builder()
                     .create_with_backend(backends::InMemoryBackend::default())
                     .unwrap()

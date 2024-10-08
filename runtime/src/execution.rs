@@ -179,5 +179,5 @@ pub fn run_script_source(
         .unwrap()
         .block_on(future);
 
-    return Ok((cloudstate, result));
+    Ok((cloudstate, result))
 }

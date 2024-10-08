@@ -190,9 +190,9 @@ fn op_cloudstate_array_pop(
 
     if let Some(key) = keys.iter().find(|key| key.index == length - 1) {
         let value = table.remove(key).unwrap().unwrap().value().data;
-        return Ok(value);
+        Ok(value)
     } else {
-        return Ok(CloudstatePrimitiveData::Undefined);
+        Ok(CloudstatePrimitiveData::Undefined)
     }
 }
 
@@ -859,7 +859,7 @@ impl ToV8<'_> for CloudstatePrimitiveData {
         self,
         scope: &mut v8::HandleScope<'a>,
     ) -> Result<v8::Local<'a, v8::Value>, JsError> {
-        Ok(v8::Local::<v8::Value>::from(match self {
+        Ok(match self {
             CloudstatePrimitiveData::Date(value) => deno_core::v8::Local::<v8::Value>::from(
                 v8::Date::new(scope, value.timestamp_millis() as f64).unwrap(),
             ),
@@ -985,7 +985,7 @@ impl ToV8<'_> for CloudstatePrimitiveData {
                 object.set(scope, key, value);
                 object.into()
             }
-        }))
+        })
     }
 
     type Error = JsError;
@@ -1156,7 +1156,7 @@ deno_core::extension!(
 );
 
 #[op2(fast)]
-pub fn op_print_with_tracing(_state: &mut OpState, #[string] msg: &str, is_err: bool) -> () {
+pub fn op_print_with_tracing(_state: &mut OpState, #[string] msg: &str, is_err: bool) {
     // tracing
     if is_err {
         error!("{}", msg);

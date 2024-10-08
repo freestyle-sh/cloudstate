@@ -9,7 +9,7 @@ macro_rules! js_test {
                 Err(_) => {}
             };
 
-            let (cs, result) = crate::execution::run_script(
+            let (cs, result) = $crate::execution::run_script(
                 &format!("tests/{}.js", stringify!($name)),
                 crate::extensions::cloudstate::ReDBCloudstate::new(std::sync::Arc::new(
                     std::sync::Mutex::new(
