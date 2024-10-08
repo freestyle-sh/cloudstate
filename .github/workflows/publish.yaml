@@ -22,7 +22,7 @@ jobs:
           cp cli/package.json/darwin-package.json _package/package.json
       - name: "Setup NPM"
         run: |
-          echo _auth=$NPM_PUBLSH_KEY >> .npmrc
+          echo _authToken=$NPM_PUBLSH_KEY >> .npmrc
           echo email=ben@freestyle.sh >> .npmrc
           echo always-auth=true >> .npmrc
       - name: "Version"
