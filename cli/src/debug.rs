@@ -1,6 +1,6 @@
 use cloudstate_runtime::{
     print::print_database,
-    tables::{ARRAYS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE},
+    tables::OBJECTS_TABLE,
 };
 use redb::{Database, ReadableTable};
 

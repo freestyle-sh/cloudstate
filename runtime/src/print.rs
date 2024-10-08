@@ -1,7 +1,7 @@
 use redb::ReadableTable;
 use tracing::debug;
 
-use crate::tables::{ARRAYS_TABLE, BLOBS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
+use crate::tables::ROOTS_TABLE;
 
 pub fn print_database(db: &redb::Database) {
     let txn = db.begin_read().unwrap();
