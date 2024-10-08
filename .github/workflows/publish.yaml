@@ -19,7 +19,7 @@ jobs:
       
 
       - run: echo _auth=$NPM_PUBLSH_KEY >> .npmrc
-      - run: echo email=<youremail> >> .npmrc
+      - run: echo email=ben@freestyle.sh >> .npmrc
       - run: echo always-auth=true >> .npmrc
       - name: "Publish"
         working-directory: _package
