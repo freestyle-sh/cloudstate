@@ -22,9 +22,7 @@ jobs:
           cp cli/package.json/darwin-package.json _package/package.json
       - name: "Setup NPM"
         run: |
-          echo _auth=$NPM_TOKEN >> .npmrc
-          echo email=ben@freestyle.sh >> .npmrc
-          echo always-auth=true >> .npmrc
+          echo //registry.npmjs.org/:_authToken=$NPM_TOKEN > .npmrc
         env: # Or as an environment variable
           NPM_TOKEN: ${{ secrets.NPM_PUBLISH_KEY }}
       - name: "Version"
