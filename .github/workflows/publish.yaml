@@ -25,6 +25,8 @@ jobs:
           echo _authToken=$NPM_PUBLISH_KEY >> .npmrc
           echo email=ben@freestyle.sh >> .npmrc
           echo always-auth=true >> .npmrc
+        env: # Or as an environment variable
+          NPM_PUBLISH_KEY: ${{ secrets.NPM_PUBLSH_KEY }}
       - name: "Version"
         working-directory: _package
         run: |
