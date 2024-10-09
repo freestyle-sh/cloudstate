@@ -20,7 +20,7 @@ jobs:
           mkdir _package/bin
           cp target/aarch64-apple-darwin/release/cloudstate _package/bin/cloudstate
           cp cli/package.json/darwin-package.json _package/package.json
-      
+          cp README.md _package/README.md
       - name: "Version"
         working-directory: _package
         run: |
