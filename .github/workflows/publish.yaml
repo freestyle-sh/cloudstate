@@ -11,6 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - run: rustup target add x86_64-apple-darwin
       - name: Build macOS x64 binary
         run: cargo build --release --target x86_64-apple-darwin
       - name: "Create package"
