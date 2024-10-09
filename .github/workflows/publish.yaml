@@ -5,6 +5,36 @@ on:
       - main
 
 jobs:
+  publish-linux-x64:
+    name: "Publish Linux x64"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - run: rustup target add x86_64-unknown-linux-musl
+      - name: Build Linux x64 binary
+        run: cargo build --release --target x86_64-unknown-linux-musl
+      - name: "Create package"
+        run: |
+          mkdir _package
+          mkdir _package/bin
+          cp target/x86_64-unknown-linux-musl/release/cloudstate _package/bin/cloudstate
+          cp cli/package.json/linux-x64-package.json _package/package.json
+          cp README.md _package/README.md
+          (echo "# THIS IS A DEPENDENCY OF [freestyle-sh](https://www.npmjs.com/package/freestyle-sh) AND SHOULD NOT BE USED DIRECTLY"; cat _package/README.md) > _package/README.md.tmp
+          mv _package/README.md.tmp _package/README.md
+      - name: "Version"
+        working-directory: _package
+        run: |
+          npm version --no-git-tag-version $(npm view cloudstate-linux-x64@latest version)
+          npm version --no-git-tag-version prerelease
+      - name: "Publish"
+        working-directory: _package
+        env: 
+          NPM_TOKEN: ${{ secrets.NPM_PUBLISH_KEY }}
+        run: |
+          npm set //registry.npmjs.org/:_authToken=$NPM_TOKEN
+          npm publish
   publish-macos-x64:
     name: "Publish macOS x64"
     runs-on: macos-latest
