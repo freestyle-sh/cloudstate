@@ -43,12 +43,12 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - run: rustup target add arm-unknown-linux-gnueabihf
       - name: Build Linux ARM binary
-        run: cargo build --release --target arm-unknown-linux-gnueabihf
+        run: cargo build --release --target aarch64-unknown-linux-musl
       - name: "Create package"
         run: |
           mkdir _package
           mkdir _package/bin
-          cp target/arm-unknown-linux-gnueabihf/release/cloudstate _package/bin/cloudstate
+          cp target/aarch64-unknown-linux-musl/release/cloudstate _package/bin/cloudstate
           cp cli/package.json/linux-arm-package.json _package/package.json
           cp README.md _package/README.md
           (echo "# THIS IS A DEPENDENCY OF [freestyle-sh](https://www.npmjs.com/package/freestyle-sh) AND SHOULD NOT BE USED DIRECTLY"; cat _package/README.md) > _package/README.md.tmp
