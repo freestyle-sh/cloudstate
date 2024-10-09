@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/package",
+  "name": "cloudstate-darwin-x64",
+  "os": ["darwin"],
+  "cpu": ["x64"],
+  "bin": "bin/cloudstate",
+  "author": {
+    "name": "Freestyle Cloud",
+    "email": "ben@freestyle.sh"
+  }
+}
