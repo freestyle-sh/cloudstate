@@ -14,6 +14,15 @@ jobs:
       - run: rustup target add x86_64-unknown-linux-musl
       - name: Install v8 build dependencies
         run: | 
+          sudo apt update
+          sudo apt install ninja-build
+          git clone https://gn.googlesource.com/gn
+          cd gn
+          python build/gen.py
+          ninja -C out
+          sudo apt update
+          sudo apt install clang
+          sudo apt-get update
           sudo apt-get install musl-tools
           sudo apt install libglib2.0-dev
       - name: Build Linux x64 binary
