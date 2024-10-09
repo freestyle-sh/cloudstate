@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/package",
+  "name": "cloudstate-windows-x64",
+  "os": ["windows"],
+  "cpu": ["x64"],
+  "bin": "bin/cloudstate",
+  "author": {
+    "name": "Freestyle Cloud",
+    "email": "ben@freestyle.sh"
+  }
+}
