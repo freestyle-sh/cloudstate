@@ -819,6 +819,71 @@ function handleArrayMethods(key, array, id) {
       // I think this is called when sometime tries to await an array
       return undefined;
     }
+    case "unshift": {
+      return (...args) => {
+        let length = Deno.core.ops.op_cloudstate_array_length(id);
+        for (let i = length - 1; i >= 0; i--) {
+          Deno.core.ops.op_cloudstate_array_set(
+            id,
+            i + args.length,
+            array[i],
+          );
+        }
+
+        for (let i = 0; i < args.length; i++) {
+          Deno.core.ops.op_cloudstate_array_set(
+            id,
+            i,
+            packToReferenceOrPrimitive(args[i]),
+          );
+        }
+
+        return length + args.length;
+      };
+    }
+    case "slice": {
+      return (start, end) => {
+        let arr = [];
+        for (let i = start; i < end; i++) {
+          arr.push(array[i]);
+        }
+        return arr;
+      };
+    }
+
+    case "splice": {
+      return (start, deleteCount, ...items) => {
+        const length = Deno.core.ops.op_cloudstate_array_length(id);
+        const deleted = [];
+        for (let i = start; i < start + deleteCount; i++) {
+          deleted.push(array[i]);
+        }
+
+        const newLength = length - deleteCount + items.length;
+        for (let i = length - 1; i >= start + deleteCount; i--) {
+          Deno.core.ops.op_cloudstate_array_set(
+            id,
+            i + items.length - deleteCount,
+            array[i],
+          );
+        }
+
+        for (let i = 0; i < items.length; i++) {
+          Deno.core.ops.op_cloudstate_array_set(
+            id,
+            start + i,
+            packToReferenceOrPrimitive(items[i]),
+          );
+        }
+
+        // remove from the end
+        for (let i = length - 1; i >= newLength; i--) {
+          Deno.core.ops.op_cloudstate_array_pop(id);
+        }
+
+        return deleted;
+      };
+    }
     default: {
       throw new Error(`Array.${key} is not supported`);
     }

@@ -33,11 +33,14 @@ js_test!(array_reduce_right);
 js_test!(array_reduce);
 js_test!(array_reverse);
 js_test!(array_shift);
+js_test!(array_slice);
 js_test!(array_some);
 js_test!(array_sort_objects); // TODO: ERR
 js_test!(array_sort_single_item);
 // js_test!(array_sort); // TODO: ERR
+js_test!(array_splice);
 js_test!(array_to_reversed);
+js_test!(array_unshift);
 js_test!(blob_create);
 js_test!(class_getters);
 js_test!(counter_class);
