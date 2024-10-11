@@ -18,7 +18,7 @@ jobs:
         run: |
           mkdir _package
           mkdir _package/bin
-          cp target/x86_64-pc-windows-msvc/release/cloudstate.exe _package/bin/cloudstate.exe
+          cp target/x86_64-pc-windows-msvc/release/cli.exe _package/bin/cloudstate.exe
           cp cli/package.json/windows-x64-package.json _package/package.json
           cp README.md _package/README.md
           (echo "# THIS IS A DEPENDENCY OF [freestyle-sh](https://www.npmjs.com/package/freestyle-sh) AND SHOULD NOT BE USED DIRECTLY"; cat _package/README.md) > _package/README.md.tmp
@@ -48,7 +48,7 @@ jobs:
         run: |
           mkdir _package
           mkdir _package/bin
-          cp target/aarch64-unknown-linux-musl/release/cloudstate _package/bin/cloudstate
+          cp target/aarch64-unknown-linux-musl/release/cli _package/bin/cloudstate
           cp cli/package.json/linux-arm-package.json _package/package.json
           cp README.md _package/README.md
           (echo "# THIS IS A DEPENDENCY OF [freestyle-sh](https://www.npmjs.com/package/freestyle-sh) AND SHOULD NOT BE USED DIRECTLY"; cat _package/README.md) > _package/README.md.tmp
@@ -78,7 +78,7 @@ jobs:
         run: |
           mkdir _package
           mkdir _package/bin
-          cp target/x86_64-unknown-linux-gnu/release/cloudstate _package/bin/cloudstate
+          cp target/x86_64-unknown-linux-gnu/release/cli _package/bin/cloudstate
           cp cli/package.json/linux-x64-package.json _package/package.json
           cp README.md _package/README.md
           (echo "# THIS IS A DEPENDENCY OF [freestyle-sh](https://www.npmjs.com/package/freestyle-sh) AND SHOULD NOT BE USED DIRECTLY"; cat _package/README.md) > _package/README.md.tmp
@@ -108,7 +108,7 @@ jobs:
         run: |
           mkdir _package
           mkdir _package/bin
-          cp target/x86_64-apple-darwin/release/cloudstate _package/bin/cloudstate
+          cp target/x86_64-apple-darwin/release/cli _package/bin/cloudstate
           cp cli/package.json/darwin-x64-package.json _package/package.json
           cp README.md _package/README.md
           (echo "# THIS IS A DEPENDENCY OF [freestyle-sh](https://www.npmjs.com/package/freestyle-sh) AND SHOULD NOT BE USED DIRECTLY"; cat _package/README.md) > _package/README.md.tmp
@@ -137,7 +137,7 @@ jobs:
         run: |
           mkdir _package
           mkdir _package/bin
-          cp target/aarch64-apple-darwin/release/cloudstate _package/bin/cloudstate
+          cp target/aarch64-apple-darwin/release/cli _package/bin/cloudstate
           cp cli/package.json/darwin-arm64-package.json _package/package.json
           cp README.md _package/README.md
           (echo "# THIS IS A DEPENDENCY OF [freestyle-sh](https://www.npmjs.com/package/freestyle-sh) AND SHOULD NOT BE USED DIRECTLY"; cat _package/README.md) > _package/README.md.tmp
