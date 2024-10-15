@@ -10,7 +10,7 @@ redb = "2.1.1"
 serde = "1.0.208"
 tokio = { version = "1.36.0", features = ["full"] }
 
-deno_core = { git = "https://github.com/denoland/deno.git" }
+deno_core = { git = "https://github.com/denoland/deno_core.git" }
 
 deno_console = { git = "https://github.com/denoland/deno.git" }
 deno_webidl = { git = "https://github.com/denoland/deno.git" }
