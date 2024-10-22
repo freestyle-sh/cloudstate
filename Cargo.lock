@@ -941,7 +941,7 @@ dependencies = [
 [[package]]
 name = "deno_console"
 version = "0.173.0"
-source = "git+https://github.com/denoland/deno.git#49d9c02bfa964082fc51df32dfb7ed3e05457508"
+source = "git+https://github.com/denoland/deno.git?rev=85709c70abb538cf22df73261bc37453e7cb07a7#85709c70abb538cf22df73261bc37453e7cb07a7"
 dependencies = [
  "deno_core",
 ]
@@ -963,7 +963,7 @@ dependencies = [
  "deno_unsync",
  "futures",
  "libc",
- "memoffset",
+ "memoffset 0.9.1",
  "parking_lot",
  "percent-encoding",
  "pin-project",
@@ -987,7 +987,7 @@ checksum = "a13951ea98c0a4c372f162d669193b4c9d991512de9f2381dd161027f34b26b1"
 [[package]]
 name = "deno_crypto"
 version = "0.187.0"
-source = "git+https://github.com/denoland/deno.git#49d9c02bfa964082fc51df32dfb7ed3e05457508"
+source = "git+https://github.com/denoland/deno.git?rev=85709c70abb538cf22df73261bc37453e7cb07a7#85709c70abb538cf22df73261bc37453e7cb07a7"
 dependencies = [
  "aes",
  "aes-gcm",
@@ -1025,7 +1025,7 @@ dependencies = [
 [[package]]
 name = "deno_fetch"
 version = "0.197.0"
-source = "git+https://github.com/denoland/deno.git#49d9c02bfa964082fc51df32dfb7ed3e05457508"
+source = "git+https://github.com/denoland/deno.git?rev=85709c70abb538cf22df73261bc37453e7cb07a7#85709c70abb538cf22df73261bc37453e7cb07a7"
 dependencies = [
  "base64",
  "bytes",
@@ -1058,7 +1058,7 @@ dependencies = [
 [[package]]
 name = "deno_fs"
 version = "0.83.0"
-source = "git+https://github.com/denoland/deno.git#49d9c02bfa964082fc51df32dfb7ed3e05457508"
+source = "git+https://github.com/denoland/deno.git?rev=85709c70abb538cf22df73261bc37453e7cb07a7#85709c70abb538cf22df73261bc37453e7cb07a7"
 dependencies = [
  "async-trait",
  "base32",
@@ -1110,7 +1110,7 @@ dependencies = [
 [[package]]
 name = "deno_io"
 version = "0.83.0"
-source = "git+https://github.com/denoland/deno.git#49d9c02bfa964082fc51df32dfb7ed3e05457508"
+source = "git+https://github.com/denoland/deno.git?rev=85709c70abb538cf22df73261bc37453e7cb07a7#85709c70abb538cf22df73261bc37453e7cb07a7"
 dependencies = [
  "async-trait",
  "deno_core",
@@ -1156,7 +1156,7 @@ dependencies = [
 [[package]]
 name = "deno_net"
 version = "0.165.0"
-source = "git+https://github.com/denoland/deno.git#49d9c02bfa964082fc51df32dfb7ed3e05457508"
+source = "git+https://github.com/denoland/deno.git?rev=85709c70abb538cf22df73261bc37453e7cb07a7#85709c70abb538cf22df73261bc37453e7cb07a7"
 dependencies = [
  "deno_core",
  "deno_permissions",
@@ -1174,7 +1174,7 @@ dependencies = [
 [[package]]
 name = "deno_node"
 version = "0.110.0"
-source = "git+https://github.com/denoland/deno.git#49d9c02bfa964082fc51df32dfb7ed3e05457508"
+source = "git+https://github.com/denoland/deno.git?rev=85709c70abb538cf22df73261bc37453e7cb07a7#85709c70abb538cf22df73261bc37453e7cb07a7"
 dependencies = [
  "aead-gcm-stream",
  "aes",
@@ -1305,7 +1305,7 @@ dependencies = [
 [[package]]
 name = "deno_permissions"
 version = "0.33.0"
-source = "git+https://github.com/denoland/deno.git#49d9c02bfa964082fc51df32dfb7ed3e05457508"
+source = "git+https://github.com/denoland/deno.git?rev=85709c70abb538cf22df73261bc37453e7cb07a7#85709c70abb538cf22df73261bc37453e7cb07a7"
 dependencies = [
  "deno_core",
  "deno_path_util",
@@ -1356,7 +1356,7 @@ dependencies = [
 [[package]]
 name = "deno_tls"
 version = "0.160.0"
-source = "git+https://github.com/denoland/deno.git#49d9c02bfa964082fc51df32dfb7ed3e05457508"
+source = "git+https://github.com/denoland/deno.git?rev=85709c70abb538cf22df73261bc37453e7cb07a7#85709c70abb538cf22df73261bc37453e7cb07a7"
 dependencies = [
  "deno_core",
  "deno_native_certs",
@@ -1383,7 +1383,7 @@ dependencies = [
 [[package]]
 name = "deno_url"
 version = "0.173.0"
-source = "git+https://github.com/denoland/deno.git#49d9c02bfa964082fc51df32dfb7ed3e05457508"
+source = "git+https://github.com/denoland/deno.git?rev=85709c70abb538cf22df73261bc37453e7cb07a7#85709c70abb538cf22df73261bc37453e7cb07a7"
 dependencies = [
  "deno_core",
  "thiserror",
@@ -1393,7 +1393,7 @@ dependencies = [
 [[package]]
 name = "deno_web"
 version = "0.204.0"
-source = "git+https://github.com/denoland/deno.git#49d9c02bfa964082fc51df32dfb7ed3e05457508"
+source = "git+https://github.com/denoland/deno.git?rev=85709c70abb538cf22df73261bc37453e7cb07a7#85709c70abb538cf22df73261bc37453e7cb07a7"
 dependencies = [
  "async-trait",
  "base64-simd 0.8.0",
@@ -1412,7 +1412,7 @@ dependencies = [
 [[package]]
 name = "deno_webidl"
 version = "0.173.0"
-source = "git+https://github.com/denoland/deno.git#49d9c02bfa964082fc51df32dfb7ed3e05457508"
+source = "git+https://github.com/denoland/deno.git?rev=85709c70abb538cf22df73261bc37453e7cb07a7#85709c70abb538cf22df73261bc37453e7cb07a7"
 dependencies = [
  "deno_core",
 ]
@@ -2633,6 +2633,15 @@ checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
 
 [[package]]
 name = "memoffset"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5de893c32cde5f383baa4c04c5d6dbdd735cfd4a794b0debdb2bb1b421da5ff4"
+dependencies = [
+ "autocfg",
+]
+
+[[package]]
+name = "memoffset"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "488016bfae457b036d996092f6cb448677611ce4449e970ceaf42695203f218a"
@@ -2702,19 +2711,22 @@ checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 
 [[package]]
 name = "nix"
-version = "0.27.1"
+version = "0.26.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2eb04e9c688eff1c89d72b407f168cf79bb9e867a9d3323ed6c01519eb9cc053"
+checksum = "bfdda3d196821d6af13126e40375cdf7da646a96114af134d5f417a9a1dc8e1a"
 dependencies = [
- "bitflags 2.6.0",
+ "bitflags 1.3.2",
  "cfg-if",
  "libc",
+ "memoffset 0.7.1",
+ "pin-utils",
+ "static_assertions",
 ]
 
 [[package]]
 name = "node_resolver"
 version = "0.12.0"
-source = "git+https://github.com/denoland/deno.git#49d9c02bfa964082fc51df32dfb7ed3e05457508"
+source = "git+https://github.com/denoland/deno.git?rev=85709c70abb538cf22df73261bc37453e7cb07a7#85709c70abb538cf22df73261bc37453e7cb07a7"
 dependencies = [
  "anyhow",
  "async-trait",
