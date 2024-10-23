@@ -48,7 +48,7 @@ where
         value: impl Borrow<V::SelfType<'a>>,
     ) -> Result<(), Error> {
         match self {
-            CloudstateTable::Read(ref _table) => panic!("Cannot insert into read-only table"),
+            CloudstateTable::Read(ref _table) => Ok(()), //panic!("Cannot insert into read-only table"),
             CloudstateTable::Write(ref mut table) => match table.insert(key, value) {
                 Ok(_) => Ok(()),
                 Err(e) => Err(e.into()),
@@ -127,9 +127,14 @@ impl TransactionContext {
         if self.current_transaction.is_none() {
             debug!("Creating new transaction");
             let db = self.database.get_database_mut();
-            let write_txn = db.begin_write().unwrap();
-            self.current_transaction = Some(Transaction::Write(write_txn));
 
+            if self.read_only {
+                let read_txn = db.begin_read().unwrap();
+                self.current_transaction = Some(Transaction::Read(read_txn));
+            } else {
+                let write_txn = db.begin_write().unwrap();
+                self.current_transaction = Some(Transaction::Write(write_txn));
+            }
             self.current_transaction.as_mut().unwrap()
         } else {
             // debug!("Using existing transaction");
