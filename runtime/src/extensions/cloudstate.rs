@@ -18,6 +18,7 @@ use v8::GetPropertyNamesArgs;
 pub struct TransactionContext {
     database: ReDBCloudstate,
     current_transaction: Option<WriteTransaction>,
+    read_only: bool,
 }
 
 impl TransactionContext {
@@ -25,7 +26,16 @@ impl TransactionContext {
         Self {
             current_transaction: None,
             database: database.clone(),
+            read_only: false,
         }
+    }
+
+    pub fn set_read_only(&mut self) {
+        if self.current_transaction.is_some() {
+            panic!("Cannot set read only after transaction has started. You must set readonly at the beginning of your method.");
+        }
+
+        self.read_only = true;
     }
 
     pub fn get_or_create_transaction_mut(&mut self) -> &WriteTransaction {
@@ -52,6 +62,12 @@ impl TransactionContext {
             debug!("No transaction to commit");
         }
     }
+}
+
+#[op2(fast)]
+fn op_cloudstate_set_read_only(state: &mut OpState) {
+    let cs = state.borrow_mut::<TransactionContext>();
+    cs.set_read_only();
 }
 
 #[op2]
