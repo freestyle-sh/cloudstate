@@ -1245,7 +1245,8 @@ deno_core::extension!(
     op_cloudstate_blob_set,
     op_cloudstate_blob_get_size,
     op_cloudstate_blob_get_type,
-    op_cloudstate_list_roots
+    op_cloudstate_list_roots,
+    op_cloudstate_set_read_only
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],
