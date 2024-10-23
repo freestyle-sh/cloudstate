@@ -22,6 +22,7 @@ use v8::GetPropertyNamesArgs;
 pub struct TransactionContext {
     database: ReDBCloudstate,
     current_transaction: Option<Transaction>,
+    read_only: bool,
 }
 
 pub enum Transaction {
@@ -85,6 +86,10 @@ impl TransactionContext {
         }
     }
 
+    pub fn set_read_only(&mut self) {
+        self.read_only = true;
+    }
+
     pub fn get_or_create_transaction_mut(&mut self) -> &Transaction {
         debug!("Checking for existing transaction");
         if self.current_transaction.is_none() {
@@ -130,7 +135,7 @@ fn op_cloudstate_object_set(
     let key = CloudstateObjectKey { id };
 
     table
-        .insert(&key, CloudstateObjectValue { data: value })
+        .insert(key.into(), CloudstateObjectValue { data: value }.into())
         .unwrap();
 
     Ok(())
