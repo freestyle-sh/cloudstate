@@ -63,6 +63,19 @@ where
         }
     }
 
+    pub fn remove<'b>(
+        &mut self,
+        key: impl Borrow<K::SelfType<'b>>,
+    ) -> redb::Result<Option<AccessGuard<V>>>
+    where
+        K: 'b,
+    {
+        match self {
+            CloudstateTable::Read(_table) => panic!("Cannot remove during read-only transaction"),
+            CloudstateTable::Write(table) => table.remove(key),
+        }
+    }
+
     pub fn get(&self, key: impl Borrow<K::SelfType<'a>>) -> anyhow::Result<Option<AccessGuard<V>>> {
         match self {
             CloudstateTable::Read(table) => table.get(key).map_err(|e| e.into()),
