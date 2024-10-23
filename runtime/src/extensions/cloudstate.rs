@@ -36,13 +36,16 @@ pub enum CloudstateTable<'a, K: Key + 'static, V: Value + 'static> {
     Write(redb::Table<'a, K, V>),
 }
 
-impl<
-        'a,
-        K: Key + 'static + std::borrow::Borrow<<K as redb::Value>::SelfType<'_>>, //+ std::borrow::Borrow<<K as redb::Value>::SelfType<'a>>,
-        V: Value + 'static + std::borrow::Borrow<<V as redb::Value>::SelfType<'_>>, // + std::borrow::Borrow<<V as redb::Value>::SelfType<'a>>,
-    > CloudstateTable<'a, K, V>
+impl<'a, K, V> CloudstateTable<'a, K, V>
+where
+    K: Key + 'static,
+    V: Value + 'static,
 {
-    pub fn insert(self, key: K, value: V) -> Result<(), Error> {
+    pub fn insert(
+        self,
+        key: impl Borrow<K::SelfType<'a>>,
+        value: impl Borrow<V::SelfType<'a>>,
+    ) -> Result<(), Error> {
         match self {
             CloudstateTable::Read(_table) => panic!("Cannot insert into read-only table"),
             CloudstateTable::Write(mut table) => match table.insert(key, value) {
@@ -62,6 +65,13 @@ impl<
         match self {
             CloudstateTable::Read(_table) => panic!("Cannot remove during read-only transaction"),
             CloudstateTable::Write(table) => table.remove(key),
+        }
+    }
+
+    pub fn get(&self, key: impl Borrow<K::SelfType<'a>>) -> anyhow::Result<Option<AccessGuard<V>>> {
+        match self {
+            CloudstateTable::Read(table) => table.get(key).map_err(|e| e.into()),
+            CloudstateTable::Write(table) => table.get(key).map_err(|e| e.into()),
         }
     }
 }
@@ -149,7 +159,7 @@ fn op_cloudstate_object_set(
     let key = CloudstateObjectKey { id };
 
     table
-        .insert(key.into(), CloudstateObjectValue { data: value }.into())
+        .insert(&key, CloudstateObjectValue { data: value })
         .unwrap();
 
     Ok(())
