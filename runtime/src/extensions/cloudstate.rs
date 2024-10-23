@@ -10,6 +10,7 @@ use redb::{
     WriteTransaction,
 };
 use serde::{Deserialize, Serialize};
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::i32;
 use std::rc::Rc;
@@ -37,11 +38,15 @@ pub enum CloudstateTable<'a, K: Key + 'static, V: Value + 'static> {
 
 impl<
         'a,
-        K: Key + 'static + std::borrow::Borrow<<K as redb::Value>::SelfType<'_>>, //+ std::borrow::Borrow<<K as redb::Value>::SelfType<'a>>,
-        V: Value + 'static + std::borrow::Borrow<<V as redb::Value>::SelfType<'_>>, // + std::borrow::Borrow<<V as redb::Value>::SelfType<'a>>,
+        K: Key + 'static,
+        V: Value + 'static, // + std::borrow::Borrow<<V as redb::Value>::SelfType<'a>>,
     > CloudstateTable<'a, K, V>
 {
-    pub fn insert(self, key: K, value: V) -> Result<(), Error> {
+    pub fn insert(
+        self,
+        key: impl Borrow<K::SelfType<'a>>,
+        value: impl Borrow<V::SelfType<'a>>,
+    ) -> Result<(), Error> {
         match self {
             CloudstateTable::Read(_table) => panic!("Cannot insert into read-only table"),
             CloudstateTable::Write(mut table) => match table.insert(key, value) {
@@ -135,7 +140,7 @@ fn op_cloudstate_object_set(
     let key = CloudstateObjectKey { id };
 
     table
-        .insert(key.into(), CloudstateObjectValue { data: value }.into())
+        .insert(&key, CloudstateObjectValue { data: value })
         .unwrap();
 
     Ok(())
