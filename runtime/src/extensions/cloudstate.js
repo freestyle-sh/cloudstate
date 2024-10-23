@@ -894,8 +894,13 @@ function registerCustomClass(klass) {
   customClasses.push(klass);
 }
 
+function __setReadOnly() {
+  Deno.core.ops.op_cloudstate_set_read_only();
+}
+
 globalThis.getRoot = getRoot;
 globalThis.setRoot = setRoot;
 globalThis.commit = commit;
 globalThis.getCloudstate = getCloudstate;
 globalThis.registerCustomClass = registerCustomClass;
+globalThis.__setReadOnly = __setReadOnly;

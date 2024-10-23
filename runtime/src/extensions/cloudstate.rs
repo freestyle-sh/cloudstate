@@ -81,6 +81,7 @@ impl TransactionContext {
         Self {
             current_transaction: None,
             database: database.clone(),
+            read_only: false,
         }
     }
 
@@ -94,13 +95,13 @@ impl TransactionContext {
 
             self.current_transaction.as_mut().unwrap()
         } else {
-            debug!("Using existing transaction");
+            // debug!("Using existing transaction");
             self.current_transaction.as_mut().unwrap()
         }
     }
 
     pub fn commit_transaction(&mut self) {
-        debug!("Checking for transaction to commit");
+        // debug!("Checking for transaction to commit");
         if let Some(transaction) = self.current_transaction.take() {
             debug!("Committing transaction");
             transaction.commit().unwrap();
@@ -108,6 +109,12 @@ impl TransactionContext {
             debug!("No transaction to commit");
         }
     }
+}
+
+#[op2(fast)]
+fn op_cloudstate_set_read_only(state: &mut OpState) {
+    let cs = state.borrow_mut::<TransactionContext>();
+    cs.set_read_only();
 }
 
 #[op2]
