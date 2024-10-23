@@ -17,7 +17,7 @@ use std::collections::HashMap;
 use std::i32;
 use std::sync::Arc;
 use std::sync::{Mutex, MutexGuard};
-use tracing::{debug, error, event, info};
+use tracing::{debug, error, event, info, instrument};
 use url::Url;
 use v8::GetPropertyNamesArgs;
 
@@ -125,7 +125,7 @@ impl TransactionContext {
     }
 
     pub fn get_or_create_transaction_mut(&mut self) -> &Transaction {
-        debug!("Checking for existing transaction");
+        // debug!("Checking for existing transaction");
         if self.current_transaction.is_none() {
             debug!("Creating new transaction");
             let db = self.database.get_database_mut();
@@ -155,12 +155,14 @@ impl TransactionContext {
     }
 }
 
+#[instrument(skip(state))]
 #[op2(fast)]
 fn op_cloudstate_set_read_only(state: &mut OpState) {
     let cs = state.borrow_mut::<TransactionContext>();
     cs.set_read_only();
 }
 
+#[instrument(skip(state))]
 #[op2]
 fn op_cloudstate_object_set(
     state: &mut OpState,
@@ -180,6 +182,7 @@ fn op_cloudstate_object_set(
     Ok(())
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_object_get(
@@ -198,6 +201,7 @@ fn op_cloudstate_object_get(
     Ok(result.unwrap())
 }
 
+#[instrument(skip(state))]
 #[op2]
 fn op_cloudstate_object_set_property(
     state: &mut OpState,
@@ -223,6 +227,7 @@ fn op_cloudstate_object_set_property(
     Ok(())
 }
 
+#[instrument(skip(state))]
 #[op2(fast)]
 fn op_cloudstate_array_reverse(state: &mut OpState, #[string] array_id: String) {
     let cs = state.borrow_mut::<TransactionContext>();
@@ -256,6 +261,7 @@ fn op_cloudstate_array_reverse(state: &mut OpState, #[string] array_id: String) 
     }
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[serde]
 fn op_cloudstate_list_roots(state: &mut OpState) -> Result<Vec<String>, Error> {
@@ -273,6 +279,7 @@ fn op_cloudstate_list_roots(state: &mut OpState) -> Result<Vec<String>, Error> {
     Ok(roots)
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_array_pop(
@@ -303,6 +310,7 @@ fn op_cloudstate_array_pop(
     }
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_array_shift(
@@ -342,6 +350,7 @@ fn op_cloudstate_array_shift(
     return_value.unwrap_or(CloudstatePrimitiveData::Undefined)
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_cloudstate_get(
@@ -375,6 +384,7 @@ fn op_cloudstate_cloudstate_get(
     }
 }
 
+#[instrument(skip(state))]
 #[op2]
 fn op_cloudstate_map_set(
     state: &mut OpState,
@@ -394,6 +404,7 @@ fn op_cloudstate_map_set(
     Ok(())
 }
 
+#[instrument(skip(state))]
 #[op2(fast)]
 fn op_cloudstate_map_delete(
     state: &mut OpState,
@@ -414,6 +425,7 @@ fn op_cloudstate_map_delete(
     was_removed
 }
 
+#[instrument(skip(state))]
 #[op2(fast)]
 fn op_cloudstate_map_clear(state: &mut OpState, #[string] map_id: String) {
     let cs = state.borrow_mut::<TransactionContext>();
@@ -432,6 +444,7 @@ fn op_cloudstate_map_clear(state: &mut OpState, #[string] map_id: String) {
     }
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_map_get(
@@ -453,6 +466,7 @@ fn op_cloudstate_map_get(
     primitive
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_map_has(
@@ -474,6 +488,7 @@ fn op_cloudstate_map_has(
     primitive
 }
 
+#[instrument(skip(state))]
 #[op2]
 fn op_cloudstate_array_set(
     state: &mut OpState,
@@ -493,6 +508,7 @@ fn op_cloudstate_array_set(
     Ok(())
 }
 
+#[instrument(skip(state))]
 #[op2(fast)]
 fn op_cloudstate_array_length(state: &mut OpState, #[string] id: String) -> i32 {
     let cs = state.borrow_mut::<TransactionContext>();
@@ -509,6 +525,7 @@ fn op_cloudstate_array_length(state: &mut OpState, #[string] id: String) -> i32 
     count as i32
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_array_get(
@@ -531,6 +548,7 @@ fn op_cloudstate_array_get(
     }
 }
 
+#[instrument(skip(state))]
 #[op2(fast)]
 fn op_cloudstate_map_size(state: &mut OpState, #[string] map_id: String) -> Result<i32, Error> {
     let cs = state.borrow_mut::<TransactionContext>();
@@ -547,6 +565,7 @@ fn op_cloudstate_map_size(state: &mut OpState, #[string] map_id: String) -> Resu
     Ok(count as i32)
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[string]
 fn op_cloudstate_object_root_get(
@@ -564,6 +583,7 @@ fn op_cloudstate_object_root_get(
     Ok(result)
 }
 
+#[instrument(skip(state))]
 #[op2(fast)]
 fn op_cloudstate_object_root_set(
     state: &mut OpState,
@@ -580,6 +600,7 @@ fn op_cloudstate_object_root_set(
     Ok(())
 }
 
+#[instrument(skip(state))]
 #[op2(fast)]
 fn op_cloudstate_commit_transaction(state: &mut OpState) -> Result<(), Error> {
     event!(tracing::Level::DEBUG, "Committing transaction");
@@ -589,6 +610,7 @@ fn op_cloudstate_commit_transaction(state: &mut OpState) -> Result<(), Error> {
     Ok(())
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_map_values(
@@ -614,6 +636,7 @@ fn op_cloudstate_map_values(
     Ok(values.into())
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_map_keys(
@@ -637,6 +660,7 @@ fn op_cloudstate_map_keys(
     Ok(keys.into())
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_map_entries(
@@ -663,6 +687,7 @@ fn op_cloudstate_map_entries(
     Ok(CloudstateEntriesVec::from(entries))
 }
 
+#[instrument(skip(state))]
 #[op2(fast)]
 fn op_cloudstate_blob_set(
     state: &mut OpState,
@@ -688,6 +713,7 @@ fn op_cloudstate_blob_set(
     Ok(())
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[string]
 fn op_cloudstate_blob_get_data(
@@ -706,6 +732,7 @@ fn op_cloudstate_blob_get_data(
     Ok(result.unwrap())
 }
 
+#[instrument(skip(state))]
 #[op2(fast)]
 fn op_cloudstate_blob_get_size(
     state: &mut OpState,
@@ -723,6 +750,7 @@ fn op_cloudstate_blob_get_size(
     Ok(result.unwrap())
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[string]
 fn op_cloudstate_blob_get_type(
@@ -1263,6 +1291,7 @@ deno_core::extension!(
   },
 );
 
+#[instrument(skip(_state))]
 #[op2(fast)]
 pub fn op_print_with_tracing(_state: &mut OpState, #[string] msg: &str, is_err: bool) {
     // tracing
