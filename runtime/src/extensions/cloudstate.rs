@@ -6,10 +6,11 @@ use deno_core::anyhow::Error;
 use deno_core::error::JsError;
 use deno_core::*;
 use redb::{
-    Database, Key, ReadOnlyTable, ReadTransaction, ReadableTable, TableDefinition, Value,
-    WriteTransaction,
+    AccessGuard, Database, Key, ReadOnlyTable, ReadTransaction, ReadableTable, TableDefinition,
+    Value, WriteTransaction,
 };
 use serde::{Deserialize, Serialize};
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::i32;
 use std::rc::Rc;
@@ -48,6 +49,19 @@ impl<
                 Ok(_) => Ok(()),
                 Err(e) => Err(e.into()),
             },
+        }
+    }
+
+    pub fn remove<'b>(
+        &mut self,
+        key: impl Borrow<K::SelfType<'b>>,
+    ) -> redb::Result<Option<AccessGuard<V>>>
+    where
+        K: 'b,
+    {
+        match self {
+            CloudstateTable::Read(_table) => panic!("Cannot remove during read-only transaction"),
+            CloudstateTable::Write(table) => table.remove(key),
         }
     }
 }
