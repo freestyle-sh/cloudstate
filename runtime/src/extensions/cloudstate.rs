@@ -119,7 +119,9 @@ impl TransactionContext {
     }
 
     pub fn set_read_only(&mut self) {
-        self.read_only = true;
+        if self.current_transaction.is_none() {
+            self.read_only = true;
+        }
     }
 
     pub fn get_or_create_transaction_mut(&mut self) -> &Transaction {
