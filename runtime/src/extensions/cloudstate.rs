@@ -1,6 +1,8 @@
 use crate::tables::{ARRAYS_TABLE, BLOBS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
 use crate::v8_string_key;
 use anyhow::anyhow;
+
+use anyhow::Result;
 use chrono::{DateTime, TimeZone, Utc};
 use deno_core::anyhow::Error;
 use deno_core::error::JsError;
@@ -13,7 +15,6 @@ use serde::{Deserialize, Serialize};
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::i32;
-use std::rc::Rc;
 use std::sync::Arc;
 use std::sync::{Mutex, MutexGuard};
 use tracing::{debug, error, event, info};
@@ -42,16 +43,23 @@ where
     V: Value + 'static,
 {
     pub fn insert(
-        self,
+        &mut self,
         key: impl Borrow<K::SelfType<'a>>,
         value: impl Borrow<V::SelfType<'a>>,
     ) -> Result<(), Error> {
         match self {
-            CloudstateTable::Read(_table) => panic!("Cannot insert into read-only table"),
-            CloudstateTable::Write(mut table) => match table.insert(key, value) {
+            CloudstateTable::Read(ref _table) => panic!("Cannot insert into read-only table"),
+            CloudstateTable::Write(ref mut table) => match table.insert(key, value) {
                 Ok(_) => Ok(()),
                 Err(e) => Err(e.into()),
             },
+        }
+    }
+
+    pub fn iter(&self) -> anyhow::Result<redb::Range<K, V>> {
+        match self {
+            CloudstateTable::Read(table) => table.iter().map_err(|e| e.into()),
+            CloudstateTable::Write(table) => table.iter().map_err(|e| e.into()),
         }
     }
 
