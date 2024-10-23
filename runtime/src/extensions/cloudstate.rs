@@ -6,8 +6,8 @@ use deno_core::anyhow::Error;
 use deno_core::error::JsError;
 use deno_core::*;
 use redb::{
-    Database, Key, ReadOnlyTable, ReadTransaction, ReadableTable, TableDefinition, Value,
-    WriteTransaction,
+    AccessGuard, Database, Key, ReadOnlyTable, ReadTransaction, ReadableTable, TableDefinition,
+    Value, WriteTransaction,
 };
 use serde::{Deserialize, Serialize};
 use std::borrow::Borrow;
@@ -36,11 +36,10 @@ pub enum CloudstateTable<'a, K: Key + 'static, V: Value + 'static> {
     Write(redb::Table<'a, K, V>),
 }
 
-impl<
-        'a,
-        K: Key + 'static,
-        V: Value + 'static, // + std::borrow::Borrow<<V as redb::Value>::SelfType<'a>>,
-    > CloudstateTable<'a, K, V>
+impl<'a, K, V> CloudstateTable<'a, K, V>
+where
+    K: Key + 'static,
+    V: Value + 'static,
 {
     pub fn insert(
         self,
@@ -53,6 +52,13 @@ impl<
                 Ok(_) => Ok(()),
                 Err(e) => Err(e.into()),
             },
+        }
+    }
+
+    pub fn get(&self, key: impl Borrow<K::SelfType<'a>>) -> anyhow::Result<Option<AccessGuard<V>>> {
+        match self {
+            CloudstateTable::Read(table) => table.get(key).map_err(|e| e.into()),
+            CloudstateTable::Write(table) => table.get(key).map_err(|e| e.into()),
         }
     }
 }
