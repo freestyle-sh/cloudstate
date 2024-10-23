@@ -5,10 +5,14 @@ use chrono::{DateTime, TimeZone, Utc};
 use deno_core::anyhow::Error;
 use deno_core::error::JsError;
 use deno_core::*;
-use redb::{Database, ReadableTable, WriteTransaction};
+use redb::{
+    Database, Key, ReadOnlyTable, ReadTransaction, ReadableTable, TableDefinition, Value,
+    WriteTransaction,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::i32;
+use std::rc::Rc;
 use std::sync::Arc;
 use std::sync::{Mutex, MutexGuard};
 use tracing::{debug, error, event, info};
@@ -17,7 +21,59 @@ use v8::GetPropertyNamesArgs;
 
 pub struct TransactionContext {
     database: ReDBCloudstate,
-    current_transaction: Option<WriteTransaction>,
+    current_transaction: Option<Transaction>,
+}
+
+pub enum Transaction {
+    Read(ReadTransaction),
+    Write(WriteTransaction),
+}
+
+pub enum CloudstateTable<'a, K: Key + 'static, V: Value + 'static> {
+    Read(ReadOnlyTable<K, V>),
+    Write(redb::Table<'a, K, V>),
+}
+
+impl<
+        'a,
+        K: Key + 'static + std::borrow::Borrow<<K as redb::Value>::SelfType<'_>>, //+ std::borrow::Borrow<<K as redb::Value>::SelfType<'a>>,
+        V: Value + 'static + std::borrow::Borrow<<V as redb::Value>::SelfType<'_>>, // + std::borrow::Borrow<<V as redb::Value>::SelfType<'a>>,
+    > CloudstateTable<'a, K, V>
+{
+    pub fn insert(self, key: K, value: V) -> Result<(), Error> {
+        match self {
+            CloudstateTable::Read(_table) => panic!("Cannot insert into read-only table"),
+            CloudstateTable::Write(mut table) => match table.insert(key, value) {
+                Ok(_) => Ok(()),
+                Err(e) => Err(e.into()),
+            },
+        }
+    }
+}
+
+impl Transaction {
+    pub fn commit(self) -> Result<(), Error> {
+        match self {
+            Transaction::Read(transaction) => transaction.close().map_err(|e| e.into()),
+            Transaction::Write(transaction) => transaction.commit().map_err(|e| e.into()),
+        }
+    }
+
+    pub fn open_table<K: Key + 'static, V: Value + 'static>(
+        &self,
+        def: TableDefinition<K, V>,
+    ) -> Result<CloudstateTable<K, V>, Error> {
+        match self {
+            Transaction::Read(transaction) => {
+                let table = transaction.open_table(def)?;
+                Ok(CloudstateTable::Read(table))
+            }
+            Transaction::Write(transaction) => {
+                let table = transaction.open_table(def)?;
+                Ok(CloudstateTable::Write(table))
+            }
+        }
+    }
 }
 
 impl TransactionContext {
@@ -28,13 +84,13 @@ impl TransactionContext {
         }
     }
 
-    pub fn get_or_create_transaction_mut(&mut self) -> &WriteTransaction {
+    pub fn get_or_create_transaction_mut(&mut self) -> &Transaction {
         debug!("Checking for existing transaction");
         if self.current_transaction.is_none() {
             debug!("Creating new transaction");
             let db = self.database.get_database_mut();
             let write_txn = db.begin_write().unwrap();
-            self.current_transaction = Some(write_txn);
+            self.current_transaction = Some(Transaction::Write(write_txn));
 
             self.current_transaction.as_mut().unwrap()
         } else {
