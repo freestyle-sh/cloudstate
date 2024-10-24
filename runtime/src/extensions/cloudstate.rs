@@ -17,7 +17,8 @@ use std::collections::HashMap;
 use std::i32;
 use std::sync::Arc;
 use std::sync::{Mutex, MutexGuard};
-use tracing::{debug, error, event, info, instrument};
+use tracing::span::EnteredSpan;
+use tracing::{debug, error, event, info, info_span, instrument, span};
 use url::Url;
 use v8::GetPropertyNamesArgs;
 
@@ -192,11 +193,13 @@ fn op_cloudstate_object_get(
     let cs = state.borrow_mut::<TransactionContext>();
     let transaction = cs.get_or_create_transaction_mut();
 
-    let table = transaction.open_table(OBJECTS_TABLE).unwrap();
+    let table =
+        info_span!("open_table").in_scope(|| transaction.open_table(OBJECTS_TABLE).unwrap());
+
     let key = CloudstateObjectKey { id };
 
-    let result = table.get(key).unwrap();
-    let result = result.map(|s| s.value().data);
+    let result = info_span!("get").in_scope(|| table.get(key).unwrap());
+    let result = info_span!("map").in_scope(|| result.map(|s| s.value().data));
 
     Ok(result.unwrap())
 }
@@ -769,6 +772,50 @@ fn op_cloudstate_blob_get_type(
     Ok(result.unwrap())
 }
 
+#[instrument(skip(_state))]
+#[op2(fast)]
+pub fn op_print_with_tracing(_state: &mut OpState, #[string] msg: &str, is_err: bool) {
+    // tracing
+    if is_err {
+        error!("{}", msg);
+    } else {
+        info!("{}", msg);
+    }
+}
+
+#[instrument(skip(state, name))]
+#[op2(fast)]
+pub fn op_tracing_span_start(state: &mut OpState, #[string] name: &str) {
+    let span = info_span!("javascript");
+    span.record("otel.name", name);
+    let span = span.entered();
+    let spans = state.borrow_mut::<JavaScriptSpans>();
+
+    spans.add_span(span);
+}
+
+#[instrument(skip(state))]
+#[op2(fast)]
+pub fn op_tracing_span_finish(state: &mut OpState) {
+    let spans = state.borrow_mut::<JavaScriptSpans>();
+    let span = spans.spans.pop().unwrap();
+    span.exit();
+}
+
+pub struct JavaScriptSpans {
+    spans: Vec<EnteredSpan>,
+}
+
+impl JavaScriptSpans {
+    pub fn new() -> Self {
+        Self { spans: vec![] }
+    }
+
+    pub fn add_span(&mut self, span: EnteredSpan) {
+        self.spans.push(span);
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct CloudstateBlobKey {
     pub id: String,
@@ -1253,7 +1300,6 @@ pub struct CloudstateArrayItemValue {
 deno_core::extension!(
   cloudstate,
   ops = [
-
     op_cloudstate_array_get,
     op_cloudstate_array_length,
     op_cloudstate_array_pop,
@@ -1281,7 +1327,9 @@ deno_core::extension!(
     op_cloudstate_blob_get_size,
     op_cloudstate_blob_get_type,
     op_cloudstate_list_roots,
-    op_cloudstate_set_read_only
+    op_cloudstate_set_read_only,
+    op_tracing_span_start,
+    op_tracing_span_finish
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],
@@ -1289,15 +1337,5 @@ deno_core::extension!(
     "op_print" => op_print_with_tracing(),
     _ => op,
   },
-);
 
-#[instrument(skip(_state))]
-#[op2(fast)]
-pub fn op_print_with_tracing(_state: &mut OpState, #[string] msg: &str, is_err: bool) {
-    // tracing
-    if is_err {
-        error!("{}", msg);
-    } else {
-        info!("{}", msg);
-    }
-}
+);

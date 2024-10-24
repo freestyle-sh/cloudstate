@@ -59,6 +59,8 @@ const cloudstateObjects = new Map();
 const customClasses = [];
 
 function hydrate(object, key, value) {
+  Deno.core.ops.op_tracing_span_start("hydrate");
+
   if (value instanceof CloudstateObjectReference) {
     Object.defineProperty(object, key, {
       get: () => {
@@ -136,6 +138,8 @@ function hydrate(object, key, value) {
       value: getMap(value.objectId),
     });
   }
+
+  Deno.core.ops.op_tracing_span_finish();
 }
 
 function commit() {
