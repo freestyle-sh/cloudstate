@@ -17,10 +17,13 @@ use std::collections::HashMap;
 use std::i32;
 use std::sync::Arc;
 use std::sync::{Mutex, MutexGuard};
-use tracing::span::EnteredSpan;
-use tracing::{debug, error, event, info, info_span, instrument, span};
+use tracing::{debug, error, event, info, info_span, instrument};
 use url::Url;
 use v8::GetPropertyNamesArgs;
+
+pub use js_spans::JavaScriptSpans;
+
+mod js_spans;
 
 pub struct TransactionContext {
     database: ReDBCloudstate,
@@ -787,6 +790,7 @@ pub fn op_print_with_tracing(_state: &mut OpState, #[string] msg: &str, is_err: 
 #[op2(fast)]
 pub fn op_tracing_span_start(state: &mut OpState, #[string] name: &str) {
     let span = info_span!("javascript");
+    info!("{}", name);
     span.record("otel.name", name);
     let span = span.entered();
     let spans = state.borrow_mut::<JavaScriptSpans>();
@@ -794,26 +798,11 @@ pub fn op_tracing_span_start(state: &mut OpState, #[string] name: &str) {
     spans.add_span(span);
 }
 
-#[instrument(skip(state))]
+// #[instrument(skip(state))]
 #[op2(fast)]
 pub fn op_tracing_span_finish(state: &mut OpState) {
     let spans = state.borrow_mut::<JavaScriptSpans>();
-    let span = spans.spans.pop().unwrap();
-    span.exit();
-}
-
-pub struct JavaScriptSpans {
-    spans: Vec<EnteredSpan>,
-}
-
-impl JavaScriptSpans {
-    pub fn new() -> Self {
-        Self { spans: vec![] }
-    }
-
-    pub fn add_span(&mut self, span: EnteredSpan) {
-        self.spans.push(span);
-    }
+    spans.pop_span();
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
@@ -1329,7 +1318,10 @@ deno_core::extension!(
     op_cloudstate_list_roots,
     op_cloudstate_set_read_only,
     op_tracing_span_start,
-    op_tracing_span_finish
+    op_tracing_span_finish,
+
+    js_spans::op_tracing_span_hydrate,
+    js_spans::op_tracing_span_get_map
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],
