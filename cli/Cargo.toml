@@ -16,6 +16,13 @@ tracing-subscriber = "0.3.18"
 tracing = "0.1.40"
 dhat = "0.3.3"
 deno_core.workspace = true
+tracing-flame = "0.2.0"
+opentelemetry = "0.26.0"
+opentelemetry_sdk = "0.26.0"
+opentelemetry-stdout = "0.26.0"
+tracing-opentelemetry = "0.27.0"
+sentry = "0.34.0"
+sentry-tracing = "0.34.0"
 # rand = "0.8.5"
 
 

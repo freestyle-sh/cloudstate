@@ -25,7 +25,14 @@ use std::{
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 use tower::Service;
-use tracing::{debug, info};
+use tracing::{debug, debug_span, info};
+use tracing_flame::FlameLayer;
+use tracing_subscriber::{fmt, prelude::*};
+
+use opentelemetry::trace::TracerProvider as _;
+use opentelemetry_sdk::trace::TracerProvider;
+use opentelemetry_stdout as stdout;
+use tracing_subscriber::layer::SubscriberExt;
 
 #[cfg(test)]
 mod debug;
@@ -35,7 +42,21 @@ async fn main() {
     // #[cfg(feature = "dhat-heap")]
     // let _profiler = dhat::Profiler::new_heap();
 
-    tracing_subscriber::fmt::init();
+    // let (flame_layer, _guard) = FlameLayer::with_file("./tracing.folded").unwrap();
+
+    let _guard = sentry::init((
+        env::var("SENTRY_DSN").unwrap(),
+        sentry::ClientOptions {
+            // Enable capturing of traces; set this a to lower value in production:
+            traces_sample_rate: 1.0,
+            ..sentry::ClientOptions::default()
+        },
+    ));
+
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .with(sentry_tracing::layer())
+        .init();
 
     debug!("Starting cloudstate");
 
