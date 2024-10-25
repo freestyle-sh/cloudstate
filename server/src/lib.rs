@@ -36,7 +36,7 @@ use tracing::{debug, event};
 mod tests;
 
 pub struct CloudstateServer {
-    // pub cloudstate: Arc<Mutex<ReDBCloudstate>>,
+    pub cloudstate: ReDBCloudstate,
     pub router: Router,
 }
 
@@ -117,7 +117,10 @@ impl CloudstateServer {
                 invalidate_endpoint,
             });
 
-        CloudstateServer { router: app }
+        CloudstateServer {
+            router: app,
+            cloudstate,
+        }
     }
 }
 
