@@ -3,11 +3,12 @@
 // static ALLOC: dhat::Alloc = dhat::Alloc;
 
 use axum::{body::Body, extract::Request, routing::get, Json};
+use deno_core::v8::Data;
 use tokio::runtime::Runtime; // 0.3.5
 
 use axum::extract::DefaultBodyLimit;
 use clap::ValueHint;
-use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
+use cloudstate_runtime::{extensions::cloudstate::ReDBCloudstate, gc::mark_and_sweep};
 use notify::Watcher;
 use redb::{
     backends::{self},
@@ -15,12 +16,7 @@ use redb::{
 };
 use server::{execute_script, CloudstateServer};
 use std::{
-    collections::HashMap,
-    fs::{self},
-    future::poll_fn,
-    path::Path,
-    sync::{Arc, Mutex},
-    time::Duration,
+    collections::HashMap, fs::{self}, future::poll_fn, os::unix::fs::MetadataExt, path::Path, sync::{Arc, Mutex}, time::Duration
 };
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
@@ -74,7 +70,13 @@ async fn main() {
                 .arg(filename_arg.clone())
                 .arg(watch_arg.clone())
                 .arg(memory_only_arg.clone())
-        );
+        ).subcommand(
+            clap::Command::new("gc").about("Runs the garbage collector on a cloudstate file")
+                .arg(filename_arg.clone())
+        )
+        
+        ;
+        
 
     let matches = cmd.get_matches();
 
@@ -200,6 +202,56 @@ async fn main() {
             } else {
                 other_thread.await.unwrap()
             }
+        }
+        Some((
+            "gc", gc_matches
+        )) => {
+            let filename = gc_matches.get_one::<String>("filename").unwrap();
+
+
+            let metadata_before = fs::metadata(filename).unwrap();
+  
+            if let Ok(mut cloudstate) = Database::open(filename) {
+                info!("Running garbage collection");
+                match mark_and_sweep(&cloudstate) {
+                    Ok(_) => {
+                        info!("Garbage collection complete");
+                    }
+                    Err(e) => {
+                        info!("Error running garbage collection: {:?}", e);
+                    }
+                }
+
+               info!("Compacting database");
+
+                match cloudstate.compact() {
+                    Ok(_) => {
+                        info!("Database compacted");
+                    },
+                    Err(_) =>  {
+                        info!("Failed to compact database");
+                    },
+                }
+            } else {
+                info!("Failed to open file");
+                return;
+            }
+
+            let metadata_after = fs::metadata(filename).unwrap();
+
+            // info!("File size before: {}", metadata_before.size());
+            // info!("File size after: {}", metadata_after.size());
+            let megabytes_before = metadata_before.size() / 1024 / 1024;
+            let megabytes_after = metadata_after.size() / 1024 / 1024;
+            let megabytes_saved = megabytes_before - megabytes_after;
+            info!(
+                "File size reduced from {}MB to {}MB, saving {}MB",
+                megabytes_before, megabytes_after, megabytes_saved
+            )
+
+
+
+
         }
         _ => {
             info!("No subcommand found");
