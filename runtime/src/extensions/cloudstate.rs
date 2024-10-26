@@ -128,6 +128,7 @@ impl TransactionContext {
         }
     }
 
+    #[instrument(skip(self))]
     pub fn get_or_create_transaction_mut(&mut self) -> &Transaction {
         // debug!("Checking for existing transaction");
         if self.current_transaction.is_none() {
@@ -148,6 +149,7 @@ impl TransactionContext {
         }
     }
 
+    #[instrument(skip(self))]
     pub fn commit_transaction(&mut self) {
         // debug!("Checking for transaction to commit");
         if let Some(transaction) = self.current_transaction.take() {
@@ -1321,7 +1323,18 @@ deno_core::extension!(
     op_tracing_span_finish,
 
     js_spans::op_tracing_span_hydrate,
-    js_spans::op_tracing_span_get_map
+    js_spans::op_tracing_span_get_map,
+    js_spans::op_tracing_span_get_object,
+    js_spans::op_tracing_span_pack_to_reference_or_primitive,
+    js_spans::op_tracing_span_unpack_from_reference,
+    js_spans::op_tracing_span_get_cloudstate,
+    js_spans::op_tracing_span_set_object,
+    js_spans::op_tracing_span_get_array,
+    js_spans::op_tracing_span_export_object,
+    js_spans::op_tracing_span_set_root,
+    js_spans::op_tracing_span_get_root,
+    js_spans::op_tracing_span_array_filter,
+    js_spans::op_tracing_span_array_splice
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],
