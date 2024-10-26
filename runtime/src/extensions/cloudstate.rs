@@ -1334,7 +1334,8 @@ deno_core::extension!(
     js_spans::op_tracing_span_set_root,
     js_spans::op_tracing_span_get_root,
     js_spans::op_tracing_span_array_filter,
-    js_spans::op_tracing_span_array_splice
+    js_spans::op_tracing_span_array_splice,
+    js_spans::op_tracing_span_commit
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],

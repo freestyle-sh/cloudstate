@@ -161,16 +161,12 @@ function hydrate(object, key, value) {
 }
 
 function commit() {
-  // console.log("commiting");
-  // const length = Array.from(objects.values()).length;
-  // let i = 0;
-  for (const value of objects.values()) {
-    // if (i++ % 100 === 0) {
-    //   console.log(`${i}/${length}`);
-    // }
-    setObject(value);
-  }
-  Deno.core.ops.op_cloudstate_commit_transaction();
+  return span("commit", () => {
+    for (const value of objects.values()) {
+      setObject(value);
+    }
+    Deno.core.ops.op_cloudstate_commit_transaction();
+  });
 }
 
 function getMap(objectId) {

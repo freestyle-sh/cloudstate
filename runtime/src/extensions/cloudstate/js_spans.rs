@@ -49,3 +49,4 @@ op_js_span!(op_tracing_span_set_root, set_root);
 op_js_span!(op_tracing_span_get_root, get_root);
 op_js_span!(op_tracing_span_array_filter, array_filter);
 op_js_span!(op_tracing_span_array_splice, array_splice);
+op_js_span!(op_tracing_span_commit, commit);
