@@ -1,3 +1,5 @@
+use crate::blob_storage::in_memory_store::InMemoryBlobStore;
+use crate::blob_storage::{CloudstateBlobStorage, CloudstateBlobValue};
 use crate::tables::{ARRAYS_TABLE, BLOBS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
 use crate::v8_string_key;
 use anyhow::anyhow;
@@ -695,41 +697,59 @@ fn op_cloudstate_blob_set(
     #[string] blob_type: String,
     #[string] blob_text: String,
 ) -> Result<(), Error> {
-    let cs = state.borrow_mut::<TransactionContext>();
-    let transaction = cs.get_or_create_transaction_mut();
+    // let cs = state.borrow_mut::<TransactionContext>();
+    let blob_store = state.borrow_mut::<Arc<std::sync::Mutex<InMemoryBlobStore>>>();
+    let mut blob_store = blob_store.lock().unwrap();
+    blob_store.put_blob(
+        &blob_id,
+        CloudstateBlobValue {
+            data: blob_text,
+            type_: blob_type,
+        },
+    )?;
 
-    let mut table = transaction.open_table(BLOBS_TABLE).unwrap();
-    let key = CloudstateBlobKey { id: blob_id };
+    // let transaction = cs.get_or_create_transaction_mut();
 
-    let _ = table
-        .insert(
-            &key,
-            CloudstateBlobValue {
-                data: blob_text,
-                type_: blob_type,
-            },
-        )
-        .unwrap();
+    // let mut table = transaction.open_table(BLOBS_TABLE).unwrap();
+    // let key = CloudstateBlobKey { id: blob_id };
+
+    // let _ = table
+    //     .insert(
+    //         &key,
+    //         CloudstateBlobValue {
+    //             data: blob_text,
+    //             type_: blob_type,
+    //         },
+    //     )
+    //     .unwrap();
     Ok(())
 }
 
 #[instrument(skip(state))]
-#[op2]
+#[op2()]
 #[string]
 fn op_cloudstate_blob_get_data(
     state: &mut OpState,
     #[string] blob_id: String,
 ) -> Result<String, Error> {
-    let cs = state.borrow_mut::<TransactionContext>();
-    let transaction = cs.get_or_create_transaction_mut();
+    let blob_store = state.borrow_mut::<Arc<std::sync::Mutex<InMemoryBlobStore>>>();
+    let mut blob_store = blob_store.lock().unwrap();
+    let result = blob_store.get_blob(&blob_id)?.data;
+    Ok(result)
 
-    let table = transaction.open_table(BLOBS_TABLE).unwrap();
-    let key = CloudstateBlobKey { id: blob_id };
+    // let blob_store = state.borrow_mut::<Arc<InMemoryBlobStore>>();
+    // // let result = blob_store.clone().get_blob(&blob_id).await?.data;
+    // // Ok(result.clone())
+    // Ok(blob_store.get_blob(&blob_id).await?.data)
 
-    let result = table.get(key).unwrap();
-    let result = result.map(|s| s.value().data);
+    // let cs = state.borrow_mut::<TransactionContext>();
+    // let transaction = cs.get_or_create_transaction_mut();
 
-    Ok(result.unwrap())
+    // let table = transaction.open_table(BLOBS_TABLE).unwrap();
+    // let key = CloudstateBlobKey { id: blob_id };
+
+    // let result = table.get(key).unwrap();
+    // let result = result.map(|s| s.value().data);
 }
 
 #[instrument(skip(state))]
@@ -738,16 +758,17 @@ fn op_cloudstate_blob_get_size(
     state: &mut OpState,
     #[string] blob_id: String,
 ) -> Result<i32, Error> {
-    let cs = state.borrow_mut::<TransactionContext>();
-    let transaction = cs.get_or_create_transaction_mut();
+    // let cs = state.borrow_mut::<TransactionContext>();
+    // let transaction = cs.get_or_create_transaction_mut();
 
-    let table = transaction.open_table(BLOBS_TABLE).unwrap();
-    let key = CloudstateBlobKey { id: blob_id };
+    // let table = transaction.open_table(BLOBS_TABLE).unwrap();
+    // let key = CloudstateBlobKey { id: blob_id };
 
-    let result = table.get(key).unwrap();
-    let result = result.map(|s| s.value().data.len() as i32);
+    // let result = table.get(key).unwrap();
+    // let result = result.map(|s| s.value().data.len() as i32);
 
-    Ok(result.unwrap())
+    // Ok(result.unwrap())
+    let blob_store = state.borrow_mut::<Arc<InMemoryBlobStore>>();
 }
 
 #[instrument(skip(state))]
@@ -772,12 +793,6 @@ fn op_cloudstate_blob_get_type(
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct CloudstateBlobKey {
     pub id: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct CloudstateBlobValue {
-    pub data: String,
-    pub type_: String,
 }
 
 #[derive(Clone)]

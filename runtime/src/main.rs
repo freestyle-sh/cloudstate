@@ -1,10 +1,12 @@
+use blob_storage::in_memory_store::InMemoryBlobStore;
+
 mod bincode;
+mod blob_storage;
 mod execution;
 mod extensions;
 mod print;
 mod tables;
 mod v8_macros;
-
 fn main() {
     tracing_subscriber::fmt::init();
 
@@ -17,6 +19,7 @@ fn main() {
                     .unwrap(),
             ),
         )),
+        InMemoryBlobStore::new(),
     )
     .unwrap();
     crate::print::print_database(&cs.get_database_mut());
