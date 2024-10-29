@@ -7,7 +7,7 @@ use futures::future::poll_fn;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use tracing::{debug, event};
 
 use crate::blob_storage::CloudstateBlobStorage;

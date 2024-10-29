@@ -1,5 +1,5 @@
 use crate::blob_storage::{CloudstateBlobStorage, CloudstateBlobValue};
-use crate::tables::{ARRAYS_TABLE, BLOBS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
+use crate::tables::{ARRAYS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
 use crate::v8_string_key;
 use anyhow::anyhow;
 
@@ -13,7 +13,6 @@ use redb::{
     Value, WriteTransaction,
 };
 use serde::{Deserialize, Serialize};
-use serde_v8::V8Slice;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::i32;

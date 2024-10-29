@@ -17,7 +17,7 @@ impl CloudstateBlobStorage for S3BlobStore {
     fn get_blob(&self, blob_id: &str) -> Result<super::CloudstateBlobValue, anyhow::Error> {
         let res = self.bucket.get_object_blocking(blob_id)?;
         let binary = res.bytes();
-        let blob_data = match bincode::deserialize(&binary) {
+        let blob_data = match bincode::deserialize(binary) {
             Ok(blob_data) => blob_data,
             Err(e) => {
                 tracing::error!("Failed to deserialize blob data: {:?}", e);
