@@ -1,7 +1,4 @@
-use cloudstate_runtime::{
-    print::print_database,
-    tables::OBJECTS_TABLE,
-};
+use cloudstate_runtime::{print::print_database, tables::OBJECTS_TABLE};
 use redb::{Database, ReadableTable};
 
 #[test]
