@@ -9,7 +9,6 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use tracing::{debug, event};
-use tracing_subscriber::filter::DynFilterFn;
 
 use crate::blob_storage::CloudstateBlobStorage;
 use crate::extensions::bootstrap::bootstrap;
@@ -76,7 +75,7 @@ impl NetPermissions for CloudstateNetPermissions {
 pub fn run_script(
     path: &str,
     cloudstate: ReDBCloudstate,
-    blob_storage: Arc<Mutex<dyn CloudstateBlobStorage>>,
+    blob_storage: Arc<dyn CloudstateBlobStorage>,
 ) -> Result<(ReDBCloudstate, Result<(), anyhow::Error>), anyhow::Error> {
     let js_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(path);
 
@@ -102,7 +101,7 @@ pub fn run_script(
 pub fn run_script_source(
     script: &str,
     cloudstate: ReDBCloudstate,
-    blob_storage: Arc<Mutex<dyn CloudstateBlobStorage>>,
+    blob_storage: Arc<dyn CloudstateBlobStorage>,
     path: PathBuf,
 ) -> Result<(ReDBCloudstate, Result<(), anyhow::Error>), anyhow::Error> {
     let main_module = ModuleSpecifier::from_file_path(path).unwrap();

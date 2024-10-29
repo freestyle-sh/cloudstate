@@ -19,7 +19,7 @@ fn main() {
                     .unwrap(),
             ),
         )),
-        InMemoryBlobStore::new(),
+        std::sync::Arc::new(InMemoryBlobStore::new()),
     )
     .unwrap();
     crate::print::print_database(&cs.get_database_mut());

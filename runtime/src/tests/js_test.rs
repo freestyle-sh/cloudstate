@@ -18,6 +18,9 @@ macro_rules! js_test {
                             .unwrap(),
                     ),
                 )),
+                std::sync::Arc::new(
+                    $crate::blob_storage::in_memory_store::InMemoryBlobStore::default(),
+                ),
             )
             .unwrap();
             $crate::print::print_database(&cs.get_database_mut());

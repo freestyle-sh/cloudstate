@@ -14,8 +14,8 @@ impl S3BlobStore {
 }
 
 impl CloudstateBlobStorage for S3BlobStore {
-    async fn get_blob(&self, blob_id: &str) -> Result<super::CloudstateBlobValue, anyhow::Error> {
-        let res = self.bucket.get_object(blob_id).await?;
+    fn get_blob(&self, blob_id: &str) -> Result<super::CloudstateBlobValue, anyhow::Error> {
+        let res = self.bucket.get_object_blocking(blob_id)?;
         let binary = res.bytes();
         let blob_data = match bincode::deserialize(&binary) {
             Ok(blob_data) => blob_data,
@@ -28,23 +28,23 @@ impl CloudstateBlobStorage for S3BlobStore {
     }
 
     fn put_blob(
-        &mut self,
+        &self,
         blob_id: &str,
         blob_data: super::CloudstateBlobValue,
     ) -> Result<(), anyhow::Error> {
         let binary = bincode::serialize(&blob_data)?;
-        self.bucket.put_object(blob_id, &binary);
+        self.bucket.put_object_blocking(blob_id, &binary)?;
 
         Ok(())
     }
 
-    fn delete_blob(&mut self, blob_id: &str) -> Result<(), anyhow::Error> {
-        self.bucket.delete_object(blob_id).await?;
+    fn delete_blob(&self, blob_id: &str) -> Result<(), anyhow::Error> {
+        self.bucket.delete_object_blocking(blob_id)?;
         Ok(())
     }
 
-    async fn has_blob(&mut self, blob_id: &str) -> Result<bool, anyhow::Error> {
-        match self.bucket.head_object(blob_id).await {
+    fn has_blob(&self, blob_id: &str) -> Result<bool, anyhow::Error> {
+        match self.bucket.head_object_blocking(blob_id) {
             Ok(_) => Ok(true),
             Err(e) => {
                 if e.to_string().contains("404") {

@@ -14,10 +14,7 @@ impl FsBlobStore {
 }
 
 impl CloudstateBlobStorage for FsBlobStore {
-    async fn get_blob(
-        &mut self,
-        blob_id: &str,
-    ) -> Result<super::CloudstateBlobValue, anyhow::Error> {
+    fn get_blob(&self, blob_id: &str) -> Result<super::CloudstateBlobValue, anyhow::Error> {
         let binary = fs::read(self.root.join(blob_id))?;
         let blob_data = match bincode::deserialize(&binary) {
             Ok(blob_data) => blob_data,
@@ -29,12 +26,12 @@ impl CloudstateBlobStorage for FsBlobStore {
         Ok(blob_data)
     }
 
-    async fn get_blob_size(&mut self, blob_id: &str) -> Result<usize, anyhow::Error> {
+    fn get_blob_size(&self, blob_id: &str) -> Result<usize, anyhow::Error> {
         Ok(fs::metadata(self.root.join(blob_id))?.len() as usize)
     }
 
-    async fn put_blob(
-        &mut self,
+    fn put_blob(
+        &self,
         blob_id: &str,
         blob_data: super::CloudstateBlobValue,
     ) -> Result<(), anyhow::Error> {
@@ -44,12 +41,12 @@ impl CloudstateBlobStorage for FsBlobStore {
         Ok(())
     }
 
-    async fn delete_blob(&mut self, blob_id: &str) -> Result<(), anyhow::Error> {
+    fn delete_blob(&self, blob_id: &str) -> Result<(), anyhow::Error> {
         fs::remove_file(self.root.join(blob_id))?;
         Ok(())
     }
 
-    async fn has_blob(&mut self, blob_id: &str) -> Result<bool, anyhow::Error> {
+    fn has_blob(&self, blob_id: &str) -> Result<bool, anyhow::Error> {
         fs::metadata(self.root.join(blob_id))
             .map(|_| true)
             .or_else(|e| {

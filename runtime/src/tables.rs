@@ -1,9 +1,10 @@
 use crate::{
     bincode::Bincode,
+    blob_storage::CloudstateBlobValue,
     extensions::cloudstate::{
-        CloudstateArrayItemKey, CloudstateArrayItemValue, CloudstateBlobKey, CloudstateBlobValue,
-        CloudstateMapFieldKey, CloudstateMapFieldValue, CloudstateObjectKey, CloudstateObjectValue,
-        CloudstateRootKey, CloudstateRootValue,
+        CloudstateArrayItemKey, CloudstateArrayItemValue, CloudstateBlobKey, CloudstateMapFieldKey,
+        CloudstateMapFieldValue, CloudstateObjectKey, CloudstateObjectValue, CloudstateRootKey,
+        CloudstateRootValue,
     },
 };
 

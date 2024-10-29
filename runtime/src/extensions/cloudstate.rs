@@ -1,4 +1,3 @@
-use crate::blob_storage::in_memory_store::InMemoryBlobStore;
 use crate::blob_storage::{CloudstateBlobStorage, CloudstateBlobValue};
 use crate::tables::{ARRAYS_TABLE, BLOBS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
 use crate::v8_string_key;
@@ -14,6 +13,7 @@ use redb::{
     Value, WriteTransaction,
 };
 use serde::{Deserialize, Serialize};
+use serde_v8::V8Slice;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::i32;
@@ -695,61 +695,61 @@ fn op_cloudstate_blob_set(
     state: &mut OpState,
     #[string] blob_id: String,
     #[string] blob_type: String,
-    #[string] blob_text: String,
+    #[arraybuffer] blob_data: &[u8], // #[buffer] blob_data: JsBuffer,
 ) -> Result<(), Error> {
     // let cs = state.borrow_mut::<TransactionContext>();
-    let blob_store = state.borrow_mut::<Arc<std::sync::Mutex<InMemoryBlobStore>>>();
-    let mut blob_store = blob_store.lock().unwrap();
+    let blob_store = state.borrow_mut::<Arc<dyn CloudstateBlobStorage>>();
+
+    let data = blob_data.to_vec();
+
     blob_store.put_blob(
         &blob_id,
         CloudstateBlobValue {
-            data: blob_text,
+            data,
             type_: blob_type,
         },
     )?;
 
-    // let transaction = cs.get_or_create_transaction_mut();
-
-    // let mut table = transaction.open_table(BLOBS_TABLE).unwrap();
-    // let key = CloudstateBlobKey { id: blob_id };
-
-    // let _ = table
-    //     .insert(
-    //         &key,
-    //         CloudstateBlobValue {
-    //             data: blob_text,
-    //             type_: blob_type,
-    //         },
-    //     )
-    //     .unwrap();
     Ok(())
 }
 
 #[instrument(skip(state))]
 #[op2()]
+#[arraybuffer]
+// #[string]
+fn op_cloudstate_blob_get_array_buffer(
+    state: &mut OpState,
+    #[string] blob_id: String,
+) -> Result<Vec<u8>, Error> {
+    let blob_store = state.borrow_mut::<Arc<dyn CloudstateBlobStorage>>();
+    let result = blob_store.get_blob(&blob_id)?.data;
+
+    Ok(result)
+}
+
+#[instrument(skip(state))]
+#[op2()]
+#[buffer]
+fn op_cloudstate_blob_get_uint8array(
+    state: &mut OpState,
+    #[string] blob_id: String,
+) -> Result<Vec<u8>, Error> {
+    let blob_store = state.borrow_mut::<Arc<dyn CloudstateBlobStorage>>();
+    let result = blob_store.get_blob(&blob_id)?.data;
+
+    Ok(result)
+}
+
+#[instrument(skip(state))]
+#[op2()]
 #[string]
-fn op_cloudstate_blob_get_data(
+fn op_cloudstate_blob_get_text(
     state: &mut OpState,
     #[string] blob_id: String,
 ) -> Result<String, Error> {
-    let blob_store = state.borrow_mut::<Arc<std::sync::Mutex<InMemoryBlobStore>>>();
-    let mut blob_store = blob_store.lock().unwrap();
+    let blob_store = state.borrow_mut::<Arc<dyn CloudstateBlobStorage>>();
     let result = blob_store.get_blob(&blob_id)?.data;
-    Ok(result)
-
-    // let blob_store = state.borrow_mut::<Arc<InMemoryBlobStore>>();
-    // // let result = blob_store.clone().get_blob(&blob_id).await?.data;
-    // // Ok(result.clone())
-    // Ok(blob_store.get_blob(&blob_id).await?.data)
-
-    // let cs = state.borrow_mut::<TransactionContext>();
-    // let transaction = cs.get_or_create_transaction_mut();
-
-    // let table = transaction.open_table(BLOBS_TABLE).unwrap();
-    // let key = CloudstateBlobKey { id: blob_id };
-
-    // let result = table.get(key).unwrap();
-    // let result = result.map(|s| s.value().data);
+    Ok(String::from_utf8(result).unwrap())
 }
 
 #[instrument(skip(state))]
@@ -768,7 +768,9 @@ fn op_cloudstate_blob_get_size(
     // let result = result.map(|s| s.value().data.len() as i32);
 
     // Ok(result.unwrap())
-    let blob_store = state.borrow_mut::<Arc<InMemoryBlobStore>>();
+    let blob_store = state.borrow_mut::<Arc<dyn CloudstateBlobStorage>>();
+    let result = blob_store.get_blob_size(&blob_id)?;
+    Ok(result as i32)
 }
 
 #[instrument(skip(state))]
@@ -778,16 +780,20 @@ fn op_cloudstate_blob_get_type(
     state: &mut OpState,
     #[string] blob_id: String,
 ) -> Result<String, Error> {
-    let cs = state.borrow_mut::<TransactionContext>();
-    let transaction = cs.get_or_create_transaction_mut();
+    let blob_store = state.borrow_mut::<Arc<dyn CloudstateBlobStorage>>();
+    let result = blob_store.get_blob(&blob_id)?.type_;
+    Ok(result)
 
-    let table = transaction.open_table(BLOBS_TABLE).unwrap();
-    let key = CloudstateBlobKey { id: blob_id };
+    // let cs = state.borrow_mut::<TransactionContext>();
+    // let transaction = cs.get_or_create_transaction_mut();
 
-    let result = table.get(key).unwrap();
-    let result = result.map(|s| s.value().type_.clone());
+    // let table = transaction.open_table(BLOBS_TABLE).unwrap();
+    // let key = CloudstateBlobKey { id: blob_id };
 
-    Ok(result.unwrap())
+    // let result = table.get(key).unwrap();
+    // let result = result.map(|s| s.value().type_.clone());
+
+    // Ok(result.unwrap())
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
@@ -1291,7 +1297,9 @@ deno_core::extension!(
     op_cloudstate_object_root_set,
     op_cloudstate_object_set,
     op_cloudstate_object_set_property,
-    op_cloudstate_blob_get_data,
+    op_cloudstate_blob_get_array_buffer,
+    op_cloudstate_blob_get_uint8array,
+    op_cloudstate_blob_get_text,
     op_cloudstate_blob_set,
     op_cloudstate_blob_get_size,
     op_cloudstate_blob_get_type,

@@ -1,24 +1,28 @@
 use super::CloudstateBlobStorage;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct InMemoryBlobStore {
-    blobs: std::collections::HashMap<String, super::CloudstateBlobValue>,
+    blobs: std::sync::RwLock<std::collections::HashMap<String, super::CloudstateBlobValue>>,
 }
 
 impl InMemoryBlobStore {
     pub fn new() -> Self {
         Self {
-            blobs: std::collections::HashMap::new(),
+            blobs: std::sync::RwLock::new(std::collections::HashMap::new()),
         }
     }
 }
 
+impl Default for InMemoryBlobStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CloudstateBlobStorage for InMemoryBlobStore {
-    async fn get_blob(
-        &mut self,
-        blob_id: &str,
-    ) -> Result<super::CloudstateBlobValue, anyhow::Error> {
-        match self.blobs.get(blob_id) {
+    fn get_blob(&self, blob_id: &str) -> Result<super::CloudstateBlobValue, anyhow::Error> {
+        let blobs = self.blobs.read().unwrap();
+        match blobs.get(blob_id) {
             Some(blob_data) => Ok(blob_data.clone()),
             None => {
                 tracing::error!("Blob not found: {}", blob_id);
@@ -27,8 +31,9 @@ impl CloudstateBlobStorage for InMemoryBlobStore {
         }
     }
 
-    async fn get_blob_size(&mut self, blob_id: &str) -> Result<usize, anyhow::Error> {
-        match self.blobs.get(blob_id) {
+    fn get_blob_size(&self, blob_id: &str) -> Result<usize, anyhow::Error> {
+        let blobs = self.blobs.read().unwrap();
+        match blobs.get(blob_id) {
             Some(blob_data) => Ok(blob_data.data.len()),
             None => {
                 tracing::error!("Blob not found: {}", blob_id);
@@ -37,21 +42,25 @@ impl CloudstateBlobStorage for InMemoryBlobStore {
         }
     }
 
-    async fn put_blob(
-        &mut self,
+    fn put_blob(
+        &self,
         blob_id: &str,
         blob_data: super::CloudstateBlobValue,
     ) -> Result<(), anyhow::Error> {
-        self.blobs.insert(blob_id.to_string(), blob_data);
+        let mut blobs = self.blobs.write().unwrap();
+        blobs.insert(blob_id.to_string(), blob_data);
         Ok(())
     }
 
-    async fn delete_blob(&mut self, blob_id: &str) -> Result<(), anyhow::Error> {
-        self.blobs.remove(blob_id);
+    fn delete_blob(&self, blob_id: &str) -> Result<(), anyhow::Error> {
+        let mut blobs = self.blobs.write().unwrap();
+        blobs.remove(blob_id);
+
         Ok(())
     }
 
-    async fn has_blob(&mut self, blob_id: &str) -> Result<bool, anyhow::Error> {
-        Ok(self.blobs.contains_key(blob_id))
+    fn has_blob(&self, blob_id: &str) -> Result<bool, anyhow::Error> {
+        let blobs = self.blobs.read().unwrap();
+        Ok(blobs.contains_key(blob_id))
     }
 }
