@@ -11,6 +11,7 @@ use clap::ValueHint;
 use cloudstate_runtime::{
     blob_storage::{
         fs_store::FsBlobStore, in_memory_store::InMemoryBlobStore, CloudstateBlobStorage,
+        CloudstateBlobStorageEngine,
     },
     extensions::cloudstate::ReDBCloudstate,
     gc::mark_and_sweep,
@@ -85,9 +86,7 @@ async fn main() {
         ).subcommand(
             clap::Command::new("gc").about("Runs the garbage collector on a cloudstate file")
                 .arg(filename_arg.clone())
-        )
-        
-        ;
+        );
 
     let matches = cmd.get_matches();
 
@@ -105,11 +104,13 @@ async fn main() {
                 Database::create("./cloudstate").unwrap()
             };
 
-            let blob_storage: Arc<dyn CloudstateBlobStorage> = if *memory_only {
+            let engine: Arc<dyn CloudstateBlobStorageEngine> = if *memory_only {
                 Arc::new(InMemoryBlobStore::new())
             } else {
                 Arc::new(FsBlobStore::new("./cloudstate-blobs".into()))
             };
+
+            let blob_storage = CloudstateBlobStorage::new(engine);
 
             // todo get output
             let result = execute_script(
@@ -148,18 +149,20 @@ async fn main() {
                 Database::create("./cloudstate").unwrap()
             };
 
-            let blob_storage: Arc<dyn CloudstateBlobStorage> = if *memory_only {
+            let blob_storage_engine: Arc<dyn CloudstateBlobStorageEngine> = if *memory_only {
                 Arc::new(InMemoryBlobStore::new())
             } else {
                 Arc::new(FsBlobStore::new("./cloudstate-blobs".into()))
             };
+
+            let blob_storage = CloudstateBlobStorage::new(blob_storage_engine.clone());
 
             let classes = fs::read_to_string(&filename).unwrap_or("".to_string());
             let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
             let cloudstate = ReDBCloudstate::new(Arc::new(Mutex::new(db)));
             let server = CloudstateServer::new(
                 cloudstate.clone(),
-                blob_storage.clone(),
+                blob_storage_engine.clone(),
                 &classes,
                 env.clone(),
                 "http://localhost:8910/__invalidate__".to_string(),
@@ -197,7 +200,7 @@ async fn main() {
 
                                     *server = CloudstateServer::new(
                                         cloudstate.clone(),
-                                        blob_storage.clone(),
+                                        blob_storage_engine.clone(),
                                         &new_classes,
                                         env.clone(),
                                         "http://localhost:8910/__invalidate__".to_string(),

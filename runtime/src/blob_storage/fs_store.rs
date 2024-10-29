@@ -1,6 +1,6 @@
 use std::{fs, path::PathBuf};
 
-use super::CloudstateBlobStorage;
+use super::CloudstateBlobStorageEngine;
 
 #[derive(Debug, Clone)]
 pub struct FsBlobStore {
@@ -13,17 +13,10 @@ impl FsBlobStore {
     }
 }
 
-impl CloudstateBlobStorage for FsBlobStore {
-    fn get_blob(&self, blob_id: &str) -> Result<super::CloudstateBlobValue, anyhow::Error> {
+impl CloudstateBlobStorageEngine for FsBlobStore {
+    fn get_blob_data(&self, blob_id: &str) -> Result<super::CloudstateBlobValue, anyhow::Error> {
         let binary = fs::read(self.root.join(blob_id))?;
-        let blob_data = match bincode::deserialize(&binary) {
-            Ok(blob_data) => blob_data,
-            Err(e) => {
-                tracing::error!("Failed to deserialize blob data: {:?}", e);
-                return Err(e.into());
-            }
-        };
-        Ok(blob_data)
+        return Ok(binary.into());
     }
 
     fn get_blob_size(&self, blob_id: &str) -> Result<usize, anyhow::Error> {
@@ -35,8 +28,8 @@ impl CloudstateBlobStorage for FsBlobStore {
         blob_id: &str,
         blob_data: super::CloudstateBlobValue,
     ) -> Result<(), anyhow::Error> {
-        let binary = bincode::serialize(&blob_data)?;
-        fs::write(self.root.join(blob_id), binary)?;
+        // let binary = bincode::serialize(&blob_data)?;
+        fs::write(self.root.join(blob_id), blob_data.data)?;
 
         Ok(())
     }

@@ -10,7 +10,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 use tracing::{debug, event};
 
-use crate::blob_storage::CloudstateBlobStorage;
+use crate::blob_storage::{CloudstateBlobStorage, CloudstateBlobStorageEngine};
 use crate::extensions::bootstrap::bootstrap;
 use crate::extensions::cloudstate::{cloudstate, ReDBCloudstate, TransactionContext};
 
@@ -75,7 +75,7 @@ impl NetPermissions for CloudstateNetPermissions {
 pub fn run_script(
     path: &str,
     cloudstate: ReDBCloudstate,
-    blob_storage: Arc<dyn CloudstateBlobStorage>,
+    blob_storage: CloudstateBlobStorage,
 ) -> Result<(ReDBCloudstate, Result<(), anyhow::Error>), anyhow::Error> {
     let js_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(path);
 
@@ -101,7 +101,7 @@ pub fn run_script(
 pub fn run_script_source(
     script: &str,
     cloudstate: ReDBCloudstate,
-    blob_storage: Arc<dyn CloudstateBlobStorage>,
+    blob_storage: CloudstateBlobStorage,
     path: PathBuf,
 ) -> Result<(ReDBCloudstate, Result<(), anyhow::Error>), anyhow::Error> {
     let main_module = ModuleSpecifier::from_file_path(path).unwrap();
@@ -129,9 +129,7 @@ pub fn run_script_source(
         ..Default::default()
     });
 
-    js_runtime.op_state().borrow_mut().put(blob_storage);
-
-    let transaction_context = TransactionContext::new(cloudstate.clone());
+    let transaction_context = TransactionContext::new(cloudstate.clone(), blob_storage.clone());
     js_runtime.op_state().borrow_mut().put(transaction_context);
     js_runtime
         .op_state()

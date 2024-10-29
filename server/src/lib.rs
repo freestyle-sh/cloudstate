@@ -6,7 +6,7 @@ use axum::{
     Json, RequestExt, Router,
 };
 use cloudstate_runtime::{
-    blob_storage::{self, CloudstateBlobStorage},
+    blob_storage::{self, CloudstateBlobStorage, CloudstateBlobStorageEngine},
     extensions::{
         bootstrap::bootstrap,
         cloudstate::{cloudstate, TransactionContext},
@@ -40,7 +40,7 @@ mod tests;
 
 pub struct CloudstateServer {
     pub cloudstate: ReDBCloudstate,
-    pub blob_storage: Arc<dyn CloudstateBlobStorage>,
+    pub blob_storage: CloudstateBlobStorage,
     pub router: Router,
 }
 
@@ -76,7 +76,7 @@ impl ModuleLoader for CloudstateModuleLoader {
 impl CloudstateServer {
     pub async fn new(
         cloudstate: ReDBCloudstate,
-        blob_storage: Arc<dyn CloudstateBlobStorage>,
+        blob_storage: CloudstateBlobStorage,
         classes: &str,
         env: HashMap<String, String>,
         invalidate_endpoint: String,
@@ -229,7 +229,7 @@ async fn fetch_request(
 #[derive(Clone)]
 struct AppState {
     cloudstate: ReDBCloudstate,
-    blob_storage: Arc<dyn CloudstateBlobStorage>,
+    blob_storage: CloudstateBlobStorage,
     classes: String,
     env: HashMap<String, String>,
     invalidate_endpoint: String,
@@ -391,7 +391,7 @@ pub async fn execute_script(
     script: &str,
     classes_script: &str,
     cs: ReDBCloudstate,
-    blob_storage: Arc<dyn CloudstateBlobStorage>,
+    blob_storage: CloudstateBlobStorage,
 ) -> String {
     let script_string = script.to_string();
     let classes_script_string = classes_script.to_string();
@@ -411,7 +411,7 @@ pub async fn execute_script_internal(
     script: &str,
     classes_script: &str,
     cs: ReDBCloudstate,
-    blob_storage: Arc<dyn CloudstateBlobStorage>,
+    blob_storage: CloudstateBlobStorage,
 ) -> String {
     let deno_blob_storage = Arc::new(BlobStore::default());
     let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
@@ -451,9 +451,8 @@ pub async fn execute_script_internal(
     .unwrap();
 
     RefCell::borrow_mut(&js_runtime.op_state()).put(CloudstateFetchPermissions {});
-    let transaction_context = TransactionContext::new(cs.clone());
+    let transaction_context = TransactionContext::new(cs.clone(), blob_storage.clone());
     RefCell::borrow_mut(&js_runtime.op_state()).put(transaction_context);
-    RefCell::borrow_mut(&js_runtime.op_state()).put(blob_storage);
     // RefCell::borrow_mut(&js_runtime.op_state()).put(CloudstateNodePermissions {});
 
     let script = script.to_string();

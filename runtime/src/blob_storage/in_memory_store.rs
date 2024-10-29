@@ -1,4 +1,4 @@
-use super::CloudstateBlobStorage;
+use super::CloudstateBlobStorageEngine;
 
 #[derive(Debug)]
 pub struct InMemoryBlobStore {
@@ -19,8 +19,8 @@ impl Default for InMemoryBlobStore {
     }
 }
 
-impl CloudstateBlobStorage for InMemoryBlobStore {
-    fn get_blob(&self, blob_id: &str) -> Result<super::CloudstateBlobValue, anyhow::Error> {
+impl CloudstateBlobStorageEngine for InMemoryBlobStore {
+    fn get_blob_data(&self, blob_id: &str) -> Result<super::CloudstateBlobValue, anyhow::Error> {
         let blobs = self.blobs.read().unwrap();
         match blobs.get(blob_id) {
             Some(blob_data) => Ok(blob_data.clone()),

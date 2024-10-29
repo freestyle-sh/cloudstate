@@ -1,4 +1,4 @@
-use blob_storage::in_memory_store::InMemoryBlobStore;
+use blob_storage::{in_memory_store::InMemoryBlobStore, CloudstateBlobStorage};
 
 mod bincode;
 mod blob_storage;
@@ -19,7 +19,7 @@ fn main() {
                     .unwrap(),
             ),
         )),
-        std::sync::Arc::new(InMemoryBlobStore::new()),
+        CloudstateBlobStorage::new(std::sync::Arc::new(InMemoryBlobStore::new())),
     )
     .unwrap();
     crate::print::print_database(&cs.get_database_mut());
