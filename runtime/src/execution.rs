@@ -10,7 +10,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 use tracing::{debug, event};
 
-use crate::blob_storage::{CloudstateBlobStorage, CloudstateBlobStorageEngine};
+use crate::blob_storage::CloudstateBlobStorage;
 use crate::extensions::bootstrap::bootstrap;
 use crate::extensions::cloudstate::{cloudstate, ReDBCloudstate, TransactionContext};
 

@@ -1,6 +1,6 @@
 use crate::{
     bincode::Bincode,
-    blob_storage::{CloudstateBlobMetadata, CloudstateBlobValue},
+    blob_storage::CloudstateBlobMetadata,
     extensions::cloudstate::{
         CloudstateArrayItemKey, CloudstateArrayItemValue, CloudstateBlobKey, CloudstateMapFieldKey,
         CloudstateMapFieldValue, CloudstateObjectKey, CloudstateObjectValue, CloudstateRootKey,

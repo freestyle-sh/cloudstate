@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use anyhow::Error;
-use redb::Database;
 use serde::{Deserialize, Serialize};
 
 use crate::{extensions::cloudstate::Transaction, tables::BLOBS_TABLE};
