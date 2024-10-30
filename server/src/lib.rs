@@ -33,7 +33,7 @@ use std::{
     path::{Path, PathBuf},
 };
 use std::{rc::Rc, sync::Arc};
-use tracing::{debug, event, info_span, instrument};
+use tracing::{debug, event, instrument};
 
 #[cfg(test)]
 mod tests;
