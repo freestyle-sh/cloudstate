@@ -2,7 +2,10 @@ use axum::{
     body::Body,
     http::{self, Request},
 };
-use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
+use cloudstate_runtime::{
+    blob_storage::{in_memory_store::InMemoryBlobStore, CloudstateBlobStorage},
+    extensions::cloudstate::ReDBCloudstate,
+};
 use http_body_util::BodyExt;
 use std::{
     collections::HashMap,
@@ -22,6 +25,7 @@ async fn test_fetch_request() {
 
     let mut router = crate::CloudstateServer::new(
         cloudstate,
+        CloudstateBlobStorage::new(Arc::new(InMemoryBlobStore::new())),
         r#"export class CounterCS {
             static id = 'fetch-test';
             fetch() {

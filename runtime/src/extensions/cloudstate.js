@@ -114,36 +114,36 @@ function hydrate(object, key, value) {
         return Deno.core.ops.op_cloudstate_blob_get_data(value.blobId);
       };
 
-    blob["text"] = async () => {
-      return Deno.core.ops.op_cloudstate_blob_get_text(value.blobId);
-    };
+      blob["text"] = async () => {
+        return Deno.core.ops.op_cloudstate_blob_get_text(value.blobId);
+      };
 
-    blob["arrayBuffer"] = async () => {
-      /* get_data now returns Array Buffer  */
-      const buffer = Deno.core.ops.op_cloudstate_blob_get_array_buffer(
-        value.blobId,
-      );
-      return buffer;
-    };
+      blob["arrayBuffer"] = async () => {
+        /* get_data now returns Array Buffer  */
+        const buffer = Deno.core.ops.op_cloudstate_blob_get_array_buffer(
+          value.blobId,
+        );
+        return buffer;
+      };
 
-    blob["slice"] = (start, end, type) => {
-      if (start < 0 || end < 0) {
-        throw new Error("start and end must be positive");
-      }
-      let arrBuffer = Deno.core.ops.op_cloudstate_blob_slice(
-        value.blobId,
-        start,
-        end,
-      );
-      return new Blob([arrBuffer], { type: type });
-    };
+      blob["slice"] = (start, end, type) => {
+        if (start < 0 || end < 0) {
+          throw new Error("start and end must be positive");
+        }
+        let arrBuffer = Deno.core.ops.op_cloudstate_blob_slice(
+          value.blobId,
+          start,
+          end,
+        );
+        return new Blob([arrBuffer], { type: type });
+      };
 
-    blob["bytes"] = async () => {
-      const blob = Deno.core.ops.op_cloudstate_blob_get_uint8array(
-        value.blobId,
-      );
-      return blob;
-    };
+      blob["bytes"] = async () => {
+        const blob = Deno.core.ops.op_cloudstate_blob_get_uint8array(
+          value.blobId,
+        );
+        return blob;
+      };
 
       Object.defineProperty(blob, "type", {
         get: () => {
@@ -427,38 +427,6 @@ function setObject(object, visited = new Set()) {
   return span("set_object", () => {
     if (typeof object !== "object") throw new Error("object must be an object");
 
-  let rootObject = undefined;
-  while (stack.length > 0) {
-    const object = stack.pop();
-
-    if (object instanceof Blob) {
-      let id = objectIds.get(object);
-      if (!id) {
-        id = uuidv4();
-        objectIds.set(object, id);
-        objects.set(id, object);
-
-        object.arrayBuffer().then(async (buffer) => {
-          Deno.core.ops.op_cloudstate_blob_set(
-            id,
-            object.type,
-            buffer,
-          );
-        });
-      }
-
-      if (!rootObject) {
-        rootObject = id;
-      }
-
-      visited.add(object);
-
-      continue;
-    }
-
-    visited.add(object);
-    const stack = [object];
-
     let rootObject = undefined;
     while (stack.length > 0) {
       const object = stack.pop();
@@ -470,101 +438,134 @@ function setObject(object, visited = new Set()) {
           objectIds.set(object, id);
           objects.set(id, object);
 
-          if (value instanceof Blob) {
-            value.arrayBuffer().then(async (buffer) => {
-              Deno.core.ops.op_cloudstate_blob_set(
-                id,
-                value.type,
-                buffer,
-              );
-            });
-          }
+          object.arrayBuffer().then(async (buffer) => {
+            Deno.core.ops.op_cloudstate_blob_set(
+              id,
+              object.type,
+              buffer,
+            );
+          });
         }
 
-        // todo: why does this break things?
-        // if (!rootObject) {
-        //   rootObject = id;
-        // }
+        if (!rootObject) {
+          rootObject = id;
+        }
 
         visited.add(object);
 
         continue;
       }
 
-      const isArray = object instanceof Array;
-      const flatObject = isArray ? [] : {};
+      visited.add(object);
+      const stack = [object];
 
-      if (object.constructor) {
-        Object.setPrototypeOf(flatObject, object.constructor.prototype);
-      }
+      let rootObject = undefined;
+      while (stack.length > 0) {
+        const object = stack.pop();
 
-      for (let [key, value] of Object.entries(object)) {
-        if (isArray) key = parseInt(key);
-        if (value === undefined) continue;
-
-        if (isPrimitive(value)) {
-          flatObject[key] = value;
-        } else if (typeof value === "object") {
-          let id = objectIds.get(value);
-
+        if (object instanceof Blob) {
+          let id = objectIds.get(object);
           if (!id) {
             id = uuidv4();
-            objectIds.set(value, id);
-            objects.set(id, value);
+            objectIds.set(object, id);
+            objects.set(id, object);
 
             if (value instanceof Blob) {
-              value.text().then((text) => {
-                Deno.core.ops.op_cloudstate_blob_set(id, value.type, text);
-                console.log("set blob " + id);
+              value.arrayBuffer().then(async (buffer) => {
+                Deno.core.ops.op_cloudstate_blob_set(
+                  id,
+                  value.type,
+                  buffer,
+                );
               });
             }
           }
 
-          if (value instanceof Map) {
-            flatObject[key] = new CloudstateMapReference(id);
-          } else if (value instanceof Array) {
-            flatObject[key] = new CloudstateArrayReference(id);
-          } else if (value instanceof Blob) {
-            flatObject[key] = new CloudstateBlobReference(id);
+          // todo: why does this break things?
+          // if (!rootObject) {
+          //   rootObject = id;
+          // }
+
+          visited.add(object);
+
+          continue;
+        }
+
+        const isArray = object instanceof Array;
+        const flatObject = isArray ? [] : {};
+
+        if (object.constructor) {
+          Object.setPrototypeOf(flatObject, object.constructor.prototype);
+        }
+
+        for (let [key, value] of Object.entries(object)) {
+          if (isArray) key = parseInt(key);
+          if (value === undefined) continue;
+
+          if (isPrimitive(value)) {
+            flatObject[key] = value;
+          } else if (typeof value === "object") {
+            let id = objectIds.get(value);
+
+            if (!id) {
+              id = uuidv4();
+              objectIds.set(value, id);
+              objects.set(id, value);
+
+              if (value instanceof Blob) {
+                value.text().then((text) => {
+                  Deno.core.ops.op_cloudstate_blob_set(id, value.type, text);
+                  console.log("set blob " + id);
+                });
+              }
+            }
+
+            if (value instanceof Map) {
+              flatObject[key] = new CloudstateMapReference(id);
+            } else if (value instanceof Array) {
+              flatObject[key] = new CloudstateArrayReference(id);
+            } else if (value instanceof Blob) {
+              flatObject[key] = new CloudstateBlobReference(id);
+            } else {
+              flatObject[key] = new CloudstateObjectReference(
+                id,
+                [Object, Array, Map].includes(value.constructor)
+                  ? undefined
+                  : value.constructor?.name,
+              );
+            }
+
+            if (value instanceof Blob) continue;
+
+            if (!visited.has(value)) {
+              visited.add(value);
+              stack.push(value);
+            }
           } else {
-            flatObject[key] = new CloudstateObjectReference(
-              id,
-              [Object, Array, Map].includes(value.constructor)
-                ? undefined
-                : value.constructor?.name,
+            throw new Error(
+              `property ${key} of type ${typeof value} on object ${object} cannot be serialized`,
             );
           }
+        }
 
-          if (value instanceof Blob) continue;
+        if (flatObject instanceof Array) {
+          let id = objectIds.get(object);
+          if (!id) {
+            id = uuidv4();
+            objectIds.set(object, id);
+          }
 
-          if (!visited.has(value)) {
-            visited.add(value);
-            stack.push(value);
+          flatObject.forEach((item, i) => {
+            Deno.core.ops.op_cloudstate_array_set(id, i, item);
+          });
+          if (!rootObject) {
+            rootObject = id;
           }
         } else {
-          throw new Error(
-            `property ${key} of type ${typeof value} on object ${object} cannot be serialized`,
-          );
-        }
-      }
-
-      if (flatObject instanceof Array) {
-        let id = objectIds.get(object);
-        if (!id) {
-          id = uuidv4();
-          objectIds.set(object, id);
-        }
-
-        flatObject.forEach((item, i) => {
-          Deno.core.ops.op_cloudstate_array_set(id, i, item);
-        });
-        if (!rootObject) {
-          rootObject = id;
-        }
-      } else {
-        const id = exportObject(object, flatObject);
-        if (!rootObject) {
-          rootObject = id;
+          const id = exportObject(object, flatObject);
+          if (!rootObject) {
+            rootObject = id;
+          }
         }
       }
     }
