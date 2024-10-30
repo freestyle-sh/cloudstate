@@ -750,7 +750,6 @@ fn op_cloudstate_blob_slice(
 #[instrument(skip(state))]
 #[op2()]
 #[arraybuffer]
-// #[string]
 fn op_cloudstate_blob_get_array_buffer(
     state: &mut OpState,
     #[string] blob_id: String,
