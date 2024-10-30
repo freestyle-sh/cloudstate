@@ -12,7 +12,9 @@ use tracing::{debug, event};
 
 use crate::blob_storage::CloudstateBlobStorage;
 use crate::extensions::bootstrap::bootstrap;
-use crate::extensions::cloudstate::{cloudstate, ReDBCloudstate, TransactionContext};
+use crate::extensions::cloudstate::{
+    cloudstate, JavaScriptSpans, ReDBCloudstate, TransactionContext,
+};
 
 struct Permissions {}
 
@@ -135,6 +137,10 @@ pub fn run_script_source(
         .op_state()
         .borrow_mut()
         .put(CloudstateFetchPermissions {});
+    js_runtime
+        .op_state()
+        .borrow_mut()
+        .put(JavaScriptSpans::new());
 
     let script = script.to_string();
     let future = async move {

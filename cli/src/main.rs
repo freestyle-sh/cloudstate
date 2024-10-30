@@ -34,18 +34,13 @@ use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 use tower::Service;
 use tracing::{debug, info};
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::prelude::*;
 
 #[tokio::main]
 async fn main() {
-    dotenv::dotenv().ok();
     // #[cfg(feature = "dhat-heap")]
     // let _profiler = dhat::Profiler::new_heap();
 
-    tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer())
-        .init();
+    tracing_subscriber::fmt::init();
 
     debug!("Starting cloudstate");
 

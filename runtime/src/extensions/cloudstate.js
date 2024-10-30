@@ -339,11 +339,7 @@ function getObject(id) {
         },
         set(target, key, value) {
           const packed = packToReferenceOrPrimitive(value);
-          Deno.core.ops.op_cloudstate_object_set_property(
-            id,
-            key,
-            packed,
-          );
+          Deno.core.ops.op_cloudstate_object_set_property(id, key, packed);
 
           return true;
         },
@@ -439,11 +435,7 @@ function setObject(object, visited = new Set()) {
           objects.set(id, object);
 
           object.arrayBuffer().then(async (buffer) => {
-            Deno.core.ops.op_cloudstate_blob_set(
-              id,
-              object.type,
-              buffer,
-            );
+            Deno.core.ops.op_cloudstate_blob_set(id, object.type, buffer);
           });
         }
 
@@ -472,11 +464,7 @@ function setObject(object, visited = new Set()) {
 
             if (value instanceof Blob) {
               value.arrayBuffer().then(async (buffer) => {
-                Deno.core.ops.op_cloudstate_blob_set(
-                  id,
-                  value.type,
-                  buffer,
-                );
+                Deno.core.ops.op_cloudstate_blob_set(id, value.type, buffer);
               });
             }
           }
@@ -885,11 +873,7 @@ function handleArrayMethods(key, array, id) {
       return (...args) => {
         let length = Deno.core.ops.op_cloudstate_array_length(id);
         for (let i = length - 1; i >= 0; i--) {
-          Deno.core.ops.op_cloudstate_array_set(
-            id,
-            i + args.length,
-            array[i],
-          );
+          Deno.core.ops.op_cloudstate_array_set(id, i + args.length, array[i]);
         }
 
         for (let i = 0; i < args.length; i++) {
