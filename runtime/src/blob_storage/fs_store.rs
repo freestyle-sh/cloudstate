@@ -1,4 +1,8 @@
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    io::{Read, Seek},
+    path::PathBuf,
+};
 
 use super::CloudstateBlobStorageEngine;
 
@@ -49,5 +53,26 @@ impl CloudstateBlobStorageEngine for FsBlobStore {
                     Err(e.into())
                 }
             })
+    }
+
+    fn get_blob_slice(
+        &self,
+        blob_id: &str,
+        start: Option<i32>,
+        end: Option<i32>,
+    ) -> Result<Vec<u8>, anyhow::Error> {
+        let mut file = fs::File::open(self.root.join(blob_id))?;
+        let start = match start {
+            Some(s) => s as usize,
+            None => 0,
+        };
+        let end = match end {
+            Some(e) => e as usize,
+            None => fs::metadata(self.root.join(blob_id))?.len() as usize,
+        };
+        file.seek(std::io::SeekFrom::Start(start as u64))?;
+        let mut buf = vec![0; end - start];
+        file.read_exact(&mut buf)?;
+        Ok(buf)
     }
 }

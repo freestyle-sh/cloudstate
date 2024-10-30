@@ -729,6 +729,25 @@ fn op_cloudstate_blob_set(
 }
 
 #[instrument(skip(state))]
+#[op2]
+#[arraybuffer]
+fn op_cloudstate_blob_slice(
+    state: Rc<RefCell<OpState>>,
+    #[string] blob_id: String,
+    start: Option<i32>,
+    end: Option<i32>,
+) -> Result<Vec<u8>, Error> {
+    let mut state = RefCell::borrow_mut(&state);
+
+    let transaction_context = state.borrow_mut::<TransactionContext>();
+    let storage = transaction_context.blob_storage().clone();
+
+    let result = storage.get_blob_slice(&blob_id, start, end)?;
+
+    Ok(result)
+}
+
+#[instrument(skip(state))]
 #[op2()]
 #[arraybuffer]
 // #[string]
@@ -1324,6 +1343,7 @@ deno_core::extension!(
     op_cloudstate_blob_get_uint8array,
     op_cloudstate_blob_get_text,
     op_cloudstate_blob_set,
+    op_cloudstate_blob_slice,
     op_cloudstate_blob_get_size,
     op_cloudstate_blob_get_type,
     op_cloudstate_list_roots,

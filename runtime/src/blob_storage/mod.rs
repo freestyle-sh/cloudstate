@@ -63,6 +63,15 @@ impl CloudstateBlobStorage {
         self.inner_storage.has_blob(blob_id)
     }
 
+    pub fn get_blob_slice(
+        &self,
+        blob_id: &str,
+        start: Option<i32>,
+        end: Option<i32>,
+    ) -> Result<Vec<u8>, Error> {
+        self.inner_storage.get_blob_slice(blob_id, start, end)
+    }
+
     pub fn get_blob_metadata(
         &self,
         blob_id: &str,
@@ -90,6 +99,20 @@ pub trait CloudstateBlobStorageEngine: Send + Sync + std::fmt::Debug + 'static {
         Ok(self.get_blob_data(blob_id)?.data.len())
     }
     fn put_blob(&self, blob_id: &str, blob_data: CloudstateBlobValue) -> Result<(), Error>;
+    fn get_blob_slice(
+        &self,
+        blob_id: &str,
+        start: Option<i32>,
+        end: Option<i32>,
+    ) -> Result<Vec<u8>, Error> {
+        let data = self.get_blob_data(blob_id)?.data;
+        let start = start.unwrap_or(0) as usize;
+        let end = match end {
+            Some(end) => end as usize,
+            None => data.len(),
+        };
+        Ok(data[start..end].to_vec())
+    }
     fn delete_blob(&self, blob_id: &str) -> Result<(), Error>;
     fn has_blob(&self, blob_id: &str) -> Result<bool, Error>;
 }

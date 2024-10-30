@@ -43,7 +43,12 @@ js_test!(array_to_reversed);
 js_test!(array_unshift);
 js_test!(blob_array_buffer);
 js_test!(blob_bytes);
+js_test!(blob_slice_no_end);
+js_test!(blob_slice_no_start);
+js_test!(blob_slice_type);
+js_test!(blob_slice);
 js_test!(blob_size);
+
 js_test!(blob_text);
 js_test!(blob_type);
 js_test!(class_getters);

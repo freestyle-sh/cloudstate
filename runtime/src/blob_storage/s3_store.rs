@@ -36,6 +36,26 @@ impl CloudstateBlobStorageEngine for S3BlobStore {
         Ok(())
     }
 
+    fn get_blob_slice(
+        &self,
+        blob_id: &str,
+        start: Option<i32>,
+        end: Option<i32>,
+    ) -> Result<Vec<u8>, anyhow::Error> {
+        let start = match start {
+            Some(s) => s as u64,
+            None => 0,
+        };
+        let end = match end {
+            Some(e) => Some(e as u64),
+            None => None,
+        };
+
+        let res = self.bucket.get_object_range_blocking(blob_id, start, end)?;
+
+        Ok(res.bytes().to_vec())
+    }
+
     fn has_blob(&self, blob_id: &str) -> Result<bool, anyhow::Error> {
         match self.bucket.head_object_blocking(blob_id) {
             Ok(_) => Ok(true),
