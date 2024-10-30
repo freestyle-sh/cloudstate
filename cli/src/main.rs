@@ -48,22 +48,15 @@ async fn main() {
     // #[cfg(feature = "dhat-heap")]
     // let _profiler = dhat::Profiler::new_heap();
 
-    let (flame_layer, _guard) = FlameLayer::with_file("./tracing.folded").unwrap();
-    let sentry_dsn = std::env::var("SENTRY_DSN").unwrap_or("".to_string());
-
-    let _guard = sentry::init((
-        sentry_dsn,
-        sentry::ClientOptions {
-            // Enable capturing of traces; set this a to lower value in production:
-            traces_sample_rate: 1.0,
-            ..sentry::ClientOptions::default()
-        },
-    ));
+    let _guard = sentry::init((sentry::ClientOptions {
+        // Enable capturing of traces; set this a to lower value in production:
+        traces_sample_rate: 1.0,
+        ..sentry::ClientOptions::default()
+    },));
 
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .with(sentry_tracing::layer())
-        .with(flame_layer)
         .init();
 
     debug!("Starting cloudstate");
