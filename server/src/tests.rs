@@ -2,7 +2,11 @@ use axum::{
     body::Body,
     http::{self, Request, StatusCode},
 };
-use cloudstate_runtime::{extensions::cloudstate::ReDBCloudstate, print::print_database};
+use cloudstate_runtime::{
+    blob_storage::{in_memory_store::InMemoryBlobStore, CloudstateBlobStorage},
+    extensions::cloudstate::ReDBCloudstate,
+    print::print_database,
+};
 use http_body_util::BodyExt;
 use serde_json::json;
 use std::{
@@ -26,6 +30,7 @@ async fn test_method_request() {
 
     let mut router = crate::CloudstateServer::new(
         cloudstate.clone(),
+        CloudstateBlobStorage::new(Arc::new(InMemoryBlobStore::default())),
         r"export class CounterCS {
             static id = 'counter';
             count = 0;
@@ -111,6 +116,7 @@ async fn test_async_write() {
                 .create_with_backend(redb::backends::InMemoryBackend::default())
                 .unwrap(),
         ))),
+        CloudstateBlobStorage::new(Arc::new(InMemoryBlobStore::default())),
         r#"export class DelayedCounter {
             static id = 'delayed-counter';
             count = 0;
