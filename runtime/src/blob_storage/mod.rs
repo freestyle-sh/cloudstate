@@ -72,7 +72,7 @@ impl CloudstateBlobStorage {
         let out = match blob_table.get(&blob_id.into()) {
             Ok(Some(metadata)) => Ok(metadata.value()),
             Ok(None) => Err(Error::msg("Blob not found")),
-            Err(e) => Err(e.into()),
+            Err(e) => Err(e),
         };
         out
     }

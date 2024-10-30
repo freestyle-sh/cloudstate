@@ -16,7 +16,7 @@ impl FsBlobStore {
 impl CloudstateBlobStorageEngine for FsBlobStore {
     fn get_blob_data(&self, blob_id: &str) -> Result<super::CloudstateBlobValue, anyhow::Error> {
         let binary = fs::read(self.root.join(blob_id))?;
-        return Ok(binary.into());
+        Ok(binary.into())
     }
 
     fn get_blob_size(&self, blob_id: &str) -> Result<usize, anyhow::Error> {
