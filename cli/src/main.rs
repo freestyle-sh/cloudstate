@@ -162,7 +162,7 @@ async fn main() {
             let cloudstate = ReDBCloudstate::new(Arc::new(Mutex::new(db)));
             let server = CloudstateServer::new(
                 cloudstate.clone(),
-                blob_storage_engine.clone(),
+                blob_storage.clone(),
                 &classes,
                 env.clone(),
                 "http://localhost:8910/__invalidate__".to_string(),
@@ -200,7 +200,7 @@ async fn main() {
 
                                     *server = CloudstateServer::new(
                                         cloudstate.clone(),
-                                        blob_storage_engine.clone(),
+                                        blob_storage.clone(),
                                         &new_classes,
                                         env.clone(),
                                         "http://localhost:8910/__invalidate__".to_string(),
