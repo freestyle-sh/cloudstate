@@ -35,9 +35,6 @@ use tokio::sync::RwLock;
 use tower::Service;
 use tracing::{debug, info};
 
-#[cfg(test)]
-mod debug;
-
 #[tokio::main]
 async fn main() {
     // #[cfg(feature = "dhat-heap")]
