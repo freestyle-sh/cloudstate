@@ -17,10 +17,12 @@ fn main() {
                 maybe_headers: None,
                 content: "
                         export class Test {
-                            test(): string {
+                            test(): TestType {
                                 return 'test';
                             }
                         }
+
+                        type TestType = string;
                     ",
             },
         )],

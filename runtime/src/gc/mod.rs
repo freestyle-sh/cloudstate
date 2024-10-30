@@ -3,16 +3,17 @@ use std::collections::BTreeSet;
 use crate::extensions::cloudstate::{
     CloudstateArrayItemKey, CloudstateMapFieldKey, CloudstatePrimitiveData,
 };
+use crate::print;
 use crate::tables::{ARRAYS_TABLE, MAPS_TABLE};
 use crate::{
     extensions::cloudstate::CloudstateObjectKey,
     tables::{OBJECTS_TABLE, ROOTS_TABLE},
 };
 use anyhow::anyhow;
-use redb::{Database, ReadTransaction, ReadableTable, WriteTransaction};
+use redb::{Database, ReadTransaction, ReadableTable, ReadableTableMetadata, WriteTransaction};
 use tracing::event;
 
-pub fn mark_and_sweep(db: &Database) -> anyhow::Result<()> {
+pub fn mark_and_sweep(db: &Database) -> anyhow::Result<&Database> {
     let tx = db.begin_read()?;
     let reachable = mark(tx)?;
 
@@ -30,7 +31,7 @@ pub fn mark_and_sweep(db: &Database) -> anyhow::Result<()> {
     };
 
     let _ = sweep(tx, &reachable);
-    Ok(())
+    Ok(db)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -45,6 +46,7 @@ enum Pointer {
 
 /// Comsumes the transaction and returns a set of reachable objects
 fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
+    println!("mark");
     let reachable = {
         let roots_table = match tx.open_table(ROOTS_TABLE) {
             Ok(table) => table,
@@ -53,6 +55,7 @@ fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
 
         let mut roots: Vec<CloudstateObjectKey> = Vec::new();
 
+        println!("roots_table: {:?}", roots_table.len());
         for item in roots_table.iter()? {
             if let Ok((key, root)) = item {
                 let _key = key.value();
@@ -62,17 +65,26 @@ fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
         }
 
         let objects_table = match tx.open_table(OBJECTS_TABLE) {
-            Ok(table) => Some(table),
+            Ok(table) => {
+                println!("objects_table: {:?}", table.len());
+                Some(table)
+            }
             Err(_e) => None,
         };
 
         let map_table = match tx.open_table(MAPS_TABLE) {
-            Ok(table) => Some(table),
+            Ok(table) => {
+                println!("map_table: {:?}", table.len());
+                Some(table)
+            }
             Err(_e) => None,
         };
 
         let arr_table = match tx.open_table(ARRAYS_TABLE) {
-            Ok(table) => Some(table),
+            Ok(table) => {
+                println!("arr_table: {:?}", table.len());
+                Some(table)
+            }
             Err(_e) => None,
         };
 
@@ -83,6 +95,7 @@ fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
         stack.extend(roots.iter().map(|root| Pointer::Object(root.clone())));
 
         while let Some(pointer) = stack.pop() {
+            println!("stack: {:?}", stack.len());
             if reachable.contains(&pointer) {
                 continue;
             }
@@ -212,7 +225,9 @@ fn sweep(tx: WriteTransaction, reachable: &BTreeSet<Pointer>) -> anyhow::Result<
 
         let mut to_delete: Vec<Pointer> = Vec::new();
 
+        println!("objects_table: {:?}", objects_table.len());
         for item in objects_table.iter()? {
+            // println!("item: {:?}", item);
             if let Ok((key, _value)) = item {
                 let key = key.value();
                 if !reachable.contains(&Pointer::Object(key.clone())) {
@@ -221,7 +236,9 @@ fn sweep(tx: WriteTransaction, reachable: &BTreeSet<Pointer>) -> anyhow::Result<
             }
         }
 
+        println!("maps_table: {:?}", maps_table.len());
         for item in maps_table.iter()? {
+            // println!("item: {:?}", item);
             if let Ok((key, _value)) = item {
                 let key = key.value();
 
@@ -231,7 +248,9 @@ fn sweep(tx: WriteTransaction, reachable: &BTreeSet<Pointer>) -> anyhow::Result<
             }
         }
 
+        println!("arrays_table: {:?}", arrays_table.len());
         for item in arrays_table.iter()? {
+            // println!("item: {:?}", item);
             if let Ok((key, _value)) = item {
                 let key = key.value();
 
@@ -242,7 +261,9 @@ fn sweep(tx: WriteTransaction, reachable: &BTreeSet<Pointer>) -> anyhow::Result<
             }
         }
 
+        println!("to_delete: {:?}", to_delete.len());
         for pointer in to_delete {
+            // println!("pointer: {:?}", pointer);
             // delete key
             let _: anyhow::Result<()> = match pointer {
                 Pointer::Object(key) => {
@@ -268,3 +289,21 @@ fn sweep(tx: WriteTransaction, reachable: &BTreeSet<Pointer>) -> anyhow::Result<
     tx.commit()?;
     Ok(())
 }
+
+// #[cfg(test)]
+// mod test {
+//     use redb::Database;
+
+//     use crate::gc::mark_and_sweep;
+
+//     #[test]
+//     fn run_garbage_collector() {
+//         println!("run_garbage_collector");
+//         // let db = Database::open(
+//         //     "/Users/jacobzwang/Documents/GitHub/cloudstate/cli/cloudstate-collected",
+//         // )
+//         // .unwrap();
+//         // println!("db open");
+//         // let _res = mark_and_sweep(&db);
+//     }
+// }

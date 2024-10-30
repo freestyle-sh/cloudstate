@@ -12,9 +12,10 @@ use std::{
 use tower::{util::ServiceExt, Service};
 
 // mod concurrency;
+mod fetch_method;
 
 #[tokio::test]
-async fn test_fetch() {
+async fn test_method_request() {
     tracing_subscriber::fmt::init();
 
     let cloudstate = ReDBCloudstate::new(Arc::new(Mutex::new(

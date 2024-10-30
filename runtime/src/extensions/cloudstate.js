@@ -413,6 +413,12 @@ function getCloudstate(id) {
 function setObject(object, visited = new Set()) {
   return span("set_object", () => {
     if (typeof object !== "object") throw new Error("object must be an object");
+
+    // skip this if the object came from the database
+    if (objectIds.has(object)) {
+      return;
+    }
+
     visited.add(object);
     const stack = [object];
 

@@ -30,7 +30,7 @@ use std::{
     path::{Path, PathBuf},
 };
 use std::{rc::Rc, sync::Arc};
-use tracing::{debug, event, instrument};
+use tracing::{debug, event, info_span, instrument};
 
 #[cfg(test)]
 mod tests;
@@ -334,7 +334,7 @@ async fn method_request(
         )
         .await
     };
-    debug!("script result: {:#?}", result);
+    // debug!("script result: {:#?}", result);
 
     Json(serde_json::from_str(&result).unwrap_or(json!({
         "error": {
@@ -401,7 +401,6 @@ impl NetPermissions for CloudstateNetPermissions {
     }
 }
 
-#[instrument(skip(script, classes_script, cs))]
 pub async fn execute_script(script: &str, classes_script: &str, cs: ReDBCloudstate) -> String {
     let script_string = script.to_string();
     let classes_script_string = classes_script.to_string();
