@@ -24,7 +24,7 @@ use deno_net::NetPermissions;
 use deno_web::BlobStore;
 use deno_web::TimersPermission;
 use futures::TryStreamExt;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{
     borrow::BorrowMut,
@@ -144,7 +144,7 @@ struct ResponseData {
     pub headers: Vec<(String, String)>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 struct ErrorData {
     pub message: String,
     pub stack: String,
