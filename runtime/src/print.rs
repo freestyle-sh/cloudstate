@@ -34,12 +34,7 @@ pub fn print_database(db: &redb::Database) {
     if let Ok(table) = txn.open_table(BLOBS_TABLE) {
         for entry in table.iter().unwrap() {
             let entry = entry.unwrap();
-            debug!(
-                "{:#?}: ({:#?}) {:#?}",
-                entry.0.value().id,
-                entry.1.value().data.len(),
-                entry.1.value().type_,
-            );
+            debug!("{:#?}: ({:#?})", entry.0.value().id, entry.1.value().type_,);
         }
     }
 }
