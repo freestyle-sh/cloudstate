@@ -3,7 +3,6 @@ use std::collections::BTreeSet;
 use crate::extensions::cloudstate::{
     CloudstateArrayItemKey, CloudstateMapFieldKey, CloudstatePrimitiveData,
 };
-use crate::print;
 use crate::tables::{ARRAYS_TABLE, MAPS_TABLE};
 use crate::{
     extensions::cloudstate::CloudstateObjectKey,
