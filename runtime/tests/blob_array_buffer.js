@@ -32,8 +32,6 @@ async function main() {
     })
       .arrayBuffer();
 
-    console.log("BUFFER", buffer, buffer.constructor);
-
     // check values
     if (buffer.byteLength !== expected.byteLength) {
       throw new Error(

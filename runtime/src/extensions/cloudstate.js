@@ -401,17 +401,12 @@ function setObject(object, visited = new Set()) {
         objectIds.set(object, id);
         objects.set(id, object);
 
-        // object.text().then((text) => {
-        //   Deno.core.ops.op_cloudstate_blob_set(id, object.type, text);
-        //   console.log("set blob " + id);
-        // });
         object.arrayBuffer().then(async (buffer) => {
           Deno.core.ops.op_cloudstate_blob_set(
             id,
             object.type,
             buffer,
           );
-          console.log("set blob " + id);
         });
       }
 
@@ -480,7 +475,6 @@ function setObject(object, visited = new Set()) {
                 value.type,
                 buffer,
               );
-              console.log("set blob " + id);
             });
           }
         }

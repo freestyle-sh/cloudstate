@@ -45,6 +45,7 @@ js_test!(blob_array_buffer);
 js_test!(blob_bytes);
 js_test!(blob_size);
 js_test!(blob_text);
+js_test!(blob_type);
 js_test!(class_getters);
 js_test!(counter_class);
 js_test!(counter_manager_class);
