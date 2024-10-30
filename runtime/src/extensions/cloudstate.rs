@@ -1,6 +1,4 @@
-use crate::blob_storage::{
-    CloudstateBlobMetadata, CloudstateBlobStorage, CloudstateBlobStorageEngine, CloudstateBlobValue,
-};
+use crate::blob_storage::{CloudstateBlobMetadata, CloudstateBlobStorage, CloudstateBlobValue};
 use crate::tables::{ARRAYS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
 use crate::v8_string_key;
 use anyhow::anyhow;

@@ -3,7 +3,6 @@
 // static ALLOC: dhat::Alloc = dhat::Alloc;
 
 use axum::{body::Body, extract::Request, routing::get, Json};
-use deno_core::v8::Data;
 use tokio::runtime::Runtime; // 0.3.5
 
 use axum::extract::DefaultBodyLimit;

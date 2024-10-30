@@ -6,7 +6,7 @@ use axum::{
     Json, RequestExt, Router,
 };
 use cloudstate_runtime::{
-    blob_storage::{self, CloudstateBlobStorage, CloudstateBlobStorageEngine},
+    blob_storage::{CloudstateBlobStorage},
     extensions::{
         bootstrap::bootstrap,
         cloudstate::{cloudstate, TransactionContext},
