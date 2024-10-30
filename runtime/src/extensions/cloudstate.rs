@@ -27,14 +27,14 @@ use v8::GetPropertyNamesArgs;
 
 pub struct TransactionContext {
     database: ReDBCloudstate,
-    storage: CloudstateBlobStorage,
+    blob_storage: CloudstateBlobStorage,
     current_transaction: Option<Transaction>,
     read_only: bool,
 }
 
 impl TransactionContext {
-    pub fn storage(&self) -> &CloudstateBlobStorage {
-        &self.storage
+    pub fn blob_storage(&self) -> &CloudstateBlobStorage {
+        &self.blob_storage
     }
 }
 
@@ -127,7 +127,7 @@ impl TransactionContext {
     pub fn new(database: ReDBCloudstate, storage: CloudstateBlobStorage) -> Self {
         Self {
             current_transaction: None,
-            storage,
+            blob_storage: storage,
             database: database.clone(),
             read_only: false,
         }
@@ -713,7 +713,7 @@ fn op_cloudstate_blob_set(
     let mut state = RefCell::borrow_mut(&state);
 
     let transaction_context = state.borrow_mut::<TransactionContext>();
-    let storage = transaction_context.storage().clone();
+    let storage = transaction_context.blob_storage().clone();
     let transaction = transaction_context.get_or_create_transaction_mut();
 
     let data = blob_data.to_vec();
@@ -736,7 +736,7 @@ fn op_cloudstate_blob_get_array_buffer(
     state: &mut OpState,
     #[string] blob_id: String,
 ) -> Result<Vec<u8>, Error> {
-    let blob_store = state.borrow_mut::<TransactionContext>().storage();
+    let blob_store = state.borrow_mut::<TransactionContext>().blob_storage();
     let result = blob_store.get_blob_data(&blob_id)?.data;
 
     Ok(result)
@@ -749,7 +749,7 @@ fn op_cloudstate_blob_get_uint8array(
     state: &mut OpState,
     #[string] blob_id: String,
 ) -> Result<Vec<u8>, Error> {
-    let blob_store = state.borrow_mut::<TransactionContext>().storage();
+    let blob_store = state.borrow_mut::<TransactionContext>().blob_storage();
     let result = blob_store.get_blob_data(&blob_id)?.data;
 
     Ok(result)
@@ -762,7 +762,7 @@ fn op_cloudstate_blob_get_text(
     state: &mut OpState,
     #[string] blob_id: String,
 ) -> Result<String, Error> {
-    let blob_store = state.borrow_mut::<TransactionContext>().storage();
+    let blob_store = state.borrow_mut::<TransactionContext>().blob_storage();
     let result = blob_store.get_blob_data(&blob_id)?.data;
     Ok(String::from_utf8(result).unwrap())
 }
@@ -783,7 +783,7 @@ fn op_cloudstate_blob_get_size(
     // let result = result.map(|s| s.value().data.len() as i32);
 
     // Ok(result.unwrap())
-    let blob_store = state.borrow_mut::<TransactionContext>().storage();
+    let blob_store = state.borrow_mut::<TransactionContext>().blob_storage();
     let result = blob_store.get_blob_size(&blob_id)?;
     Ok(result as i32)
 }
@@ -798,7 +798,7 @@ fn op_cloudstate_blob_get_type(
     let mut state = RefCell::borrow_mut(&state);
 
     let transaction_context = state.borrow_mut::<TransactionContext>();
-    let storage = transaction_context.storage().clone();
+    let storage = transaction_context.blob_storage().clone();
     let transaction = transaction_context.get_or_create_transaction_mut();
 
     match storage.get_blob_metadata(&blob_id, transaction) {
