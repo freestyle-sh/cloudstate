@@ -5,9 +5,12 @@ use axum::{
     routing::{get, post},
     Json, RequestExt, Router,
 };
-use cloudstate_runtime::extensions::{
-    bootstrap::bootstrap,
-    cloudstate::{cloudstate, TransactionContext},
+use cloudstate_runtime::{
+    blob_storage::CloudstateBlobStorage,
+    extensions::{
+        bootstrap::bootstrap,
+        cloudstate::{cloudstate, TransactionContext},
+    },
 };
 use cloudstate_runtime::{extensions::cloudstate::ReDBCloudstate, v8_string_key};
 use deno_core::JsRuntime;
@@ -37,6 +40,7 @@ mod tests;
 
 pub struct CloudstateServer {
     pub cloudstate: ReDBCloudstate,
+    pub blob_storage: CloudstateBlobStorage,
     pub router: Router,
 }
 
@@ -72,18 +76,18 @@ impl ModuleLoader for CloudstateModuleLoader {
 impl CloudstateServer {
     pub async fn new(
         cloudstate: ReDBCloudstate,
+        blob_storage: CloudstateBlobStorage,
         classes: &str,
         env: HashMap<String, String>,
         invalidate_endpoint: String,
     ) -> Self {
-        // tracing_subscriber::fmt::init();
-
         let env_string = serde_json::to_string(&env).unwrap();
 
         execute_script(
             &include_str!("./initialize.js").replace("env_string", &env_string),
             classes,
             cloudstate.clone(),
+            blob_storage.clone(),
         )
         .await;
 
@@ -97,6 +101,7 @@ impl CloudstateServer {
             ",
             include_str!("./inspection.js"),
             cloudstate.clone(),
+            blob_storage.clone(),
         )
         .await;
 
@@ -115,10 +120,12 @@ impl CloudstateServer {
                 classes: classes.to_string(),
                 env,
                 invalidate_endpoint,
+                blob_storage: blob_storage.clone(),
             });
 
         CloudstateServer {
             router: app,
+            blob_storage: blob_storage,
             cloudstate,
         }
     }
@@ -199,6 +206,7 @@ async fn fetch_request(
             &state.classes
         },
         state.cloudstate,
+        state.blob_storage.clone(),
     )
     .await;
 
@@ -221,6 +229,7 @@ async fn fetch_request(
 #[derive(Clone)]
 struct AppState {
     cloudstate: ReDBCloudstate,
+    blob_storage: CloudstateBlobStorage,
     classes: String,
     env: HashMap<String, String>,
     invalidate_endpoint: String,
@@ -295,6 +304,7 @@ async fn method_request(
                 .replace("invalidate_endpoint", &invalidate_endpoint),
             &state.classes,
             state.cloudstate,
+            state.blob_storage.clone(),
         )
         .await
     } else {
@@ -306,6 +316,7 @@ async fn method_request(
                 &state.classes
             },
             state.cloudstate,
+            state.blob_storage.clone(),
         )
         .await
     };
@@ -376,13 +387,18 @@ impl NetPermissions for CloudstateNetPermissions {
     }
 }
 
-pub async fn execute_script(script: &str, classes_script: &str, cs: ReDBCloudstate) -> String {
+pub async fn execute_script(
+    script: &str,
+    classes_script: &str,
+    cs: ReDBCloudstate,
+    blob_storage: CloudstateBlobStorage,
+) -> String {
     let script_string = script.to_string();
     let classes_script_string = classes_script.to_string();
 
     tokio::task::spawn_blocking(move || {
         debug!("execute_script_internal blocking");
-        execute_script_internal(&script_string, &classes_script_string, cs)
+        execute_script_internal(&script_string, &classes_script_string, cs, blob_storage)
     })
     .await
     .unwrap()
@@ -395,8 +411,9 @@ pub async fn execute_script_internal(
     script: &str,
     classes_script: &str,
     cs: ReDBCloudstate,
+    blob_storage: CloudstateBlobStorage,
 ) -> String {
-    let blob_storage = Arc::new(BlobStore::default());
+    let deno_blob_storage = Arc::new(BlobStore::default());
     let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
         module_loader: Some(Rc::new(CloudstateModuleLoader {
             lib: classes_script.to_string(),
@@ -405,7 +422,10 @@ pub async fn execute_script_internal(
             deno_webidl::deno_webidl::init_ops_and_esm(),
             deno_url::deno_url::init_ops_and_esm(),
             deno_console::deno_console::init_ops_and_esm(),
-            deno_web::deno_web::init_ops_and_esm::<CloudstateTimerPermissions>(blob_storage, None),
+            deno_web::deno_web::init_ops_and_esm::<CloudstateTimerPermissions>(
+                deno_blob_storage,
+                None,
+            ),
             deno_crypto::deno_crypto::init_ops_and_esm(None),
             bootstrap::init_ops_and_esm(),
             deno_fetch::deno_fetch::init_ops_and_esm::<CloudstateFetchPermissions>(
@@ -431,7 +451,7 @@ pub async fn execute_script_internal(
     .unwrap();
 
     RefCell::borrow_mut(&js_runtime.op_state()).put(CloudstateFetchPermissions {});
-    let transaction_context = TransactionContext::new(cs.clone());
+    let transaction_context = TransactionContext::new(cs.clone(), blob_storage.clone());
     RefCell::borrow_mut(&js_runtime.op_state()).put(transaction_context);
     // RefCell::borrow_mut(&js_runtime.op_state()).put(CloudstateNodePermissions {});
 

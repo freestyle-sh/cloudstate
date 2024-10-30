@@ -1,9 +1,10 @@
 use crate::{
     bincode::Bincode,
+    blob_storage::CloudstateBlobMetadata,
     extensions::cloudstate::{
-        CloudstateArrayItemKey, CloudstateArrayItemValue, CloudstateBlobKey, CloudstateBlobValue,
-        CloudstateMapFieldKey, CloudstateMapFieldValue, CloudstateObjectKey, CloudstateObjectValue,
-        CloudstateRootKey, CloudstateRootValue,
+        CloudstateArrayItemKey, CloudstateArrayItemValue, CloudstateBlobKey, CloudstateMapFieldKey,
+        CloudstateMapFieldValue, CloudstateObjectKey, CloudstateObjectValue, CloudstateRootKey,
+        CloudstateRootValue,
     },
 };
 
@@ -27,5 +28,7 @@ pub const ARRAYS_TABLE: TableDefinition<
     Bincode<CloudstateArrayItemValue>,
 > = TableDefinition::new("arrays");
 
-pub const BLOBS_TABLE: TableDefinition<Bincode<CloudstateBlobKey>, Bincode<CloudstateBlobValue>> =
-    TableDefinition::new("blobs");
+pub const BLOBS_TABLE: TableDefinition<
+    Bincode<CloudstateBlobKey>,
+    Bincode<CloudstateBlobMetadata>,
+> = TableDefinition::new("blobs");

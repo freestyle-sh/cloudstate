@@ -2,7 +2,7 @@ use deno_core::*;
 use deno_fetch::FetchPermissions;
 use deno_net::NetPermissions;
 // use deno_node::AllowAllNodePermissions;
-use deno_web::{BlobStore, TimersPermission};
+use deno_web::TimersPermission;
 use futures::future::poll_fn;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -10,6 +10,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 use tracing::{debug, event};
 
+use crate::blob_storage::CloudstateBlobStorage;
 use crate::extensions::bootstrap::bootstrap;
 use crate::extensions::cloudstate::{cloudstate, ReDBCloudstate, TransactionContext};
 
@@ -74,10 +75,9 @@ impl NetPermissions for CloudstateNetPermissions {
 pub fn run_script(
     path: &str,
     cloudstate: ReDBCloudstate,
+    blob_storage: CloudstateBlobStorage,
 ) -> Result<(ReDBCloudstate, Result<(), anyhow::Error>), anyhow::Error> {
     let js_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(path);
-
-    let blob_storage = Arc::new(BlobStore::default());
 
     let mut result = Err(anyhow::anyhow!("No files found"));
     for (_i, source) in fs::read_to_string(js_path.clone())
@@ -101,17 +101,19 @@ pub fn run_script(
 pub fn run_script_source(
     script: &str,
     cloudstate: ReDBCloudstate,
-    blob_storage: Arc<BlobStore>,
+    blob_storage: CloudstateBlobStorage,
     path: PathBuf,
 ) -> Result<(ReDBCloudstate, Result<(), anyhow::Error>), anyhow::Error> {
     let main_module = ModuleSpecifier::from_file_path(path).unwrap();
+    let deno_blob_storage = Arc::new(deno_web::BlobStore::default());
+
     let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
         module_loader: Some(Rc::new(FsModuleLoader)),
         extensions: vec![
             deno_webidl::deno_webidl::init_ops_and_esm(),
             deno_url::deno_url::init_ops_and_esm(),
             deno_console::deno_console::init_ops_and_esm(),
-            deno_web::deno_web::init_ops_and_esm::<Permissions>(blob_storage, None),
+            deno_web::deno_web::init_ops_and_esm::<Permissions>(deno_blob_storage, None),
             deno_crypto::deno_crypto::init_ops_and_esm(None),
             bootstrap::init_ops_and_esm(),
             deno_fetch::deno_fetch::init_ops_and_esm::<CloudstateFetchPermissions>(
@@ -127,7 +129,7 @@ pub fn run_script_source(
         ..Default::default()
     });
 
-    let transaction_context = TransactionContext::new(cloudstate.clone());
+    let transaction_context = TransactionContext::new(cloudstate.clone(), blob_storage.clone());
     js_runtime.op_state().borrow_mut().put(transaction_context);
     js_runtime
         .op_state()

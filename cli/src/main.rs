@@ -3,12 +3,18 @@
 // static ALLOC: dhat::Alloc = dhat::Alloc;
 
 use axum::{body::Body, extract::Request, routing::get, Json};
-use deno_core::v8::Data;
 use tokio::runtime::Runtime; // 0.3.5
 
 use axum::extract::DefaultBodyLimit;
 use clap::ValueHint;
-use cloudstate_runtime::{extensions::cloudstate::ReDBCloudstate, gc::mark_and_sweep};
+use cloudstate_runtime::{
+    blob_storage::{
+        fs_store::FsBlobStore, in_memory_store::InMemoryBlobStore, CloudstateBlobStorage,
+        CloudstateBlobStorageEngine,
+    },
+    extensions::cloudstate::ReDBCloudstate,
+    gc::mark_and_sweep,
+};
 use notify::Watcher;
 use redb::{
     backends::{self},
@@ -16,15 +22,18 @@ use redb::{
 };
 use server::{execute_script, CloudstateServer};
 use std::{
-    collections::HashMap, fs::{self}, future::poll_fn, os::unix::fs::MetadataExt, path::Path, sync::{Arc, Mutex}, time::Duration
+    collections::HashMap,
+    fs::{self},
+    future::poll_fn,
+    os::unix::fs::MetadataExt,
+    path::Path,
+    sync::{Arc, Mutex},
+    time::Duration,
 };
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 use tower::Service;
 use tracing::{debug, info};
-
-#[cfg(test)]
-mod debug;
 
 #[tokio::main]
 async fn main() {
@@ -73,10 +82,7 @@ async fn main() {
         ).subcommand(
             clap::Command::new("gc").about("Runs the garbage collector on a cloudstate file")
                 .arg(filename_arg.clone())
-        )
-        
-        ;
-        
+        );
 
     let matches = cmd.get_matches();
 
@@ -94,6 +100,14 @@ async fn main() {
                 Database::create("./cloudstate").unwrap()
             };
 
+            let engine: Arc<dyn CloudstateBlobStorageEngine> = if *memory_only {
+                Arc::new(InMemoryBlobStore::new())
+            } else {
+                Arc::new(FsBlobStore::new("./cloudstate-blobs".into()))
+            };
+
+            let blob_storage = CloudstateBlobStorage::new(engine);
+
             // todo get output
             let result = execute_script(
                 &format!(
@@ -110,6 +124,7 @@ async fn main() {
                 ),
                 "",
                 ReDBCloudstate::new(Arc::new(Mutex::new(db))),
+                blob_storage,
             )
             .await;
 
@@ -130,11 +145,20 @@ async fn main() {
                 Database::create("./cloudstate").unwrap()
             };
 
+            let blob_storage_engine: Arc<dyn CloudstateBlobStorageEngine> = if *memory_only {
+                Arc::new(InMemoryBlobStore::new())
+            } else {
+                Arc::new(FsBlobStore::new("./cloudstate-blobs".into()))
+            };
+
+            let blob_storage = CloudstateBlobStorage::new(blob_storage_engine.clone());
+
             let classes = fs::read_to_string(&filename).unwrap_or("".to_string());
             let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
             let cloudstate = ReDBCloudstate::new(Arc::new(Mutex::new(db)));
             let server = CloudstateServer::new(
                 cloudstate.clone(),
+                blob_storage.clone(),
                 &classes,
                 env.clone(),
                 "http://localhost:8910/__invalidate__".to_string(),
@@ -172,6 +196,7 @@ async fn main() {
 
                                     *server = CloudstateServer::new(
                                         cloudstate.clone(),
+                                        blob_storage.clone(),
                                         &new_classes,
                                         env.clone(),
                                         "http://localhost:8910/__invalidate__".to_string(),
@@ -203,14 +228,11 @@ async fn main() {
                 other_thread.await.unwrap()
             }
         }
-        Some((
-            "gc", gc_matches
-        )) => {
+        Some(("gc", gc_matches)) => {
             let filename = gc_matches.get_one::<String>("filename").unwrap();
 
-
             let metadata_before = fs::metadata(filename).unwrap();
-  
+
             if let Ok(mut cloudstate) = Database::open(filename) {
                 info!("Running garbage collection");
                 match mark_and_sweep(&cloudstate) {
@@ -222,15 +244,15 @@ async fn main() {
                     }
                 }
 
-               info!("Compacting database");
+                info!("Compacting database");
 
                 match cloudstate.compact() {
                     Ok(_) => {
                         info!("Database compacted");
-                    },
-                    Err(_) =>  {
+                    }
+                    Err(_) => {
                         info!("Failed to compact database");
-                    },
+                    }
                 }
             } else {
                 info!("Failed to open file");
@@ -248,10 +270,6 @@ async fn main() {
                 "File size reduced from {}MB to {}MB, saving {}MB",
                 megabytes_before, megabytes_after, megabytes_saved
             )
-
-
-
-
         }
         _ => {
             info!("No subcommand found");

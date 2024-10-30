@@ -90,19 +90,34 @@ function hydrate(object, key, value) {
     const blob = new Blob();
 
     blob["text"] = async () => {
-      return Deno.core.ops.op_cloudstate_blob_get_data(value.blobId);
+      return Deno.core.ops.op_cloudstate_blob_get_text(value.blobId);
     };
 
     blob["arrayBuffer"] = async () => {
-      const text = Deno.core.ops.op_cloudstate_blob_get_data(value.blobId);
-      const encoder = new TextEncoder();
-      return encoder.encode(text).buffer;
+      /* get_data now returns Array Buffer  */
+      const buffer = Deno.core.ops.op_cloudstate_blob_get_array_buffer(
+        value.blobId,
+      );
+      return buffer;
+    };
+
+    blob["slice"] = (start, end, type) => {
+      if (start < 0 || end < 0) {
+        throw new Error("start and end must be positive");
+      }
+      let arrBuffer = Deno.core.ops.op_cloudstate_blob_slice(
+        value.blobId,
+        start,
+        end,
+      );
+      return new Blob([arrBuffer], { type: type });
     };
 
     blob["bytes"] = async () => {
-      const text = Deno.core.ops.op_cloudstate_blob_get_data(value.blobId);
-      const encoder = new TextEncoder();
-      return encoder.encode(text);
+      const blob = Deno.core.ops.op_cloudstate_blob_get_uint8array(
+        value.blobId,
+      );
+      return blob;
     };
 
     Object.defineProperty(blob, "size", {
@@ -398,9 +413,12 @@ function setObject(object, visited = new Set()) {
         objectIds.set(object, id);
         objects.set(id, object);
 
-        object.text().then((text) => {
-          Deno.core.ops.op_cloudstate_blob_set(id, object.type, text);
-          console.log("set blob " + id);
+        object.arrayBuffer().then(async (buffer) => {
+          Deno.core.ops.op_cloudstate_blob_set(
+            id,
+            object.type,
+            buffer,
+          );
         });
       }
 
@@ -463,9 +481,12 @@ function setObject(object, visited = new Set()) {
           objects.set(id, value);
 
           if (value instanceof Blob) {
-            value.text().then((text) => {
-              Deno.core.ops.op_cloudstate_blob_set(id, value.type, text);
-              console.log("set blob " + id);
+            value.arrayBuffer().then(async (buffer) => {
+              Deno.core.ops.op_cloudstate_blob_set(
+                id,
+                value.type,
+                buffer,
+              );
             });
           }
         }
