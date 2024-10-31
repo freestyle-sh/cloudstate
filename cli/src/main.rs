@@ -6,7 +6,7 @@ use axum::{body::Body, extract::Request, routing::get, Json};
 use tokio::runtime::Runtime; // 0.3.5
 
 use axum::extract::DefaultBodyLimit;
-use clap::ValueHint;
+use clap::{Parser, ValueHint};
 use cloudstate_runtime::{
     blob_storage::{
         fs_store::FsBlobStore, in_memory_store::InMemoryBlobStore, CloudstateBlobStorage,
@@ -35,6 +35,58 @@ use tokio::sync::RwLock;
 use tower::Service;
 use tracing::{debug, info};
 
+#[derive(clap::Parser)]
+struct CliArguments {
+    #[clap(value_hint = ValueHint::FilePath)]
+    // #[arg(required = true, long, help = "The filename to serve")]
+    filename: String,
+    #[arg(
+        long,
+        short,
+        num_args = 0,
+        required = false,
+        help = "Watch the file for changes"
+    )]
+    watch: bool,
+
+    #[arg(
+        long = "memory-only",
+        num_args = 0,
+        required = false,
+        help = "Only store data in memory"
+    )]
+    memory_only: bool,
+}
+
+#[derive(clap::Parser)]
+struct GcArguments {
+    #[arg(
+        required = true,
+        long,
+        help = "The database file to run the garbage collector on"
+    )]
+    filename: String,
+}
+
+#[derive(clap::Parser)]
+#[clap(
+    name = "cloudstate",
+    bin_name = "cloudstate",
+    version = env!("CARGO_PKG_VERSION"),
+    about = "Cloudstate is a command line tool to manage the Cloudstate runtime"
+)]
+enum Cli {
+    #[command(
+        name = "run",
+        about = "Runs a file on the cloudstate runtime",
+        long_about = "Runs a file on the cloudstate runtime. This is useful for single time use code, or for testing code."
+    )]
+    Run(CliArguments),
+    #[command(name = "serve", about = "Serves a file on the cloudstate runtime")]
+    Serve(CliArguments),
+    Gc(GcArguments),
+}
+
 #[tokio::main]
 async fn main() {
     // #[cfg(feature = "dhat-heap")]
@@ -44,55 +96,15 @@ async fn main() {
 
     debug!("Starting cloudstate");
 
-    let filename_arg = clap::Arg::new("filename")
-        .help("The filename to serve")
-        .value_hint(ValueHint::FilePath)
-        .required(true);
-    let watch_arg = clap::Arg::new("watch")
-        .short('w')
-        .long("watch")
-        .help("Watch the file for changes")
-        .required(false)
-        .num_args(0);
-
-    let memory_only_arg = clap::Arg::new("memory-only")
-        .help("Only store data in memory")
-        .long("memory-only")
-        .required(false)
-        .num_args(0);
-
-    let cmd = clap::Command::new("cloudstate")
-        .bin_name("cloudstate")
-        .name("cloudstate")
-        .about("cloudstate is a command line tool to manage the Cloudstate runtime")
-        .version(env!("CARGO_PKG_VERSION"))
-        .subcommand(
-            clap::Command::new("run").about("Runs a file on the cloudstate runtime").long_about("
-            Runs a file on the cloudstate runtime. This is useful for single time use code, or for testing code.
-            ").arg(
-               filename_arg.clone()
-            ).arg(
-                watch_arg.clone()
-            ).arg(memory_only_arg.clone()),
-        ).subcommand(
-            clap::Command::new("serve").about("Serves a file on the cloudstate runtime")
-                .arg(filename_arg.clone())
-                .arg(watch_arg.clone())
-                .arg(memory_only_arg.clone())
-        ).subcommand(
-            clap::Command::new("gc").about("Runs the garbage collector on a cloudstate file")
-                .arg(filename_arg.clone())
-        );
-
-    let matches = cmd.get_matches();
-
-    match matches.subcommand() {
-        Some(("run", run_matches)) => {
-            let filename = run_matches.get_one::<String>("filename").unwrap();
-            let memory_only = run_matches.get_one::<bool>("memory-only").unwrap();
+    match Cli::parse() {
+        Cli::Run(CliArguments {
+            filename,
+            memory_only,
+            ..
+        }) => {
             let script = fs::read_to_string(filename).unwrap();
 
-            let db = if *memory_only {
+            let db = if memory_only {
                 Database::builder()
                     .create_with_backend(backends::InMemoryBackend::default())
                     .unwrap()
@@ -100,7 +112,7 @@ async fn main() {
                 Database::create("./cloudstate").unwrap()
             };
 
-            let engine: Arc<dyn CloudstateBlobStorageEngine> = if *memory_only {
+            let engine: Arc<dyn CloudstateBlobStorageEngine> = if memory_only {
                 Arc::new(InMemoryBlobStore::new())
             } else {
                 Arc::new(FsBlobStore::new("./cloudstate-blobs".into()))
@@ -130,14 +142,14 @@ async fn main() {
 
             debug!("{result}");
         }
-        Some(("serve", serve_matches)) => {
-            let serve_matches = serve_matches.clone();
-            let filename = serve_matches.get_one::<String>("filename").unwrap().clone();
-            let watch = serve_matches.get_one::<bool>("watch").unwrap();
-            let memory_only = serve_matches.get_one::<bool>("memory-only").unwrap();
+        Cli::Serve(CliArguments {
+            filename,
+            watch,
+            memory_only,
+        }) => {
             let env: HashMap<String, String> = std::env::vars().collect();
 
-            let db = if *memory_only {
+            let db = if memory_only {
                 Database::builder()
                     .create_with_backend(backends::InMemoryBackend::default())
                     .unwrap()
@@ -145,7 +157,7 @@ async fn main() {
                 Database::create("./cloudstate").unwrap()
             };
 
-            let blob_storage_engine: Arc<dyn CloudstateBlobStorageEngine> = if *memory_only {
+            let blob_storage_engine: Arc<dyn CloudstateBlobStorageEngine> = if memory_only {
                 Arc::new(InMemoryBlobStore::new())
             } else {
                 Arc::new(FsBlobStore::new("./cloudstate-blobs".into()))
@@ -173,7 +185,7 @@ async fn main() {
                 let _ = run_server(cloned, listener).await;
             });
 
-            if *watch {
+            if watch {
                 let pre_cloned_filename: String = filename.clone();
 
                 let mut watcher = notify::recommended_watcher(
@@ -228,12 +240,10 @@ async fn main() {
                 other_thread.await.unwrap()
             }
         }
-        Some(("gc", gc_matches)) => {
-            let filename = gc_matches.get_one::<String>("filename").unwrap();
+        Cli::Gc(GcArguments { filename }) => {
+            let metadata_before = fs::metadata(filename.clone()).unwrap();
 
-            let metadata_before = fs::metadata(filename).unwrap();
-
-            if let Ok(mut cloudstate) = Database::open(filename) {
+            if let Ok(mut cloudstate) = Database::open(filename.clone()) {
                 info!("Running garbage collection");
                 match mark_and_sweep(&cloudstate) {
                     Ok(_) => {
@@ -259,7 +269,7 @@ async fn main() {
                 return;
             }
 
-            let metadata_after = fs::metadata(filename).unwrap();
+            let metadata_after = fs::metadata(filename.clone()).unwrap();
 
             // info!("File size before: {}", metadata_before.size());
             // info!("File size after: {}", metadata_after.size());
@@ -270,9 +280,6 @@ async fn main() {
                 "File size reduced from {}MB to {}MB, saving {}MB",
                 megabytes_before, megabytes_after, megabytes_saved
             )
-        }
-        _ => {
-            info!("No subcommand found");
         }
     }
 }
