@@ -7,7 +7,14 @@ use tokio::runtime::Runtime; // 0.3.5
 
 use axum::extract::DefaultBodyLimit;
 use clap::{Parser, ValueHint};
-use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
+use cloudstate_runtime::{
+    blob_storage::{
+        fs_store::FsBlobStore, in_memory_store::InMemoryBlobStore, CloudstateBlobStorage,
+        CloudstateBlobStorageEngine,
+    },
+    extensions::cloudstate::ReDBCloudstate,
+    gc::mark_and_sweep,
+};
 use notify::Watcher;
 use redb::{
     backends::{self},
@@ -18,6 +25,7 @@ use std::{
     collections::HashMap,
     fs::{self},
     future::poll_fn,
+    os::unix::fs::MetadataExt,
     path::Path,
     sync::{Arc, Mutex},
     time::Duration,
@@ -26,9 +34,6 @@ use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 use tower::Service;
 use tracing::{debug, info};
-
-#[cfg(test)]
-mod debug;
 
 #[derive(clap::Parser)]
 struct CliArguments {
@@ -54,6 +59,16 @@ struct CliArguments {
 }
 
 #[derive(clap::Parser)]
+struct GcArguments {
+    #[arg(
+        required = true,
+        long,
+        help = "The database file to run the garbage collector on"
+    )]
+    filename: String,
+}
+
+#[derive(clap::Parser)]
 #[clap(
     name = "cloudstate",
     bin_name = "cloudstate",
@@ -69,6 +84,7 @@ enum Cli {
     Run(CliArguments),
     #[command(name = "serve", about = "Serves a file on the cloudstate runtime")]
     Serve(CliArguments),
+    Gc(GcArguments),
 }
 
 #[tokio::main]
@@ -96,6 +112,14 @@ async fn main() {
                 Database::create("./cloudstate").unwrap()
             };
 
+            let engine: Arc<dyn CloudstateBlobStorageEngine> = if memory_only {
+                Arc::new(InMemoryBlobStore::new())
+            } else {
+                Arc::new(FsBlobStore::new("./cloudstate-blobs".into()))
+            };
+
+            let blob_storage = CloudstateBlobStorage::new(engine);
+
             // todo get output
             let result = execute_script(
                 &format!(
@@ -112,6 +136,7 @@ async fn main() {
                 ),
                 "",
                 ReDBCloudstate::new(Arc::new(Mutex::new(db))),
+                blob_storage,
             )
             .await;
 
@@ -132,11 +157,20 @@ async fn main() {
                 Database::create("./cloudstate").unwrap()
             };
 
+            let blob_storage_engine: Arc<dyn CloudstateBlobStorageEngine> = if memory_only {
+                Arc::new(InMemoryBlobStore::new())
+            } else {
+                Arc::new(FsBlobStore::new("./cloudstate-blobs".into()))
+            };
+
+            let blob_storage = CloudstateBlobStorage::new(blob_storage_engine.clone());
+
             let classes = fs::read_to_string(&filename).unwrap_or("".to_string());
             let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
             let cloudstate = ReDBCloudstate::new(Arc::new(Mutex::new(db)));
             let server = CloudstateServer::new(
                 cloudstate.clone(),
+                blob_storage.clone(),
                 &classes,
                 env.clone(),
                 "http://localhost:8910/__invalidate__".to_string(),
@@ -174,6 +208,7 @@ async fn main() {
 
                                     *server = CloudstateServer::new(
                                         cloudstate.clone(),
+                                        blob_storage.clone(),
                                         &new_classes,
                                         env.clone(),
                                         "http://localhost:8910/__invalidate__".to_string(),
@@ -205,7 +240,48 @@ async fn main() {
                 other_thread.await.unwrap()
             }
         }
-    };
+        Cli::Gc(GcArguments { filename }) => {
+            let metadata_before = fs::metadata(filename.clone()).unwrap();
+
+            if let Ok(mut cloudstate) = Database::open(filename.clone()) {
+                info!("Running garbage collection");
+                match mark_and_sweep(&cloudstate) {
+                    Ok(_) => {
+                        info!("Garbage collection complete");
+                    }
+                    Err(e) => {
+                        info!("Error running garbage collection: {:?}", e);
+                    }
+                }
+
+                info!("Compacting database");
+
+                match cloudstate.compact() {
+                    Ok(_) => {
+                        info!("Database compacted");
+                    }
+                    Err(_) => {
+                        info!("Failed to compact database");
+                    }
+                }
+            } else {
+                info!("Failed to open file");
+                return;
+            }
+
+            let metadata_after = fs::metadata(filename.clone()).unwrap();
+
+            // info!("File size before: {}", metadata_before.size());
+            // info!("File size after: {}", metadata_after.size());
+            let megabytes_before = metadata_before.size() / 1024 / 1024;
+            let megabytes_after = metadata_after.size() / 1024 / 1024;
+            let megabytes_saved = megabytes_before - megabytes_after;
+            info!(
+                "File size reduced from {}MB to {}MB, saving {}MB",
+                megabytes_before, megabytes_after, megabytes_saved
+            )
+        }
+    }
 }
 
 async fn run_server(server: Arc<RwLock<CloudstateServer>>, listener: TcpListener) {

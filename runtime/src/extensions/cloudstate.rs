@@ -1,50 +1,170 @@
-use crate::tables::{ARRAYS_TABLE, BLOBS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
+use crate::blob_storage::{CloudstateBlobMetadata, CloudstateBlobStorage, CloudstateBlobValue};
+use crate::tables::{ARRAYS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
 use crate::v8_string_key;
 use anyhow::anyhow;
+
+use anyhow::Result;
 use chrono::{DateTime, TimeZone, Utc};
 use deno_core::anyhow::Error;
 use deno_core::error::JsError;
 use deno_core::*;
-use redb::{Database, ReadableTable, WriteTransaction};
+use redb::{
+    AccessGuard, Database, Key, ReadOnlyTable, ReadTransaction, ReadableTable, TableDefinition,
+    Value, WriteTransaction,
+};
 use serde::{Deserialize, Serialize};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::i32;
+use std::rc::Rc;
 use std::sync::Arc;
 use std::sync::{Mutex, MutexGuard};
-use tracing::{debug, error, event, info};
+use tracing::{debug, error, event, info, info_span, instrument};
 use url::Url;
 use v8::GetPropertyNamesArgs;
 
+pub use js_spans::JavaScriptSpans;
+
+mod js_spans;
+
 pub struct TransactionContext {
     database: ReDBCloudstate,
-    current_transaction: Option<WriteTransaction>,
+    blob_storage: CloudstateBlobStorage,
+    current_transaction: Option<Transaction>,
+    read_only: bool,
 }
 
 impl TransactionContext {
-    pub fn new(database: ReDBCloudstate) -> Self {
-        Self {
-            current_transaction: None,
-            database: database.clone(),
+    pub fn blob_storage(&self) -> &CloudstateBlobStorage {
+        &self.blob_storage
+    }
+}
+
+pub enum Transaction {
+    Read(ReadTransaction),
+    Write(WriteTransaction),
+}
+
+pub enum CloudstateTable<'a, K: Key + 'static, V: Value + 'static> {
+    Read(ReadOnlyTable<K, V>),
+    Write(redb::Table<'a, K, V>),
+}
+
+impl<'a, K, V> CloudstateTable<'a, K, V>
+where
+    K: Key + 'static,
+    V: Value + 'static,
+{
+    pub fn insert(
+        &mut self,
+        key: impl std::borrow::Borrow<K::SelfType<'a>>,
+        value: impl std::borrow::Borrow<V::SelfType<'a>>,
+    ) -> Result<(), Error> {
+        match self {
+            CloudstateTable::Read(ref _table) => Ok(()), //panic!("Cannot insert into read-only table"),
+            CloudstateTable::Write(ref mut table) => match table.insert(key, value) {
+                Ok(_) => Ok(()),
+                Err(e) => Err(e.into()),
+            },
         }
     }
 
-    pub fn get_or_create_transaction_mut(&mut self) -> &WriteTransaction {
-        debug!("Checking for existing transaction");
+    pub fn iter(&self) -> anyhow::Result<redb::Range<K, V>> {
+        match self {
+            CloudstateTable::Read(table) => table.iter().map_err(|e| e.into()),
+            CloudstateTable::Write(table) => table.iter().map_err(|e| e.into()),
+        }
+    }
+
+    pub fn remove<'b>(
+        &mut self,
+        key: impl std::borrow::Borrow<K::SelfType<'b>>,
+    ) -> redb::Result<Option<AccessGuard<V>>>
+    where
+        K: 'b,
+    {
+        match self {
+            CloudstateTable::Read(_table) => panic!("Cannot remove during read-only transaction"),
+            CloudstateTable::Write(table) => table.remove(key),
+        }
+    }
+
+    pub fn get(
+        &self,
+        key: impl std::borrow::Borrow<K::SelfType<'a>>,
+    ) -> anyhow::Result<Option<AccessGuard<V>>> {
+        match self {
+            CloudstateTable::Read(table) => table.get(key).map_err(|e| e.into()),
+            CloudstateTable::Write(table) => table.get(key).map_err(|e| e.into()),
+        }
+    }
+}
+
+impl Transaction {
+    pub fn commit(self) -> Result<(), Error> {
+        match self {
+            Transaction::Read(transaction) => transaction.close().map_err(|e| e.into()),
+            Transaction::Write(transaction) => transaction.commit().map_err(|e| e.into()),
+        }
+    }
+
+    pub fn open_table<K: Key + 'static, V: Value + 'static>(
+        &self,
+        def: TableDefinition<K, V>,
+    ) -> Result<CloudstateTable<K, V>, Error> {
+        match self {
+            Transaction::Read(transaction) => {
+                let table = transaction.open_table(def)?;
+                Ok(CloudstateTable::Read(table))
+            }
+            Transaction::Write(transaction) => {
+                let table = transaction.open_table(def)?;
+                Ok(CloudstateTable::Write(table))
+            }
+        }
+    }
+}
+
+impl TransactionContext {
+    pub fn new(database: ReDBCloudstate, storage: CloudstateBlobStorage) -> Self {
+        Self {
+            current_transaction: None,
+            blob_storage: storage,
+            database: database.clone(),
+            read_only: false,
+        }
+    }
+
+    pub fn set_read_only(&mut self) {
+        if self.current_transaction.is_none() {
+            self.read_only = true;
+        }
+    }
+
+    #[instrument(skip(self))]
+    pub fn get_or_create_transaction_mut(&mut self) -> &Transaction {
+        // debug!("Checking for existing transaction");
         if self.current_transaction.is_none() {
             debug!("Creating new transaction");
             let db = self.database.get_database_mut();
-            let write_txn = db.begin_write().unwrap();
-            self.current_transaction = Some(write_txn);
 
+            if self.read_only {
+                let read_txn = db.begin_read().unwrap();
+                self.current_transaction = Some(Transaction::Read(read_txn));
+            } else {
+                let write_txn = db.begin_write().unwrap();
+                self.current_transaction = Some(Transaction::Write(write_txn));
+            }
             self.current_transaction.as_mut().unwrap()
         } else {
-            debug!("Using existing transaction");
+            // debug!("Using existing transaction");
             self.current_transaction.as_mut().unwrap()
         }
     }
 
+    #[instrument(skip(self))]
     pub fn commit_transaction(&mut self) {
-        debug!("Checking for transaction to commit");
+        // debug!("Checking for transaction to commit");
         if let Some(transaction) = self.current_transaction.take() {
             debug!("Committing transaction");
             transaction.commit().unwrap();
@@ -54,6 +174,14 @@ impl TransactionContext {
     }
 }
 
+#[instrument(skip(state))]
+#[op2(fast)]
+fn op_cloudstate_set_read_only(state: &mut OpState) {
+    let cs = state.borrow_mut::<TransactionContext>();
+    cs.set_read_only();
+}
+
+#[instrument(skip(state))]
 #[op2]
 fn op_cloudstate_object_set(
     state: &mut OpState,
@@ -73,6 +201,7 @@ fn op_cloudstate_object_set(
     Ok(())
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_object_get(
@@ -82,15 +211,18 @@ fn op_cloudstate_object_get(
     let cs = state.borrow_mut::<TransactionContext>();
     let transaction = cs.get_or_create_transaction_mut();
 
-    let table = transaction.open_table(OBJECTS_TABLE).unwrap();
+    let table =
+        info_span!("open_table").in_scope(|| transaction.open_table(OBJECTS_TABLE).unwrap());
+
     let key = CloudstateObjectKey { id };
 
-    let result = table.get(key).unwrap();
-    let result = result.map(|s| s.value().data);
+    let result = info_span!("get").in_scope(|| table.get(key).unwrap());
+    let result = info_span!("map").in_scope(|| result.map(|s| s.value().data));
 
     Ok(result.unwrap())
 }
 
+#[instrument(skip(state))]
 #[op2]
 fn op_cloudstate_object_set_property(
     state: &mut OpState,
@@ -116,6 +248,7 @@ fn op_cloudstate_object_set_property(
     Ok(())
 }
 
+#[instrument(skip(state))]
 #[op2(fast)]
 fn op_cloudstate_array_reverse(state: &mut OpState, #[string] array_id: String) {
     let cs = state.borrow_mut::<TransactionContext>();
@@ -149,6 +282,7 @@ fn op_cloudstate_array_reverse(state: &mut OpState, #[string] array_id: String) 
     }
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[serde]
 fn op_cloudstate_list_roots(state: &mut OpState) -> Result<Vec<String>, Error> {
@@ -166,6 +300,7 @@ fn op_cloudstate_list_roots(state: &mut OpState) -> Result<Vec<String>, Error> {
     Ok(roots)
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_array_pop(
@@ -196,6 +331,7 @@ fn op_cloudstate_array_pop(
     }
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_array_shift(
@@ -235,6 +371,7 @@ fn op_cloudstate_array_shift(
     return_value.unwrap_or(CloudstatePrimitiveData::Undefined)
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_cloudstate_get(
@@ -268,6 +405,7 @@ fn op_cloudstate_cloudstate_get(
     }
 }
 
+#[instrument(skip(state))]
 #[op2]
 fn op_cloudstate_map_set(
     state: &mut OpState,
@@ -287,6 +425,7 @@ fn op_cloudstate_map_set(
     Ok(())
 }
 
+#[instrument(skip(state))]
 #[op2(fast)]
 fn op_cloudstate_map_delete(
     state: &mut OpState,
@@ -307,6 +446,7 @@ fn op_cloudstate_map_delete(
     was_removed
 }
 
+#[instrument(skip(state))]
 #[op2(fast)]
 fn op_cloudstate_map_clear(state: &mut OpState, #[string] map_id: String) {
     let cs = state.borrow_mut::<TransactionContext>();
@@ -325,6 +465,7 @@ fn op_cloudstate_map_clear(state: &mut OpState, #[string] map_id: String) {
     }
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_map_get(
@@ -346,6 +487,7 @@ fn op_cloudstate_map_get(
     primitive
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_map_has(
@@ -367,6 +509,7 @@ fn op_cloudstate_map_has(
     primitive
 }
 
+#[instrument(skip(state))]
 #[op2]
 fn op_cloudstate_array_set(
     state: &mut OpState,
@@ -386,6 +529,7 @@ fn op_cloudstate_array_set(
     Ok(())
 }
 
+#[instrument(skip(state))]
 #[op2(fast)]
 fn op_cloudstate_array_length(state: &mut OpState, #[string] id: String) -> i32 {
     let cs = state.borrow_mut::<TransactionContext>();
@@ -402,6 +546,7 @@ fn op_cloudstate_array_length(state: &mut OpState, #[string] id: String) -> i32 
     count as i32
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_array_get(
@@ -424,6 +569,7 @@ fn op_cloudstate_array_get(
     }
 }
 
+#[instrument(skip(state))]
 #[op2(fast)]
 fn op_cloudstate_map_size(state: &mut OpState, #[string] map_id: String) -> Result<i32, Error> {
     let cs = state.borrow_mut::<TransactionContext>();
@@ -440,6 +586,7 @@ fn op_cloudstate_map_size(state: &mut OpState, #[string] map_id: String) -> Resu
     Ok(count as i32)
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[string]
 fn op_cloudstate_object_root_get(
@@ -457,6 +604,7 @@ fn op_cloudstate_object_root_get(
     Ok(result)
 }
 
+#[instrument(skip(state))]
 #[op2(fast)]
 fn op_cloudstate_object_root_set(
     state: &mut OpState,
@@ -473,6 +621,7 @@ fn op_cloudstate_object_root_set(
     Ok(())
 }
 
+#[instrument(skip(state))]
 #[op2(fast)]
 fn op_cloudstate_commit_transaction(state: &mut OpState) -> Result<(), Error> {
     event!(tracing::Level::DEBUG, "Committing transaction");
@@ -482,6 +631,7 @@ fn op_cloudstate_commit_transaction(state: &mut OpState) -> Result<(), Error> {
     Ok(())
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_map_values(
@@ -507,6 +657,7 @@ fn op_cloudstate_map_values(
     Ok(values.into())
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_map_keys(
@@ -530,6 +681,7 @@ fn op_cloudstate_map_keys(
     Ok(keys.into())
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[to_v8]
 fn op_cloudstate_map_entries(
@@ -556,82 +708,145 @@ fn op_cloudstate_map_entries(
     Ok(CloudstateEntriesVec::from(entries))
 }
 
+#[instrument(skip(state))]
 #[op2(fast)]
 fn op_cloudstate_blob_set(
-    state: &mut OpState,
+    state: Rc<RefCell<OpState>>,
     #[string] blob_id: String,
     #[string] blob_type: String,
-    #[string] blob_text: String,
+    #[arraybuffer] blob_data: &[u8], // #[buffer] blob_data: JsBuffer,
 ) -> Result<(), Error> {
-    let cs = state.borrow_mut::<TransactionContext>();
-    let transaction = cs.get_or_create_transaction_mut();
+    let mut state = RefCell::borrow_mut(&state);
 
-    let mut table = transaction.open_table(BLOBS_TABLE).unwrap();
-    let key = CloudstateBlobKey { id: blob_id };
+    let transaction_context = state.borrow_mut::<TransactionContext>();
+    let storage = transaction_context.blob_storage().clone();
+    let transaction = transaction_context.get_or_create_transaction_mut();
 
-    let _ = table
-        .insert(
-            &key,
-            CloudstateBlobValue {
-                data: blob_text,
-                type_: blob_type,
-            },
-        )
-        .unwrap();
+    let data = blob_data.to_vec();
+
+    storage.put_blob(
+        &blob_id,
+        transaction,
+        CloudstateBlobValue { data },
+        CloudstateBlobMetadata { type_: blob_type },
+    )?;
+
     Ok(())
 }
 
+#[instrument(skip(state))]
 #[op2]
+#[arraybuffer]
+fn op_cloudstate_blob_slice(
+    state: Rc<RefCell<OpState>>,
+    #[string] blob_id: String,
+    start: Option<i32>,
+    end: Option<i32>,
+) -> Result<Vec<u8>, Error> {
+    let mut state = RefCell::borrow_mut(&state);
+
+    let transaction_context = state.borrow_mut::<TransactionContext>();
+    let storage = transaction_context.blob_storage().clone();
+
+    let result = storage.get_blob_slice(&blob_id, start, end)?;
+
+    Ok(result)
+}
+
+#[instrument(skip(state))]
+#[op2()]
+#[arraybuffer]
+fn op_cloudstate_blob_get_array_buffer(
+    state: &mut OpState,
+    #[string] blob_id: String,
+) -> Result<Vec<u8>, Error> {
+    let blob_store = state.borrow_mut::<TransactionContext>().blob_storage();
+    let result = blob_store.get_blob_data(&blob_id)?.data;
+
+    Ok(result)
+}
+
+#[instrument(skip(state))]
+#[op2()]
+#[buffer]
+fn op_cloudstate_blob_get_uint8array(
+    state: &mut OpState,
+    #[string] blob_id: String,
+) -> Result<Vec<u8>, Error> {
+    let blob_store = state.borrow_mut::<TransactionContext>().blob_storage();
+    let result = blob_store.get_blob_data(&blob_id)?.data;
+
+    Ok(result)
+}
+
+#[instrument(skip(state))]
+#[op2()]
 #[string]
-fn op_cloudstate_blob_get_data(
+fn op_cloudstate_blob_get_text(
     state: &mut OpState,
     #[string] blob_id: String,
 ) -> Result<String, Error> {
-    let cs = state.borrow_mut::<TransactionContext>();
-    let transaction = cs.get_or_create_transaction_mut();
-
-    let table = transaction.open_table(BLOBS_TABLE).unwrap();
-    let key = CloudstateBlobKey { id: blob_id };
-
-    let result = table.get(key).unwrap();
-    let result = result.map(|s| s.value().data);
-
-    Ok(result.unwrap())
+    let blob_store = state.borrow_mut::<TransactionContext>().blob_storage();
+    let result = blob_store.get_blob_data(&blob_id)?.data;
+    Ok(String::from_utf8(result).unwrap())
 }
 
+#[instrument(skip(state))]
 #[op2(fast)]
 fn op_cloudstate_blob_get_size(
     state: &mut OpState,
     #[string] blob_id: String,
 ) -> Result<i32, Error> {
-    let cs = state.borrow_mut::<TransactionContext>();
-    let transaction = cs.get_or_create_transaction_mut();
+    // let cs = state.borrow_mut::<TransactionContext>();
+    // let transaction = cs.get_or_create_transaction_mut();
 
-    let table = transaction.open_table(BLOBS_TABLE).unwrap();
-    let key = CloudstateBlobKey { id: blob_id };
+    // let table = transaction.open_table(BLOBS_TABLE).unwrap();
+    // let key = CloudstateBlobKey { id: blob_id };
 
-    let result = table.get(key).unwrap();
-    let result = result.map(|s| s.value().data.len() as i32);
+    // let result = table.get(key).unwrap();
+    // let result = result.map(|s| s.value().data.len() as i32);
 
-    Ok(result.unwrap())
+    // Ok(result.unwrap())
+    let blob_store = state.borrow_mut::<TransactionContext>().blob_storage();
+    let result = blob_store.get_blob_size(&blob_id)?;
+    Ok(result as i32)
 }
 
+#[instrument(skip(state))]
 #[op2]
 #[string]
 fn op_cloudstate_blob_get_type(
-    state: &mut OpState,
+    state: Rc<RefCell<OpState>>,
     #[string] blob_id: String,
 ) -> Result<String, Error> {
-    let cs = state.borrow_mut::<TransactionContext>();
-    let transaction = cs.get_or_create_transaction_mut();
+    let mut state = RefCell::borrow_mut(&state);
 
-    let table = transaction.open_table(BLOBS_TABLE).unwrap();
-    let key = CloudstateBlobKey { id: blob_id };
+    let transaction_context = state.borrow_mut::<TransactionContext>();
+    let storage = transaction_context.blob_storage().clone();
+    let transaction = transaction_context.get_or_create_transaction_mut();
 
-    let result = table.get(key).unwrap();
-    let result = result.map(|s| s.value().type_.clone());
+    match storage.get_blob_metadata(&blob_id, transaction) {
+        Ok(metadata) => Ok(metadata.type_),
+        Err(_) => Err(anyhow!("Blob not found")),
+    }
+}
 
-    Ok(result.unwrap())
+#[instrument(skip(_state))]
+#[op2(fast)]
+pub fn op_print_with_tracing(_state: &mut OpState, #[string] msg: &str, is_err: bool) {
+    // tracing
+    if is_err {
+        error!("{}", msg);
+    } else {
+        info!("{}", msg);
+    }
+}
+
+// #[instrument(skip(state))]
+#[op2(fast)]
+pub fn op_tracing_span_finish(state: &mut OpState) {
+    let spans = state.borrow_mut::<JavaScriptSpans>();
+    spans.pop_span();
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
@@ -639,13 +854,19 @@ pub struct CloudstateBlobKey {
     pub id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct CloudstateBlobValue {
-    pub data: String,
-    pub type_: String,
+impl From<&str> for CloudstateBlobKey {
+    fn from(id: &str) -> Self {
+        Self { id: id.to_string() }
+    }
 }
 
-#[derive(Clone)]
+impl From<String> for CloudstateBlobKey {
+    fn from(id: String) -> Self {
+        Self { id }
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct ReDBCloudstate {
     db: Arc<Mutex<Database>>,
 }
@@ -1118,7 +1339,6 @@ pub struct CloudstateArrayItemValue {
 deno_core::extension!(
   cloudstate,
   ops = [
-
     op_cloudstate_array_get,
     op_cloudstate_array_length,
     op_cloudstate_array_pop,
@@ -1141,11 +1361,32 @@ deno_core::extension!(
     op_cloudstate_object_root_set,
     op_cloudstate_object_set,
     op_cloudstate_object_set_property,
-    op_cloudstate_blob_get_data,
+    op_cloudstate_blob_get_array_buffer,
+    op_cloudstate_blob_get_uint8array,
+    op_cloudstate_blob_get_text,
     op_cloudstate_blob_set,
+    op_cloudstate_blob_slice,
     op_cloudstate_blob_get_size,
     op_cloudstate_blob_get_type,
-    op_cloudstate_list_roots
+    op_cloudstate_list_roots,
+    op_cloudstate_set_read_only,
+
+    op_tracing_span_finish,
+
+    js_spans::op_tracing_span_hydrate,
+    js_spans::op_tracing_span_get_map,
+    js_spans::op_tracing_span_get_object,
+    js_spans::op_tracing_span_pack_to_reference_or_primitive,
+    js_spans::op_tracing_span_unpack_from_reference,
+    js_spans::op_tracing_span_get_cloudstate,
+    js_spans::op_tracing_span_set_object,
+    js_spans::op_tracing_span_get_array,
+    js_spans::op_tracing_span_export_object,
+    js_spans::op_tracing_span_set_root,
+    js_spans::op_tracing_span_get_root,
+    js_spans::op_tracing_span_array_filter,
+    js_spans::op_tracing_span_array_splice,
+    js_spans::op_tracing_span_commit
   ],
   esm_entry_point = "ext:cloudstate/cloudstate.js",
   esm = [ dir "src/extensions", "cloudstate.js" ],
@@ -1153,14 +1394,5 @@ deno_core::extension!(
     "op_print" => op_print_with_tracing(),
     _ => op,
   },
-);
 
-#[op2(fast)]
-pub fn op_print_with_tracing(_state: &mut OpState, #[string] msg: &str, is_err: bool) {
-    // tracing
-    if is_err {
-        error!("{}", msg);
-    } else {
-        info!("{}", msg);
-    }
-}
+);

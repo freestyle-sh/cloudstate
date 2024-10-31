@@ -10,17 +10,17 @@ redb = "2.1.1"
 serde = "1.0.208"
 tokio = { version = "1.36.0", features = ["full"] }
 
-deno_core = "0.312.0"
+deno_core = "0.314.2"
 
-deno_console = { git = "https://github.com/denoland/deno.git" }
-deno_webidl = { git = "https://github.com/denoland/deno.git" }
-deno_web = { git = "https://github.com/denoland/deno.git" }
-deno_crypto = { git = "https://github.com/denoland/deno.git" }
-deno_fetch = { git = "https://github.com/denoland/deno.git" }
-deno_net = { git = "https://github.com/denoland/deno.git" }
-deno_node = { git = "https://github.com/denoland/deno.git" }
-deno_url = { git = "https://github.com/denoland/deno.git" }
-deno_fs = { git = "https://github.com/denoland/deno.git" }
-
+deno_console = { git = "https://github.com/denoland/deno.git", rev = "85709c70abb538cf22df73261bc37453e7cb07a7" }
+deno_webidl = { git = "https://github.com/denoland/deno.git", rev = "85709c70abb538cf22df73261bc37453e7cb07a7" }
+deno_web = { git = "https://github.com/denoland/deno.git", rev = "85709c70abb538cf22df73261bc37453e7cb07a7" }
+deno_crypto = { git = "https://github.com/denoland/deno.git", rev = "85709c70abb538cf22df73261bc37453e7cb07a7" }
+deno_fetch = { git = "https://github.com/denoland/deno.git", rev = "85709c70abb538cf22df73261bc37453e7cb07a7" }
+deno_net = { git = "https://github.com/denoland/deno.git", rev = "85709c70abb538cf22df73261bc37453e7cb07a7" }
+deno_node = { git = "https://github.com/denoland/deno.git", rev = "85709c70abb538cf22df73261bc37453e7cb07a7" }
+deno_url = { git = "https://github.com/denoland/deno.git", rev = "85709c70abb538cf22df73261bc37453e7cb07a7" }
+deno_fs = { git = "https://github.com/denoland/deno.git", rev = "85709c70abb538cf22df73261bc37453e7cb07a7" }
 anyhow = "1.0.86"
 bincode = "1.3.3"
+rust-s3 = { version = "0.35.1", features = ["blocking"] }
