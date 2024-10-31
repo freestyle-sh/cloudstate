@@ -38,7 +38,7 @@ use tracing::{debug, info};
 #[derive(clap::Parser)]
 struct CliArguments {
     #[clap(value_hint = ValueHint::FilePath)]
-    #[arg(required = true, long, help = "The filename to serve")]
+    // #[arg(required = true, long, help = "The filename to serve")]
     filename: String,
     #[arg(
         long,
