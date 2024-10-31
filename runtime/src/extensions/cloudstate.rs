@@ -842,18 +842,6 @@ pub fn op_print_with_tracing(_state: &mut OpState, #[string] msg: &str, is_err: 
     }
 }
 
-#[instrument(skip(state, name))]
-#[op2(fast)]
-pub fn op_tracing_span_start(state: &mut OpState, #[string] name: &str) {
-    let span = info_span!("javascript");
-    info!("{}", name);
-    span.record("otel.name", name);
-    let span = span.entered();
-    let spans = state.borrow_mut::<JavaScriptSpans>();
-
-    spans.add_span(span);
-}
-
 // #[instrument(skip(state))]
 #[op2(fast)]
 pub fn op_tracing_span_finish(state: &mut OpState) {
@@ -1382,7 +1370,7 @@ deno_core::extension!(
     op_cloudstate_blob_get_type,
     op_cloudstate_list_roots,
     op_cloudstate_set_read_only,
-    op_tracing_span_start,
+
     op_tracing_span_finish,
 
     js_spans::op_tracing_span_hydrate,

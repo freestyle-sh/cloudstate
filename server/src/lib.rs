@@ -9,7 +9,7 @@ use cloudstate_runtime::{
     blob_storage::CloudstateBlobStorage,
     extensions::{
         bootstrap::bootstrap,
-        cloudstate::{cloudstate, TransactionContext},
+        cloudstate::{cloudstate, JavaScriptSpans, TransactionContext},
     },
 };
 use cloudstate_runtime::{extensions::cloudstate::ReDBCloudstate, v8_string_key};
@@ -482,6 +482,7 @@ pub async fn execute_script_internal(
     RefCell::borrow_mut(&js_runtime.op_state()).put(CloudstateFetchPermissions {});
     let transaction_context = TransactionContext::new(cs.clone(), blob_storage.clone());
     RefCell::borrow_mut(&js_runtime.op_state()).put(transaction_context);
+    RefCell::borrow_mut(&js_runtime.op_state()).put(JavaScriptSpans::new());
     // RefCell::borrow_mut(&js_runtime.op_state()).put(CloudstateNodePermissions {});
 
     let script = script.to_string();

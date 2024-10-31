@@ -77,7 +77,7 @@ const cloudstateObjects = new Map();
 const customClasses = [];
 
 function hydrate(object, key, value) {
-  span("hydrate", () => {
+  return span("hydrate", () => {
     if (value instanceof CloudstateObjectReference) {
       Object.defineProperty(object, key, {
         get: () => {
@@ -111,10 +111,6 @@ function hydrate(object, key, value) {
       const blob = new Blob();
 
       blob["text"] = async () => {
-        return Deno.core.ops.op_cloudstate_blob_get_data(value.blobId);
-      };
-
-      blob["text"] = async () => {
         return Deno.core.ops.op_cloudstate_blob_get_text(value.blobId);
       };
 
@@ -144,6 +140,12 @@ function hydrate(object, key, value) {
         );
         return blob;
       };
+
+      Object.defineProperty(blob, "size", {
+        get: () => {
+          return Deno.core.ops.op_cloudstate_blob_get_size(value.blobId);
+        },
+      });
 
       Object.defineProperty(blob, "type", {
         get: () => {
@@ -339,7 +341,11 @@ function getObject(id) {
         },
         set(target, key, value) {
           const packed = packToReferenceOrPrimitive(value);
-          Deno.core.ops.op_cloudstate_object_set_property(id, key, packed);
+          Deno.core.ops.op_cloudstate_object_set_property(
+            id,
+            key,
+            packed,
+          );
 
           return true;
         },
@@ -422,6 +428,8 @@ function getCloudstate(id) {
 function setObject(object, visited = new Set()) {
   return span("set_object", () => {
     if (typeof object !== "object") throw new Error("object must be an object");
+    visited.add(object);
+    const stack = [object];
 
     let rootObject = undefined;
     while (stack.length > 0) {
@@ -435,7 +443,11 @@ function setObject(object, visited = new Set()) {
           objects.set(id, object);
 
           object.arrayBuffer().then(async (buffer) => {
-            Deno.core.ops.op_cloudstate_blob_set(id, object.type, buffer);
+            Deno.core.ops.op_cloudstate_blob_set(
+              id,
+              object.type,
+              buffer,
+            );
           });
         }
 
@@ -448,112 +460,111 @@ function setObject(object, visited = new Set()) {
         continue;
       }
 
-      visited.add(object);
-      const stack = [object];
-
-      let rootObject = undefined;
-      while (stack.length > 0) {
-        const object = stack.pop();
-
-        if (object instanceof Blob) {
-          let id = objectIds.get(object);
-          if (!id) {
-            id = uuidv4();
-            objectIds.set(object, id);
-            objects.set(id, object);
-
-            if (value instanceof Blob) {
-              value.arrayBuffer().then(async (buffer) => {
-                Deno.core.ops.op_cloudstate_blob_set(id, value.type, buffer);
-              });
-            }
-          }
-
-          // todo: why does this break things?
-          // if (!rootObject) {
-          //   rootObject = id;
-          // }
-
-          visited.add(object);
-
-          continue;
-        }
-
-        const isArray = object instanceof Array;
-        const flatObject = isArray ? [] : {};
-
-        if (object.constructor) {
-          Object.setPrototypeOf(flatObject, object.constructor.prototype);
-        }
-
-        for (let [key, value] of Object.entries(object)) {
-          if (isArray) key = parseInt(key);
-          if (value === undefined) continue;
-
+      if (object instanceof Map) {
+        for (const [key, value] of object.entries()) {
           if (isPrimitive(value)) {
-            flatObject[key] = value;
-          } else if (typeof value === "object") {
-            let id = objectIds.get(value);
-
-            if (!id) {
-              id = uuidv4();
-              objectIds.set(value, id);
-              objects.set(id, value);
-
-              if (value instanceof Blob) {
-                value.text().then((text) => {
-                  Deno.core.ops.op_cloudstate_blob_set(id, value.type, text);
-                  console.log("set blob " + id);
-                });
-              }
-            }
-
-            if (value instanceof Map) {
-              flatObject[key] = new CloudstateMapReference(id);
-            } else if (value instanceof Array) {
-              flatObject[key] = new CloudstateArrayReference(id);
-            } else if (value instanceof Blob) {
-              flatObject[key] = new CloudstateBlobReference(id);
-            } else {
-              flatObject[key] = new CloudstateObjectReference(
-                id,
-                [Object, Array, Map].includes(value.constructor)
-                  ? undefined
-                  : value.constructor?.name,
-              );
-            }
-
-            if (value instanceof Blob) continue;
-
-            if (!visited.has(value)) {
-              visited.add(value);
-              stack.push(value);
-            }
+            Deno.core.ops.op_cloudstate_map_set(
+              objectIds.get(object),
+              key,
+              value,
+            );
           } else {
-            throw new Error(
-              `property ${key} of type ${typeof value} on object ${object} cannot be serialized`,
+            const id = setObject(value, visited);
+            Deno.core.ops.op_cloudstate_map_set(
+              objectIds.get(object),
+              key,
+              new CloudstateObjectReference(id),
             );
           }
         }
 
-        if (flatObject instanceof Array) {
-          let id = objectIds.get(object);
+        // todo: why does this break things?
+        // if (!rootObject) {
+        //   rootObject = id;
+        // }
+
+        visited.add(object);
+
+        continue;
+      }
+
+      const isArray = object instanceof Array;
+      const flatObject = isArray ? [] : {};
+
+      if (object.constructor) {
+        Object.setPrototypeOf(flatObject, object.constructor.prototype);
+      }
+
+      for (let [key, value] of Object.entries(object)) {
+        if (isArray) key = parseInt(key);
+        if (value === undefined) continue;
+
+        if (isPrimitive(value)) {
+          flatObject[key] = value;
+        } else if (typeof value === "object") {
+          let id = objectIds.get(value);
+
           if (!id) {
             id = uuidv4();
-            objectIds.set(object, id);
+            objectIds.set(value, id);
+            objects.set(id, value);
+
+            if (value instanceof Blob) {
+              value.arrayBuffer().then(async (buffer) => {
+                Deno.core.ops.op_cloudstate_blob_set(
+                  id,
+                  value.type,
+                  buffer,
+                );
+              });
+            }
           }
 
-          flatObject.forEach((item, i) => {
-            Deno.core.ops.op_cloudstate_array_set(id, i, item);
-          });
-          if (!rootObject) {
-            rootObject = id;
+          if (value instanceof Map) {
+            flatObject[key] = new CloudstateMapReference(id);
+          } else if (value instanceof Array) {
+            flatObject[key] = new CloudstateArrayReference(id);
+          } else if (value instanceof Blob) {
+            flatObject[key] = new CloudstateBlobReference(id);
+          } else {
+            flatObject[key] = new CloudstateObjectReference(
+              id,
+              [Object, Array, Map].includes(value.constructor)
+                ? undefined
+                : value.constructor?.name,
+            );
+          }
+
+          if (value instanceof Blob) continue;
+
+          if (!visited.has(value)) {
+            visited.add(value);
+            stack.push(value);
           }
         } else {
-          const id = exportObject(object, flatObject);
-          if (!rootObject) {
-            rootObject = id;
-          }
+          throw new Error(
+            `property ${key} of type ${typeof value} on object ${object} cannot be serialized`,
+          );
+        }
+      }
+
+      if (flatObject instanceof Array) {
+        let id = objectIds.get(object);
+        if (!id) {
+          id = uuidv4();
+          objectIds.set(object, id);
+        }
+
+        flatObject.forEach((item, i) => {
+          Deno.core.ops.op_cloudstate_array_set(id, i, item);
+        });
+        if (!rootObject) {
+          rootObject = id;
+        }
+      } else {
+        const id = exportObject(object, flatObject);
+        if (!rootObject) {
+          rootObject = id;
         }
       }
     }
@@ -653,8 +664,8 @@ function getRoot(alias) {
 function handleArrayMethods(key, array, id) {
   switch (key) {
     case "filter": {
-      return span("array_filter", () => {
-        return (fn) => {
+      return (fn) => {
+        return span("array_filter", () => {
           let arr = [];
           for (let i = 0; i < array.length; i++) {
             if (fn(array[i], i, array)) {
@@ -662,8 +673,8 @@ function handleArrayMethods(key, array, id) {
             }
           }
           return arr;
-        };
-      });
+        });
+      };
     }
     case "toReversed": {
       return () => {
@@ -873,7 +884,11 @@ function handleArrayMethods(key, array, id) {
       return (...args) => {
         let length = Deno.core.ops.op_cloudstate_array_length(id);
         for (let i = length - 1; i >= 0; i--) {
-          Deno.core.ops.op_cloudstate_array_set(id, i + args.length, array[i]);
+          Deno.core.ops.op_cloudstate_array_set(
+            id,
+            i + args.length,
+            array[i],
+          );
         }
 
         for (let i = 0; i < args.length; i++) {
@@ -898,8 +913,8 @@ function handleArrayMethods(key, array, id) {
     }
 
     case "splice": {
-      return span("array_splice", () => {
-        return (start, deleteCount, ...items) => {
+      return (start, deleteCount, ...items) => {
+        return span("array_splice", () => {
           const length = Deno.core.ops.op_cloudstate_array_length(id);
           const deleted = [];
           for (let i = start; i < start + deleteCount; i++) {
@@ -929,8 +944,8 @@ function handleArrayMethods(key, array, id) {
           }
 
           return deleted;
-        };
-      });
+        });
+      };
     }
     default: {
       throw new Error(`Array.${key} is not supported`);

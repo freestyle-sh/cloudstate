@@ -15,7 +15,7 @@ use tower::{util::ServiceExt, Service};
 
 #[tokio::test]
 async fn test_fetch_request() {
-    tracing_subscriber::fmt::init();
+    let _ = tracing_subscriber::fmt::try_init();
 
     let cloudstate = ReDBCloudstate::new(Arc::new(Mutex::new(
         redb::Database::builder()

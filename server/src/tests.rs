@@ -20,7 +20,7 @@ mod fetch_method;
 
 #[tokio::test]
 async fn test_method_request() {
-    tracing_subscriber::fmt::init();
+    let _ = tracing_subscriber::fmt::try_init();
 
     let cloudstate = ReDBCloudstate::new(Arc::new(Mutex::new(
         redb::Database::builder()
@@ -110,6 +110,8 @@ async fn test_method_request() {
 
 #[tokio::test]
 async fn test_async_write() {
+    let _ = tracing_subscriber::fmt::try_init();
+
     let mut router = crate::CloudstateServer::new(
         ReDBCloudstate::new(Arc::new(Mutex::new(
             redb::Database::builder()
