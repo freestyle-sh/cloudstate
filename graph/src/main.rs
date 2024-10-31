@@ -58,6 +58,18 @@ fn main() {
     let graph = block_on(future);
 
     for module in graph.modules() {
-        println!("{:#?}", module.js().unwrap().fast_check);
+        // println!("{:#?}", module.js().unwrap().fast_check);
+
+        match module.js().unwrap().fast_check.clone().unwrap() {
+            deno_graph::FastCheckTypeModuleSlot::Module(module) => {
+                for item in module.dts.unwrap().program.expect_module().body {
+                    println!("{:#?}", item);
+                    if let Some(module_decl) = item.as_module_decl() {
+                        // module_decl.
+                    }
+                }
+            }
+            _ => {}
+        }
     }
 }
