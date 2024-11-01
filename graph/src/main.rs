@@ -64,7 +64,7 @@ fn main() {
             deno_graph::FastCheckTypeModuleSlot::Module(module) => {
                 for item in module.dts.unwrap().program.expect_module().body {
                     println!("{:#?}", item);
-                    if let Some(module_decl) = item.as_module_decl() {
+                    if let Some(_module_decl) = item.as_module_decl() {
                         // module_decl.
                     }
                 }
