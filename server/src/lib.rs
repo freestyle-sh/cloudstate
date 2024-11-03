@@ -424,7 +424,10 @@ pub async fn execute_script(
     let script_string = script.to_string();
     let classes_script_string = classes_script.to_string();
 
+    let span = tracing::info_span!("execute_script");
+
     tokio::task::spawn_blocking(move || {
+        let _enter = span.enter();
         debug!("execute_script_internal blocking");
         execute_script_internal(&script_string, &classes_script_string, cs, blob_storage)
     })
@@ -434,7 +437,7 @@ pub async fn execute_script(
 
 // type CloudstateNodePermissions = AllowAllNodePermissions;
 
-#[instrument(skip(script, classes_script, cs))]
+#[instrument(skip(script, classes_script, cs, blob_storage))]
 #[tokio::main(flavor = "current_thread")]
 pub async fn execute_script_internal(
     script: &str,
