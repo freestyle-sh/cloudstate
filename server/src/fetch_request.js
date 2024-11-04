@@ -45,14 +45,15 @@ try {
     object = getRoot($ID) || getCloudstate($ID);
 } catch (e) {
     console.error("Error getting root or cloudstate", e);
-    throw e;
+    globalThis.result = { error: { message: e.message, stack: e.stack } };
 }
 
 try {
     const req = new Request($URI, {
-        method,
         headers: new Headers($HEADERS),
-        body: ["GET", "HEAD"].includes(method) ? undefined : bytes.buffer,
+        method: "$HTTP_METHOD",
+        // TODO
+        // body: ["GET", "HEAD"].includes(method) ? undefined : bytes.buffer,
     });
 
     let out = object.fetch(req);
@@ -68,7 +69,7 @@ try {
         // uint8array to array
         let bytes = Array.from(body);
 
-        globalThis.result = { result: { bytes, headers } };
+        globalThis.result = { response: { bytes, headers } };
     }
 } catch (e) {
     globalThis.result = { error: { message: e.message, stack: e.stack } };

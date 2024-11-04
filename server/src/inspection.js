@@ -10,4 +10,10 @@ export class CloudstateInspectionCS {
     run(script) {
         // internal
     }
+
+    status() {
+        return {
+            status: "ok",
+        };
+    }
 }

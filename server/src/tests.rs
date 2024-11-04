@@ -2,7 +2,11 @@ use axum::{
     body::Body,
     http::{self, Request, StatusCode},
 };
-use cloudstate_runtime::{extensions::cloudstate::ReDBCloudstate, print::print_database};
+use cloudstate_runtime::{
+    blob_storage::{in_memory_store::InMemoryBlobStore, CloudstateBlobStorage},
+    extensions::cloudstate::ReDBCloudstate,
+    print::print_database,
+};
 use http_body_util::BodyExt;
 use serde_json::json;
 use std::{
@@ -12,10 +16,11 @@ use std::{
 use tower::{util::ServiceExt, Service};
 
 // mod concurrency;
+mod fetch_method;
 
 #[tokio::test]
-async fn test_fetch() {
-    tracing_subscriber::fmt::init();
+async fn test_method_request() {
+    let _ = tracing_subscriber::fmt::try_init();
 
     let cloudstate = ReDBCloudstate::new(Arc::new(Mutex::new(
         redb::Database::builder()
@@ -25,6 +30,7 @@ async fn test_fetch() {
 
     let mut router = crate::CloudstateServer::new(
         cloudstate.clone(),
+        CloudstateBlobStorage::new(Arc::new(InMemoryBlobStore::default())),
         r"export class CounterCS {
             static id = 'counter';
             count = 0;
@@ -104,12 +110,15 @@ async fn test_fetch() {
 
 #[tokio::test]
 async fn test_async_write() {
+    let _ = tracing_subscriber::fmt::try_init();
+
     let mut router = crate::CloudstateServer::new(
         ReDBCloudstate::new(Arc::new(Mutex::new(
             redb::Database::builder()
                 .create_with_backend(redb::backends::InMemoryBackend::default())
                 .unwrap(),
         ))),
+        CloudstateBlobStorage::new(Arc::new(InMemoryBlobStore::default())),
         r#"export class DelayedCounter {
             static id = 'delayed-counter';
             count = 0;

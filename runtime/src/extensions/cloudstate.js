@@ -77,7 +77,7 @@ const cloudstateObjects = new Map();
 const customClasses = [];
 
 function hydrate(object, key, value) {
-  span("hydrate", () => {
+  return span("hydrate", () => {
     if (value instanceof CloudstateObjectReference) {
       Object.defineProperty(object, key, {
         get: () => {
@@ -111,19 +111,34 @@ function hydrate(object, key, value) {
       const blob = new Blob();
 
       blob["text"] = async () => {
-        return Deno.core.ops.op_cloudstate_blob_get_data(value.blobId);
+        return Deno.core.ops.op_cloudstate_blob_get_text(value.blobId);
       };
 
       blob["arrayBuffer"] = async () => {
-        const text = Deno.core.ops.op_cloudstate_blob_get_data(value.blobId);
-        const encoder = new TextEncoder();
-        return encoder.encode(text).buffer;
+        /* get_data now returns Array Buffer  */
+        const buffer = Deno.core.ops.op_cloudstate_blob_get_array_buffer(
+          value.blobId,
+        );
+        return buffer;
+      };
+
+      blob["slice"] = (start, end, type) => {
+        if (start < 0 || end < 0) {
+          throw new Error("start and end must be positive");
+        }
+        let arrBuffer = Deno.core.ops.op_cloudstate_blob_slice(
+          value.blobId,
+          start,
+          end,
+        );
+        return new Blob([arrBuffer], { type: type });
       };
 
       blob["bytes"] = async () => {
-        const text = Deno.core.ops.op_cloudstate_blob_get_data(value.blobId);
-        const encoder = new TextEncoder();
-        return encoder.encode(text);
+        const blob = Deno.core.ops.op_cloudstate_blob_get_uint8array(
+          value.blobId,
+        );
+        return blob;
       };
 
       Object.defineProperty(blob, "size", {
@@ -427,9 +442,12 @@ function setObject(object, visited = new Set()) {
           objectIds.set(object, id);
           objects.set(id, object);
 
-          object.text().then((text) => {
-            Deno.core.ops.op_cloudstate_blob_set(id, object.type, text);
-            console.log("set blob " + id);
+          object.arrayBuffer().then(async (buffer) => {
+            Deno.core.ops.op_cloudstate_blob_set(
+              id,
+              object.type,
+              buffer,
+            );
           });
         }
 
@@ -492,9 +510,12 @@ function setObject(object, visited = new Set()) {
             objects.set(id, value);
 
             if (value instanceof Blob) {
-              value.text().then((text) => {
-                Deno.core.ops.op_cloudstate_blob_set(id, value.type, text);
-                console.log("set blob " + id);
+              value.arrayBuffer().then(async (buffer) => {
+                Deno.core.ops.op_cloudstate_blob_set(
+                  id,
+                  value.type,
+                  buffer,
+                );
               });
             }
           }
@@ -643,8 +664,8 @@ function getRoot(alias) {
 function handleArrayMethods(key, array, id) {
   switch (key) {
     case "filter": {
-      return span("array_filter", () => {
-        return (fn) => {
+      return (fn) => {
+        return span("array_filter", () => {
           let arr = [];
           for (let i = 0; i < array.length; i++) {
             if (fn(array[i], i, array)) {
@@ -652,8 +673,8 @@ function handleArrayMethods(key, array, id) {
             }
           }
           return arr;
-        };
-      });
+        });
+      };
     }
     case "toReversed": {
       return () => {
@@ -892,8 +913,8 @@ function handleArrayMethods(key, array, id) {
     }
 
     case "splice": {
-      return span("array_splice", () => {
-        return (start, deleteCount, ...items) => {
+      return (start, deleteCount, ...items) => {
+        return span("array_splice", () => {
           const length = Deno.core.ops.op_cloudstate_array_length(id);
           const deleted = [];
           for (let i = start; i < start + deleteCount; i++) {
@@ -923,8 +944,8 @@ function handleArrayMethods(key, array, id) {
           }
 
           return deleted;
-        };
-      });
+        });
+      };
     }
     default: {
       throw new Error(`Array.${key} is not supported`);
