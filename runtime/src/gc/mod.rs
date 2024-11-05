@@ -35,7 +35,7 @@ pub fn mark_and_sweep(db: &Database) -> anyhow::Result<&Database> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-enum Pointer {
+pub enum Pointer {
     Object(CloudstateObjectKey),
     Map(CloudstateObjectKey),
     Array(CloudstateObjectKey),
