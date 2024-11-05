@@ -219,7 +219,10 @@ fn op_cloudstate_object_get(
     let result = info_span!("get").in_scope(|| table.get(key).unwrap());
     let result = info_span!("map").in_scope(|| result.map(|s| s.value().data));
 
-    Ok(result.unwrap())
+    match result {
+        Some(result) => Ok(result),
+        None => Err(anyhow!("Object not found")),
+    }
 }
 
 #[instrument(skip(state))]
