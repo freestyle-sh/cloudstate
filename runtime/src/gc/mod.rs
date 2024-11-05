@@ -47,7 +47,6 @@ pub enum Pointer {
 /// Comsumes the transaction and returns a set of reachable objects
 #[instrument(skip(tx))]
 pub fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
-    println!("mark");
     let reachable = {
         let roots_table = match tx.open_table(ROOTS_TABLE) {
             Ok(table) => table,
@@ -56,7 +55,7 @@ pub fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
 
         let mut roots: Vec<CloudstateObjectKey> = Vec::new();
 
-        println!("roots_table: {:?}", roots_table.len());
+        info!("{} items in roots table", roots_table.len().unwrap_or(0));
         for item in roots_table.iter()? {
             if let Ok((key, root)) = item {
                 let _key = key.value();
@@ -67,7 +66,7 @@ pub fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
 
         let objects_table = match tx.open_table(OBJECTS_TABLE) {
             Ok(table) => {
-                println!("objects_table: {:?}", table.len());
+                info!("{} items in objects table", table.len().unwrap_or(0));
                 Some(table)
             }
             Err(_e) => None,
@@ -75,7 +74,7 @@ pub fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
 
         let map_table = match tx.open_table(MAPS_TABLE) {
             Ok(table) => {
-                println!("map_table: {:?}", table.len());
+                info!("{} items in map table", table.len().unwrap_or(0));
                 Some(table)
             }
             Err(_e) => None,
@@ -83,7 +82,7 @@ pub fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
 
         let arr_table = match tx.open_table(ARRAYS_TABLE) {
             Ok(table) => {
-                println!("arr_table: {:?}", table.len());
+                info!("{} items in array table", table.len().unwrap_or(0));
                 Some(table)
             }
             Err(_e) => None,
@@ -96,7 +95,6 @@ pub fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
         stack.extend(roots.iter().map(|root| Pointer::Object(root.clone())));
 
         while let Some(pointer) = stack.pop() {
-            println!("stack: {:?}", stack.len());
             if reachable.contains(&pointer) {
                 continue;
             }
@@ -201,9 +199,13 @@ pub fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
                 _ => { /* These don't have references so they don't need anything */ }
             }
         }
+        info!("Found {} reachable objects", reachable.len());
+
         reachable
     };
+
     tx.close()?;
+
     Ok(reachable)
 }
 
@@ -227,12 +229,7 @@ pub fn sweep(tx: WriteTransaction, reachable: &BTreeSet<Pointer>) -> anyhow::Res
 
         let mut to_delete: Vec<Pointer> = Vec::new();
 
-        info!(
-            "sweeping objects table with {:?} items",
-            objects_table.len()
-        );
         for item in objects_table.iter()? {
-            // println!("item: {:?}", item);
             if let Ok((key, _value)) = item {
                 let key = key.value();
                 if !reachable.contains(&Pointer::Object(key.clone())) {
@@ -241,9 +238,7 @@ pub fn sweep(tx: WriteTransaction, reachable: &BTreeSet<Pointer>) -> anyhow::Res
             }
         }
 
-        info!("sweeping maps table with {:?} items", maps_table.len());
         for item in maps_table.iter()? {
-            // println!("item: {:?}", item);
             if let Ok((key, _value)) = item {
                 let key = key.value();
 
@@ -253,9 +248,7 @@ pub fn sweep(tx: WriteTransaction, reachable: &BTreeSet<Pointer>) -> anyhow::Res
             }
         }
 
-        info!("sweeping arrays table with {:?} items", arrays_table.len());
         for item in arrays_table.iter()? {
-            // println!("item: {:?}", item);
             if let Ok((key, _value)) = item {
                 let key = key.value();
 
