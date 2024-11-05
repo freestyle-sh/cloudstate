@@ -46,7 +46,7 @@ enum Pointer {
 
 /// Comsumes the transaction and returns a set of reachable objects
 #[instrument(skip(tx))]
-fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
+pub fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
     println!("mark");
     let reachable = {
         let roots_table = match tx.open_table(ROOTS_TABLE) {
@@ -209,7 +209,7 @@ fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
 
 /// Consumes the transaction and deletes all objects not in the set
 #[instrument(skip(tx, reachable))]
-fn sweep(tx: WriteTransaction, reachable: &BTreeSet<Pointer>) -> anyhow::Result<()> {
+pub fn sweep(tx: WriteTransaction, reachable: &BTreeSet<Pointer>) -> anyhow::Result<()> {
     {
         let mut objects_table = match tx.open_table(OBJECTS_TABLE) {
             Ok(table) => table,
