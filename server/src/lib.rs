@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use axum::{
     body::Body,
     extract::{Host, Request, State},
@@ -11,6 +12,7 @@ use cloudstate_runtime::{
         bootstrap::bootstrap,
         cloudstate::{cloudstate, JavaScriptSpans, TransactionContext},
     },
+    gc::mark_and_sweep,
 };
 use cloudstate_runtime::{extensions::cloudstate::ReDBCloudstate, v8_string_key};
 use deno_core::JsRuntime;
@@ -127,6 +129,16 @@ impl CloudstateServer {
             router: app,
             blob_storage: blob_storage,
             cloudstate,
+        }
+    }
+
+    pub async fn gc(&self) -> anyhow::Result<()> {
+        let db = self.cloudstate.get_database_mut();
+        match mark_and_sweep(&db) {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                return Err(anyhow!("Error running garbage collection: {:?}", e));
+            }
         }
     }
 }
