@@ -9,7 +9,7 @@ use crate::{
 use anyhow::anyhow;
 use redb::{Database, ReadTransaction, ReadableTable, ReadableTableMetadata, WriteTransaction};
 use std::collections::BTreeSet;
-use tracing::instrument;
+use tracing::{debug, instrument};
 use tracing::{event, info};
 
 #[instrument(skip(db))]
@@ -95,6 +95,8 @@ pub fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
         stack.extend(roots.iter().map(|root| Pointer::Object(root.clone())));
 
         while let Some(pointer) = stack.pop() {
+            debug!("Stack size: {}", stack.len());
+            debug!("Pointer: {:?}", pointer);
             if reachable.contains(&pointer) {
                 continue;
             }
