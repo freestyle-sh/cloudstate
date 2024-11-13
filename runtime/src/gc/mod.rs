@@ -9,6 +9,7 @@ use crate::{
 use anyhow::anyhow;
 use redb::{Database, ReadTransaction, ReadableTable, ReadableTableMetadata, WriteTransaction};
 use std::collections::BTreeSet;
+use std::ops::RangeBounds;
 use tracing::{debug, instrument};
 use tracing::{event, info};
 
@@ -165,35 +166,37 @@ pub fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
                 }
                 Pointer::Array(arr_ref) => {
                     if let Some(ref arr_table) = arr_table {
-                        for item in arr_table.iter()? {
-                            if let Ok((key, value)) = item {
-                                let key = key.value();
-                                let value = value.value();
-
-                                if key.id == arr_ref.id {
-                                    match value.data {
-                                        CloudstatePrimitiveData::ObjectReference(obj_ref) => {
-                                            stack.push(Pointer::Object(CloudstateObjectKey {
-                                                id: obj_ref.id,
-                                            }));
-                                        }
-                                        CloudstatePrimitiveData::MapReference(map_ref) => {
-                                            stack.push(Pointer::Map(CloudstateObjectKey {
-                                                id: map_ref,
-                                            }));
-                                        }
-                                        CloudstatePrimitiveData::ArrayReference(
-                                            arr_ref_internal,
-                                        ) => {
-                                            stack.push(Pointer::Array(CloudstateObjectKey {
-                                                id: arr_ref_internal,
-                                            }));
-                                        }
-                                        _ => {
-                                            /* These don't have references so they don't need anything */
-                                        }
+                        let mut index = 0;
+                        loop {
+                            let key = CloudstateArrayItemKey {
+                                id: arr_ref.id.clone(),
+                                index,
+                            };
+                            if let Ok(Some(value)) = arr_table.get(&key) {
+                                match value.value().data {
+                                    CloudstatePrimitiveData::ObjectReference(obj_ref) => {
+                                        stack.push(Pointer::Object(CloudstateObjectKey {
+                                            id: obj_ref.id,
+                                        }));
+                                    }
+                                    CloudstatePrimitiveData::MapReference(map_ref) => {
+                                        stack.push(Pointer::Map(CloudstateObjectKey {
+                                            id: map_ref,
+                                        }));
+                                    }
+                                    CloudstatePrimitiveData::ArrayReference(arr_ref_internal) => {
+                                        stack.push(Pointer::Array(CloudstateObjectKey {
+                                            id: arr_ref_internal,
+                                        }));
+                                    }
+                                    _ => {
+                                        /* These don't have references so they don't need anything */
                                     }
                                 }
+                                index += 1;
+                            } else {
+                                // No more items in the index
+                                break;
                             }
                         }
                     }
