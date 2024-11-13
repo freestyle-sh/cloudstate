@@ -8,7 +8,7 @@ use crate::{
     },
 };
 
-use redb::TableDefinition;
+use redb::{ReadTransaction, ReadableTable, TableDefinition, WriteTransaction};
 
 pub const ROOTS_TABLE: TableDefinition<Bincode<CloudstateRootKey>, Bincode<CloudstateRootValue>> =
     TableDefinition::new("roots");
@@ -32,3 +32,29 @@ pub const BLOBS_TABLE: TableDefinition<
     Bincode<CloudstateBlobKey>,
     Bincode<CloudstateBlobMetadata>,
 > = TableDefinition::new("blobs");
+
+// backup utilities here, so when we add/remove tables we can easily update the backup code
+
+fn backup_table<K: redb::Key + 'static, V: redb::Value + 'static>(
+    table_definition: redb::TableDefinition<K, V>,
+    read: &ReadTransaction,
+    write: &WriteTransaction,
+) -> () {
+    let table = read.open_table(table_definition).unwrap();
+    let mut write_table = write.open_table(table_definition).unwrap();
+    for item in table.iter().unwrap() {
+        if let Ok((key, value)) = item {
+            write_table.insert(key.value(), value.value()).unwrap();
+        }
+    }
+    ()
+}
+
+pub fn backup_all_tables(read: &ReadTransaction, write: &WriteTransaction) -> () {
+    backup_table(ROOTS_TABLE, read, write);
+    backup_table(OBJECTS_TABLE, read, write);
+    backup_table(MAPS_TABLE, read, write);
+    backup_table(ARRAYS_TABLE, read, write);
+    backup_table(BLOBS_TABLE, read, write);
+    ()
+}

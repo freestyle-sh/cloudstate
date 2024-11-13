@@ -1,8 +1,7 @@
 use crate::blob_storage::{CloudstateBlobMetadata, CloudstateBlobStorage, CloudstateBlobValue};
-use crate::tables::{ARRAYS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
+use crate::tables::{backup_all_tables, ARRAYS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
 use crate::v8_string_key;
 use anyhow::anyhow;
-
 use anyhow::Result;
 use chrono::{DateTime, TimeZone, Utc};
 use deno_core::anyhow::Error;
@@ -17,6 +16,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::i32;
 use std::rc::Rc;
+use std::result::Result::Ok;
 use std::sync::Arc;
 use std::sync::{Mutex, MutexGuard};
 use tracing::{debug, error, event, info, info_span, instrument};
@@ -881,6 +881,22 @@ impl ReDBCloudstate {
 
     pub fn get_database_mut(&self) -> MutexGuard<Database> {
         self.db.lock().unwrap()
+    }
+
+    pub fn backup(&self, path: &str) -> Result<(), Error> {
+        let db = self.get_database_mut();
+        let backup_db = Database::create(path)?;
+        let read = db.begin_read().unwrap();
+        let write = backup_db.begin_write().unwrap();
+
+        backup_all_tables(&read, &write);
+
+        read.close().unwrap();
+        write.commit().unwrap();
+
+        Ok(())
+
+        //db.begin_read();
     }
 }
 
