@@ -732,7 +732,7 @@ checksum = "1462739cb27611015575c0c11df5df7601141071f07518d56fcc1be504cbec97"
 
 [[package]]
 name = "cli"
-version = "0.1.4"
+version = "0.1.41"
 dependencies = [
  "axum",
  "clap",
@@ -758,7 +758,7 @@ dependencies = [
 
 [[package]]
 name = "cloudstate"
-version = "0.1.4"
+version = "0.1.41"
 dependencies = [
  "anyhow",
  "bincode",
@@ -4422,7 +4422,7 @@ dependencies = [
 
 [[package]]
 name = "server"
-version = "0.1.4"
+version = "0.1.41"
 dependencies = [
  "anyhow",
  "axum",
