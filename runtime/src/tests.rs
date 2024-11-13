@@ -1,4 +1,5 @@
 use crate::js_test;
+mod gc_tests;
 mod js_test;
 
 // mod gc_tests; // TODO: ERR

@@ -2,7 +2,11 @@ use redb::{backends::InMemoryBackend, Database, ReadableTable};
 use std::sync::{Arc, Mutex};
 
 use crate::{
-    execution::run_script, extensions::cloudstate::ReDBCloudstate, gc::mark_and_sweep, tables,
+    blob_storage::{in_memory_store::InMemoryBlobStore, CloudstateBlobStorage},
+    execution::run_script,
+    extensions::cloudstate::ReDBCloudstate,
+    gc::mark_and_sweep,
+    tables,
 };
 
 #[test]
@@ -12,7 +16,12 @@ fn test_gc_objects() {
         .unwrap();
     let cloudstate = ReDBCloudstate::new(Arc::new(Mutex::new(db)));
 
-    let (cloudstate, _) = run_script("tests/gc/base.js", cloudstate.clone()).unwrap();
+    let (cloudstate, _) = run_script(
+        "tests/gc/base.js",
+        cloudstate.clone(),
+        CloudstateBlobStorage::new(Arc::new(InMemoryBlobStore::new())),
+    )
+    .unwrap();
 
     let db = &cloudstate.get_database_mut();
     let read = db.begin_read();
@@ -66,7 +75,12 @@ fn test_gc_maps() {
         .unwrap();
     let cloudstate = ReDBCloudstate::new(Arc::new(Mutex::new(db)));
 
-    let (cloudstate, _) = run_script("tests/gc/map.js", cloudstate).unwrap();
+    let (cloudstate, _) = run_script(
+        "tests/gc/map.js",
+        cloudstate,
+        CloudstateBlobStorage::new(Arc::new(InMemoryBlobStore::new())),
+    )
+    .unwrap();
 
     let db = &cloudstate.get_database_mut();
     let read = db.begin_read();
@@ -119,7 +133,12 @@ pub fn test_gc_array() {
         .unwrap();
     let cloudstate = ReDBCloudstate::new(Arc::new(Mutex::new(db)));
 
-    let (cloudstate, _) = run_script("tests/gc/array.js", cloudstate).unwrap();
+    let (cloudstate, _) = run_script(
+        "tests/gc/array.js",
+        cloudstate,
+        CloudstateBlobStorage::new(Arc::new(InMemoryBlobStore::new())),
+    )
+    .unwrap();
 
     let db = &cloudstate.get_database_mut();
     let read = db.begin_read();
