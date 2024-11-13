@@ -114,7 +114,8 @@ impl CloudstateServer {
                     .post(fetch_request)
                     .patch(fetch_request)
                     .put(fetch_request)
-                    .delete(fetch_request),
+                    .delete(fetch_request)
+                    .head(fetch_request),
             )
             .route("/cloudstate/instances/:id/:method", post(method_request))
             .with_state(AppState {
