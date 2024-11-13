@@ -9,7 +9,6 @@ use crate::{
 use anyhow::anyhow;
 use redb::{Database, ReadTransaction, ReadableTable, ReadableTableMetadata, WriteTransaction};
 use std::collections::BTreeSet;
-use std::ops::RangeBounds;
 use tracing::{debug, instrument};
 use tracing::{event, info};
 
