@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::i32;
+use std::path::Path;
 use std::rc::Rc;
 use std::result::Result::Ok;
 use std::sync::Arc;
@@ -883,7 +884,7 @@ impl ReDBCloudstate {
         self.db.lock().unwrap()
     }
 
-    pub fn backup(&self, path: &str) -> Result<(), Error> {
+    pub fn backup(&self, path: impl AsRef<Path>) -> Result<(), Error> {
         let db = self.get_database_mut();
         let backup_db = Database::create(path)?;
         let read = db.begin_read().unwrap();
