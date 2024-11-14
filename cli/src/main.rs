@@ -84,6 +84,7 @@ enum Cli {
     Run(CliArguments),
     #[command(name = "serve", about = "Serves a file on the cloudstate runtime")]
     Serve(CliArguments),
+    #[command(name = "gc", about = "Runs the garbage collector on a database file")]
     Gc(GcArguments),
 }
 
