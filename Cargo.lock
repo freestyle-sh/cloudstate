@@ -749,7 +749,7 @@ dependencies = [
 
 [[package]]
 name = "cloudstate"
-version = "0.1.41"
+version = "0.1.43"
 dependencies = [
  "anyhow",
  "bincode",
@@ -4346,7 +4346,7 @@ dependencies = [
 
 [[package]]
 name = "server"
-version = "0.1.41"
+version = "0.1.43"
 dependencies = [
  "anyhow",
  "axum",

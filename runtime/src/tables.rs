@@ -40,13 +40,15 @@ fn backup_table<K: redb::Key + 'static, V: redb::Value + 'static>(
     read: &ReadTransaction,
     write: &WriteTransaction,
 ) -> () {
-    let table = read.open_table(table_definition).unwrap();
-    let mut write_table = write.open_table(table_definition).unwrap();
-    for item in table.iter().unwrap() {
-        if let Ok((key, value)) = item {
-            write_table.insert(key.value(), value.value()).unwrap();
+    if let Ok(table) = read.open_table(table_definition) {
+        let mut write_table = write.open_table(table_definition).unwrap();
+        for item in table.iter().unwrap() {
+            if let Ok((key, value)) = item {
+                write_table.insert(key.value(), value.value()).unwrap();
+            }
         }
     }
+    // If table doesn't exist/doesn't have anything in it, it throws an error, so we pass over that
     ()
 }
 
