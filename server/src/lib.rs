@@ -14,6 +14,8 @@ use cloudstate_runtime::{
     },
     gc::mark_and_sweep,
 };
+use deno_runtime::deno_permissions::PermissionCheckError;
+
 use cloudstate_runtime::{extensions::cloudstate::ReDBCloudstate, v8_string_key};
 use deno_core::JsRuntime;
 use deno_core::*;
@@ -381,7 +383,11 @@ impl TimersPermission for CloudstateTimerPermissions {
 struct CloudstateFetchPermissions {}
 
 impl FetchPermissions for CloudstateFetchPermissions {
-    fn check_net_url(&mut self, _url: &url::Url, _api_name: &str) -> Result<(), error::AnyError> {
+    fn check_net_url(
+        &mut self,
+        _url: &url::Url,
+        _api_name: &str,
+    ) -> Result<(), PermissionCheckError> {
         debug!("checking net url fetch permission");
         Ok(())
     }
@@ -390,7 +396,7 @@ impl FetchPermissions for CloudstateFetchPermissions {
         &mut self,
         p: &'a Path,
         _api_name: &str,
-    ) -> Result<std::borrow::Cow<'a, Path>, error::AnyError> {
+    ) -> Result<std::borrow::Cow<'a, Path>, PermissionCheckError> {
         debug!("checking read fetch permission");
         Ok(p.to_path_buf().into())
     }
@@ -403,17 +409,17 @@ impl NetPermissions for CloudstateNetPermissions {
         &mut self,
         _host: &(T, Option<u16>),
         _api_name: &str,
-    ) -> Result<(), error::AnyError> {
+    ) -> Result<(), PermissionCheckError> {
         debug!("checking net permission");
         Ok(())
     }
 
-    fn check_read(&mut self, p: &str, _api_name: &str) -> Result<PathBuf, error::AnyError> {
+    fn check_read(&mut self, p: &str, _api_name: &str) -> Result<PathBuf, PermissionCheckError> {
         debug!("checking read permission");
         Ok(p.to_string().into())
     }
 
-    fn check_write(&mut self, p: &str, _api_name: &str) -> Result<PathBuf, error::AnyError> {
+    fn check_write(&mut self, p: &str, _api_name: &str) -> Result<PathBuf, PermissionCheckError> {
         debug!("checking write permission");
         Ok(p.to_string().into())
     }
@@ -422,7 +428,7 @@ impl NetPermissions for CloudstateNetPermissions {
         &mut self,
         p: &'a std::path::Path,
         _api_name: &str,
-    ) -> Result<std::borrow::Cow<'a, std::path::Path>, error::AnyError> {
+    ) -> Result<std::borrow::Cow<'a, std::path::Path>, PermissionCheckError> {
         debug!("checking write path permission");
         Ok(p.to_path_buf().into())
     }

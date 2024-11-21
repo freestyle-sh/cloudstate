@@ -7,7 +7,7 @@ edition = "2021"
 cloudstate = { path = "../runtime" }
 
 anyhow.workspace = true
-axum = "0.7.5"
+axum.workspace = true
 serde.workspace = true
 redb = "2.1.1"
 tokio.workspace = true
@@ -28,4 +28,6 @@ deno_fetch.workspace = true
 deno_net.workspace = true
 deno_node.workspace = true
 deno_fs.workspace = true
+deno_runtime.workspace = true
+
 tracing-subscriber = "0.3.18"

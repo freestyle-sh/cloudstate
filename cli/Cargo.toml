@@ -9,7 +9,7 @@ redb = "2.1.1"
 server = { path = "../server" }
 cloudstate = { path = "../runtime" }
 tokio.workspace = true
-axum = "0.7.5"
+axum.workspace = true
 notify = "6.1.1"
 tower = "0.5.0"
 tracing-subscriber = "0.3.18"
