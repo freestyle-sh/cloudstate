@@ -133,7 +133,15 @@ pub fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
                 }
                 Pointer::Map(map_reference) => {
                     if let Some(ref map_table) = map_table {
-                        for item in map_table.iter()? {
+                        for item in map_table.range(
+                            CloudstateMapFieldKey {
+                                id: map_reference.id.clone(),
+                                field: String::new(),
+                            }..CloudstateMapFieldKey {
+                                id: map_reference.id.clone() + "\u{0}", // null character so it goes through all the fields
+                                field: String::new(),
+                            },
+                        )? {
                             if let Ok((key, value)) = item {
                                 let key = key.value();
                                 let value = value.value();
@@ -165,14 +173,19 @@ pub fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
                 }
                 Pointer::Array(arr_ref) => {
                     if let Some(ref arr_table) = arr_table {
-                        let mut index = 0;
-                        loop {
-                            let key = CloudstateArrayItemKey {
+                        for item in arr_table.range(
+                            CloudstateArrayItemKey {
                                 id: arr_ref.id.clone(),
-                                index,
-                            };
-                            if let Ok(Some(value)) = arr_table.get(&key) {
-                                match value.value().data {
+                                index: 0,
+                            }..CloudstateArrayItemKey {
+                                id: arr_ref.id.clone(),
+                                index: i32::MAX,
+                            },
+                        )? {
+                            if let Ok((_key, value)) = item {
+                                let value = value.value();
+
+                                match value.data {
                                     CloudstatePrimitiveData::ObjectReference(obj_ref) => {
                                         stack.push(Pointer::Object(CloudstateObjectKey {
                                             id: obj_ref.id,
@@ -192,10 +205,6 @@ pub fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
                                         /* These don't have references so they don't need anything */
                                     }
                                 }
-                                index += 1;
-                            } else {
-                                // No more items in the index
-                                break;
                             }
                         }
                     }

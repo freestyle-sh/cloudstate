@@ -1,5 +1,7 @@
 use crate::blob_storage::{CloudstateBlobMetadata, CloudstateBlobStorage, CloudstateBlobValue};
-use crate::tables::{backup_all_tables, ARRAYS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
+use crate::tables::{
+    backup_all_tables, BackupProgress, ARRAYS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE,
+};
 use crate::v8_string_key;
 use anyhow::anyhow;
 use anyhow::Result;
@@ -13,6 +15,7 @@ use redb::{
 };
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::i32;
 use std::path::Path;
@@ -884,13 +887,17 @@ impl ReDBCloudstate {
         self.db.lock().unwrap()
     }
 
-    pub fn backup(&self, path: impl AsRef<Path>) -> Result<(), Error> {
+    pub fn backup<'a>(
+        &self,
+        path: impl AsRef<Path>,
+        progress_callback: &mut Option<Box<dyn FnMut(BackupProgress) + 'a>>,
+    ) -> Result<(), Error> {
         let db = self.get_database_mut();
         let backup_db = Database::create(path)?;
         let read = db.begin_read().unwrap();
         let write = backup_db.begin_write().unwrap();
 
-        backup_all_tables(&read, &write);
+        backup_all_tables(&read, &write, progress_callback)?;
 
         read.close().unwrap();
         write.commit().unwrap();
@@ -1334,10 +1341,24 @@ impl FromV8<'_> for CloudstatePrimitiveData {
     type Error = JsError;
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct CloudstateMapFieldKey {
     pub id: String,
     pub field: String,
+}
+
+impl PartialOrd for CloudstateMapFieldKey {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for CloudstateMapFieldKey {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.id
+            .cmp(&other.id)
+            .then_with(|| self.field.cmp(&other.field))
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -1345,10 +1366,24 @@ pub struct CloudstateMapFieldValue {
     pub data: CloudstatePrimitiveData,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct CloudstateArrayItemKey {
     pub id: String,
     pub index: i32,
+}
+
+impl PartialOrd for CloudstateArrayItemKey {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for CloudstateArrayItemKey {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.id
+            .cmp(&other.id)
+            .then_with(|| self.index.cmp(&other.index))
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]

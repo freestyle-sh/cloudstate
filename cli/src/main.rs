@@ -2,10 +2,8 @@
 // #[global_allocator]
 // static ALLOC: dhat::Alloc = dhat::Alloc;
 
-use axum::{body::Body, extract::Request, routing::get, Json};
-use tokio::runtime::Runtime; // 0.3.5
-
 use axum::extract::DefaultBodyLimit;
+use axum::{body::Body, extract::Request, routing::get, Json};
 use clap::{Parser, ValueHint};
 use cloudstate_runtime::{
     blob_storage::{
@@ -14,13 +12,16 @@ use cloudstate_runtime::{
     },
     extensions::cloudstate::ReDBCloudstate,
     gc::mark_and_sweep,
+    tables::BackupProgress,
 };
+use indicatif::ProgressBar;
 use notify::Watcher;
 use redb::{
     backends::{self},
     Database,
 };
 use server::{execute_script, CloudstateServer};
+use std::io::Write;
 use std::{
     collections::HashMap,
     fs::{self},
@@ -31,6 +32,7 @@ use std::{
     time::Duration,
 };
 use tokio::net::TcpListener;
+use tokio::runtime::Runtime; // 0.3.5
 use tokio::sync::RwLock;
 use tower::Service;
 use tracing::{debug, info};
@@ -69,6 +71,24 @@ struct GcArguments {
 }
 
 #[derive(clap::Parser)]
+struct BackupArguments {
+    #[arg(
+        required = true,
+        long,
+        help = "The database file to backup",
+        default_value = "cloudstate"
+    )]
+    filename: String,
+    #[arg(
+        required = true,
+        long,
+        help = "The backup file to write to",
+        default_value = "backup"
+    )]
+    backup_filename: String,
+}
+
+#[derive(clap::Parser)]
 #[clap(
     name = "cloudstate",
     bin_name = "cloudstate",
@@ -86,6 +106,8 @@ enum Cli {
     Serve(CliArguments),
     #[command(name = "gc", about = "Runs the garbage collector on a database file")]
     Gc(GcArguments),
+    #[command(name = "backup", about = "Backs up a database file")]
+    Backup(BackupArguments),
 }
 
 #[tokio::main]
@@ -161,7 +183,10 @@ async fn main() {
             let blob_storage_engine: Arc<dyn CloudstateBlobStorageEngine> = if memory_only {
                 Arc::new(InMemoryBlobStore::new())
             } else {
-                Arc::new(FsBlobStore::new("./cloudstate-blobs".into()))
+                // cwd is the current working directory
+                Arc::new(FsBlobStore::new(
+                    std::env::current_dir().unwrap().join("cloudstate-blobs"),
+                ))
             };
 
             let blob_storage = CloudstateBlobStorage::new(blob_storage_engine.clone());
@@ -282,7 +307,77 @@ async fn main() {
                 megabytes_before, megabytes_after, megabytes_saved
             )
         }
-    }
+        Cli::Backup(BackupArguments {
+            filename,
+            backup_filename,
+        }) => {
+            let db = match Database::open(filename.clone()) {
+                Ok(db) => db,
+                Err(e) => {
+                    info!("Failed to open file: {:?}", e);
+                    return;
+                }
+            };
+
+            let cloudstate = ReDBCloudstate::new(Arc::new(Mutex::new(db)));
+            let mut current_progress_bar = ProgressBarState::None;
+            cloudstate
+                .backup(
+                    backup_filename.clone(),
+                    &mut Some(Box::new(|progress: BackupProgress| {
+                        if let Some(current_table) = progress.tables.last() {
+                            let (table_name, table_progress) = current_table;
+                            match &mut current_progress_bar {
+                                ProgressBarState::None => {
+                                    // println!("Backing up table: {}", table_name);
+
+                                    let bar = ProgressBar::new(table_progress.total)
+                                        .with_style(
+                                            indicatif::ProgressStyle::default_bar()
+                                                .template("{msg} {bar:40.cyan/blue} {pos}/{len}")
+                                                .unwrap(),
+                                        )
+                                        .with_message(format!("Backing up {}", table_name));
+
+                                    current_progress_bar =
+                                        ProgressBarState::Named(table_name.clone(), bar);
+                                }
+                                ProgressBarState::Named(name, pb) => {
+                                    if name != table_name {
+                                        pb.finish();
+                                        current_progress_bar = ProgressBarState::Named(
+                                            table_name.clone(),
+                                            ProgressBar::new(table_progress.total)
+                                                .with_style(
+                                                    indicatif::ProgressStyle::default_bar()
+                                                        .template(
+                                                            "{msg} {bar:40.cyan/blue} {pos}/{len}",
+                                                        )
+                                                        .unwrap(),
+                                                )
+                                                .with_message(format!("Backing up {}", table_name)),
+                                        );
+                                    } else {
+                                        pb.set_position(table_progress.current);
+                                        if table_progress.current == table_progress.total {
+                                            pb.finish();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // progress_bar_height = progress.tables.len();
+                    })),
+                )
+                .unwrap();
+        }
+    };
+}
+
+pub enum ProgressBarState {
+    None,
+    Named(String, ProgressBar),
 }
 
 async fn run_server(server: Arc<RwLock<CloudstateServer>>, listener: TcpListener) {
