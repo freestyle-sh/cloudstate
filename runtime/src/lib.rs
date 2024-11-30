@@ -1,3 +1,4 @@
+pub mod backup;
 pub mod bincode;
 pub mod blob_storage;
 pub mod execution;

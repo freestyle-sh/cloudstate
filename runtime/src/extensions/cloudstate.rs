@@ -1,7 +1,6 @@
+use crate::backup::{backup_all_tables, BackupProgress};
 use crate::blob_storage::{CloudstateBlobMetadata, CloudstateBlobStorage, CloudstateBlobValue};
-use crate::tables::{
-    backup_all_tables, BackupProgress, ARRAYS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE,
-};
+use crate::tables::{ARRAYS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
 use crate::v8_string_key;
 use anyhow::anyhow;
 use anyhow::Result;
