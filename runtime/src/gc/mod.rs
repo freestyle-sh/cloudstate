@@ -217,7 +217,7 @@ pub fn mark(tx: ReadTransaction) -> anyhow::Result<BTreeSet<Pointer>> {
         reachable
     };
 
-    tx.close()?;
+    // tx.close()?;
 
     Ok(reachable)
 }

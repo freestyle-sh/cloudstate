@@ -5,6 +5,7 @@
 use axum::extract::DefaultBodyLimit;
 use axum::{body::Body, extract::Request, routing::get, Json};
 use clap::{Parser, ValueHint};
+use cloudstate_runtime::backup::BackupProgress;
 use cloudstate_runtime::{
     blob_storage::{
         fs_store::FsBlobStore, in_memory_store::InMemoryBlobStore, CloudstateBlobStorage,
@@ -12,7 +13,6 @@ use cloudstate_runtime::{
     },
     extensions::cloudstate::ReDBCloudstate,
     gc::mark_and_sweep,
-    tables::BackupProgress,
 };
 use indicatif::ProgressBar;
 use notify::Watcher;
