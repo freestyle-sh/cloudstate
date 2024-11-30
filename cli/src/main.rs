@@ -314,12 +314,21 @@ async fn main() {
             let db = match Database::open(filename.clone()) {
                 Ok(db) => db,
                 Err(e) => {
-                    info!("Failed to open file: {:?}", e);
-                    return;
+                    if matches!(e, redb::DatabaseError::Storage(_)) {
+                        info!("We couldn't find a database file at {:?}", filename);
+                        return;
+                    } else {
+                        info!("Failed to open file: {:?}", e);
+                        return;
+                    }
                 }
             };
 
             let cloudstate = ReDBCloudstate::new(Arc::new(Mutex::new(db)));
+            let style = indicatif::ProgressStyle::default_bar()
+                .template("{msg:<18} {bar:40.green/white} ({pos}/{len})")
+                .unwrap();
+            // .progress_chars("=>|");
             let mut current_progress_bar = ProgressBarState::None;
             cloudstate
                 .backup(
@@ -329,14 +338,8 @@ async fn main() {
                             let (table_name, table_progress) = current_table;
                             match &mut current_progress_bar {
                                 ProgressBarState::None => {
-                                    // println!("Backing up table: {}", table_name);
-
                                     let bar = ProgressBar::new(table_progress.total)
-                                        .with_style(
-                                            indicatif::ProgressStyle::default_bar()
-                                                .template("{msg} {bar:40.cyan/blue} {pos}/{len}")
-                                                .unwrap(),
-                                        )
+                                        .with_style(style.clone())
                                         .with_message(format!("Backing up {}", table_name));
 
                                     current_progress_bar =
@@ -348,13 +351,7 @@ async fn main() {
                                         current_progress_bar = ProgressBarState::Named(
                                             table_name.clone(),
                                             ProgressBar::new(table_progress.total)
-                                                .with_style(
-                                                    indicatif::ProgressStyle::default_bar()
-                                                        .template(
-                                                            "{msg} {bar:40.cyan/blue} {pos}/{len}",
-                                                        )
-                                                        .unwrap(),
-                                                )
+                                                .with_style(style.clone())
                                                 .with_message(format!("Backing up {}", table_name)),
                                         );
                                     } else {
