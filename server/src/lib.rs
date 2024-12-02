@@ -471,6 +471,7 @@ pub async fn execute_script_internal(
         })),
         extensions: vec![
             deno_webidl::deno_webidl::init_ops_and_esm(),
+            deno_telemetry::deno_telemetry::init_ops_and_esm(),
             deno_url::deno_url::init_ops_and_esm(),
             deno_console::deno_console::init_ops_and_esm(),
             deno_web::deno_web::init_ops_and_esm::<CloudstateTimerPermissions>(
@@ -489,6 +490,9 @@ pub async fn execute_script_internal(
             //     std::rc::Rc::new(InMemoryFs::default()),
             // ),
         ],
+        extension_transpiler: Some(Rc::new(|specifier, source| {
+            cloudstate_runtime::transpile::maybe_transpile_source(specifier, source)
+        })),
         ..Default::default()
     });
 

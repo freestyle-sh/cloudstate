@@ -6040,6 +6040,7 @@ dependencies = [
  "deno_net",
  "deno_node",
  "deno_runtime",
+ "deno_telemetry",
  "deno_url",
  "deno_web",
  "deno_webidl",

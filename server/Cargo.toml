@@ -29,5 +29,6 @@ deno_net.workspace = true
 deno_node.workspace = true
 deno_fs.workspace = true
 deno_runtime.workspace = true
+deno_telemetry.workspace = true
 
 tracing-subscriber = "0.3.18"
