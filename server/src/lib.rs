@@ -247,8 +247,6 @@ async fn fetch_request(
         },
     );
 
-    debug!("json: {:#?}", json);
-
     let mut builder = Response::builder();
 
     match json {
