@@ -25,6 +25,10 @@ deno_url = { git = "https://github.com/denoland/deno.git" }
 deno_fs = { git = "https://github.com/denoland/deno.git" }
 deno_runtime = { git = "https://github.com/denoland/deno.git" }
 deno_permissions = { git = "https://github.com/denoland/deno.git" }
+deno_telemetry = { git = "https://github.com/denoland/deno.git" }
+
+deno_ast = "0.44.0"
+
 
 anyhow = "1.0.86"
 bincode = "1.3.3"

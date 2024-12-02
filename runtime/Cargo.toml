@@ -25,7 +25,8 @@ deno_net.workspace = true
 deno_node.workspace = true
 deno_fs.workspace = true
 deno_runtime.workspace = true
-
+deno_telemetry.workspace = true
+deno_ast.workspace = true
 
 redb.workspace = true
 serde.workspace = true
