@@ -8,6 +8,7 @@ use axum::{
 };
 use cloudstate_runtime::{
     blob_storage::CloudstateBlobStorage,
+    cloudstate_extensions::cloudstate_extensions,
     extensions::{
         bootstrap::bootstrap,
         cloudstate::{cloudstate, JavaScriptSpans, TransactionContext},
@@ -464,32 +465,11 @@ pub async fn execute_script_internal(
     cs: ReDBCloudstate,
     blob_storage: CloudstateBlobStorage,
 ) -> String {
-    let deno_blob_storage = Arc::new(BlobStore::default());
     let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
         module_loader: Some(Rc::new(CloudstateModuleLoader {
             lib: classes_script.to_string(),
         })),
-        extensions: vec![
-            deno_webidl::deno_webidl::init_ops_and_esm(),
-            deno_telemetry::deno_telemetry::init_ops_and_esm(),
-            deno_url::deno_url::init_ops_and_esm(),
-            deno_console::deno_console::init_ops_and_esm(),
-            deno_web::deno_web::init_ops_and_esm::<CloudstateTimerPermissions>(
-                deno_blob_storage,
-                None,
-            ),
-            deno_crypto::deno_crypto::init_ops_and_esm(None),
-            bootstrap::init_ops_and_esm(),
-            deno_fetch::deno_fetch::init_ops_and_esm::<CloudstateFetchPermissions>(
-                Default::default(),
-            ),
-            deno_net::deno_net::init_ops_and_esm::<CloudstateNetPermissions>(None, None),
-            cloudstate::init_ops_and_esm(),
-            // deno_node::deno_node::init_ops_and_esm::<CloudstateNodePermissions>(
-            //     None,
-            //     std::rc::Rc::new(InMemoryFs::default()),
-            // ),
-        ],
+        extensions: cloudstate_extensions(),
         extension_transpiler: Some(Rc::new(|specifier, source| {
             cloudstate_runtime::transpile::maybe_transpile_source(specifier, source)
         })),

@@ -13,82 +13,13 @@ use std::sync::Arc;
 use tracing::{debug, event};
 
 use crate::blob_storage::CloudstateBlobStorage;
+use crate::cloudstate_extensions::cloudstate_extensions;
 use crate::extensions::bootstrap::bootstrap;
 use crate::extensions::cloudstate::{
     cloudstate, JavaScriptSpans, ReDBCloudstate, TransactionContext,
 };
+use crate::permissions::CloudstatePermissions;
 use crate::transpile;
-
-struct Permissions {}
-
-impl TimersPermission for Permissions {
-    fn allow_hrtime(&mut self) -> bool {
-        false
-    }
-}
-
-struct CloudstateFetchPermissions {}
-
-impl FetchPermissions for CloudstateFetchPermissions {
-    fn check_net_url(
-        &mut self,
-        _url: &url::Url,
-        _api_name: &str,
-    ) -> Result<(), PermissionCheckError> {
-        debug!("checking net url fetch permission");
-        Ok(())
-    }
-
-    fn check_read<'a>(
-        &mut self,
-        p: &'a Path,
-        _api_name: &str,
-    ) -> Result<std::borrow::Cow<'a, Path>, PermissionCheckError> {
-        debug!("checking read fetch permission");
-        Ok(p.to_path_buf().into())
-    }
-
-    // fn check_read<'a>(
-    //     &mut self,
-    //     p: &'a Path,
-    //     _api_name: &str,
-    // ) -> Result<std::borrow::Cow<'a, Path>, error::AnyError> {
-    //     debug!("checking read fetch permission");
-    //     Ok(p.to_path_buf().into())
-    // }
-}
-
-struct CloudstateNetPermissions {}
-
-impl NetPermissions for CloudstateNetPermissions {
-    fn check_net<T: AsRef<str>>(
-        &mut self,
-        _host: &(T, Option<u16>),
-        _api_name: &str,
-    ) -> Result<(), PermissionCheckError> {
-        debug!("checking net permission");
-        Ok(())
-    }
-
-    fn check_read(&mut self, p: &str, _api_name: &str) -> Result<PathBuf, PermissionCheckError> {
-        debug!("checking read permission");
-        Ok(p.to_string().into())
-    }
-
-    fn check_write(&mut self, p: &str, _api_name: &str) -> Result<PathBuf, PermissionCheckError> {
-        debug!("checking write permission");
-        Ok(p.to_string().into())
-    }
-
-    fn check_write_path<'a>(
-        &mut self,
-        p: &'a std::path::Path,
-        _api_name: &str,
-    ) -> Result<std::borrow::Cow<'a, std::path::Path>, PermissionCheckError> {
-        debug!("checking write path permission");
-        Ok(p.to_path_buf().into())
-    }
-}
 
 pub fn run_script(
     path: &str,
@@ -123,28 +54,10 @@ pub fn run_script_source(
     path: PathBuf,
 ) -> Result<(ReDBCloudstate, Result<(), anyhow::Error>), anyhow::Error> {
     let main_module = ModuleSpecifier::from_file_path(path).unwrap();
-    let deno_blob_storage = Arc::new(deno_web::BlobStore::default());
 
     let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
         module_loader: Some(Rc::new(FsModuleLoader)),
-        extensions: vec![
-            deno_webidl::deno_webidl::init_ops_and_esm(),
-            deno_telemetry::deno_telemetry::init_ops_and_esm(),
-            deno_url::deno_url::init_ops_and_esm(),
-            deno_console::deno_console::init_ops_and_esm(),
-            deno_web::deno_web::init_ops_and_esm::<Permissions>(deno_blob_storage, None),
-            deno_crypto::deno_crypto::init_ops_and_esm(None),
-            bootstrap::init_ops_and_esm(),
-            deno_fetch::deno_fetch::init_ops_and_esm::<CloudstateFetchPermissions>(
-                Default::default(),
-            ),
-            deno_net::deno_net::init_ops_and_esm::<CloudstateNetPermissions>(None, None),
-            cloudstate::init_ops_and_esm(),
-            // deno_node::deno_node::init_ops_and_esm::<CloudstateNodePermissions>(
-            //     None,
-            //     std::rc::Rc::new(InMemoryFs::default()),
-            // ),
-        ],
+        extensions: cloudstate_extensions(),
         extension_transpiler: Some(Rc::new(|specifier, source| {
             transpile::maybe_transpile_source(specifier, source)
         })),
@@ -156,7 +69,7 @@ pub fn run_script_source(
     js_runtime
         .op_state()
         .borrow_mut()
-        .put(CloudstateFetchPermissions {});
+        .put(CloudstatePermissions {});
     js_runtime
         .op_state()
         .borrow_mut()
