@@ -37,34 +37,38 @@
   }
   if (object.value.size !== expected.size) {
     throw new Error(
-      `object.value should have size ${expected.size}, got ${object.value.size}`
+      `object.value should have size ${expected.size}, got ${object.value.size}`,
     );
   }
   for (const [expectedKey, expectedVal] of expected.entries()) {
     if (!object.value.has(expectedKey)) {
       throw new Error(
-        `object.value should have key ${JSON.stringify(expectedKey)}`
+        `object.value should have key ${JSON.stringify(expectedKey)}`,
       );
     }
     if (object.value.get(expectedKey) !== expectedVal) {
       throw new Error(
-        `object.value.get(${JSON.stringify(
-          expectedKey
-        )}) should be ${JSON.stringify(expectedVal)}, got ${JSON.stringify(
-          object.value.get(expectedKey)
-        )}`
+        `object.value.get(${
+          JSON.stringify(
+            expectedKey,
+          )
+        }) should be ${JSON.stringify(expectedVal)}, got ${
+          JSON.stringify(
+            object.value.get(expectedKey),
+          )
+        }`,
       );
     }
   }
 
-  console.log("BEFORE DELETE");
   const deletedVal = object.value.delete("a");
-  console.log("AFTER DELETE");
   if (!deletedVal) {
     throw new Error(
-      `Expected ${JSON.stringify(
-        "a"
-      )} to be deleted (return value should be truthy)`
+      `Expected ${
+        JSON.stringify(
+          "a",
+        )
+      } to be deleted (return value should be truthy)`,
     );
   }
   commit();
@@ -92,7 +96,7 @@
   }
   if (object.value.size !== expected.size) {
     throw new Error(
-      `object.value should have size ${expected.size}, got ${object.value.size}`
+      `object.value should have size ${expected.size}, got ${object.value.size}`,
     );
   }
   if (object.value.has("a")) {

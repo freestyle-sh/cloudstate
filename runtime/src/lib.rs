@@ -6,6 +6,7 @@ pub mod extensions;
 pub mod gc;
 pub mod print;
 pub mod tables;
+pub mod transpile;
 
 #[macro_use]
 pub mod v8_macros;

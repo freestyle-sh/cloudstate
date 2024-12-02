@@ -2,6 +2,7 @@ use deno_core::*;
 use deno_fetch::FetchPermissions;
 use deno_net::NetPermissions;
 use deno_runtime::deno_permissions::PermissionCheckError;
+// use deno_runtime::ops::runtime::deno_runtime;
 // use deno_node::AllowAllNodePermissions;
 use deno_web::TimersPermission;
 use futures::future::poll_fn;
@@ -16,6 +17,7 @@ use crate::extensions::bootstrap::bootstrap;
 use crate::extensions::cloudstate::{
     cloudstate, JavaScriptSpans, ReDBCloudstate, TransactionContext,
 };
+use crate::transpile;
 
 struct Permissions {}
 
@@ -40,7 +42,7 @@ impl FetchPermissions for CloudstateFetchPermissions {
     fn check_read<'a>(
         &mut self,
         p: &'a Path,
-        api_name: &str,
+        _api_name: &str,
     ) -> Result<std::borrow::Cow<'a, Path>, PermissionCheckError> {
         debug!("checking read fetch permission");
         Ok(p.to_path_buf().into())
@@ -127,6 +129,7 @@ pub fn run_script_source(
         module_loader: Some(Rc::new(FsModuleLoader)),
         extensions: vec![
             deno_webidl::deno_webidl::init_ops_and_esm(),
+            deno_telemetry::deno_telemetry::init_ops_and_esm(),
             deno_url::deno_url::init_ops_and_esm(),
             deno_console::deno_console::init_ops_and_esm(),
             deno_web::deno_web::init_ops_and_esm::<Permissions>(deno_blob_storage, None),
@@ -142,6 +145,9 @@ pub fn run_script_source(
             //     std::rc::Rc::new(InMemoryFs::default()),
             // ),
         ],
+        extension_transpiler: Some(Rc::new(|specifier, source| {
+            transpile::maybe_transpile_source(specifier, source)
+        })),
         ..Default::default()
     });
 
