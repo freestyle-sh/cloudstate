@@ -9,10 +9,7 @@ use axum::{
 use cloudstate_runtime::{
     blob_storage::CloudstateBlobStorage,
     cloudstate_extensions::cloudstate_extensions,
-    extensions::{
-        bootstrap::bootstrap,
-        cloudstate::{cloudstate, JavaScriptSpans, TransactionContext},
-    },
+    extensions::cloudstate::{JavaScriptSpans, TransactionContext},
     gc::mark_and_sweep,
 };
 use deno_runtime::deno_permissions::PermissionCheckError;
@@ -26,7 +23,6 @@ use deno_core::{
 };
 use deno_fetch::FetchPermissions;
 use deno_net::NetPermissions;
-use deno_web::BlobStore;
 use deno_web::TimersPermission;
 use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
@@ -37,7 +33,7 @@ use std::{
     collections::HashMap,
     path::{Path, PathBuf},
 };
-use std::{rc::Rc, sync::Arc};
+use std::rc::Rc;
 use tracing::{debug, event, instrument};
 
 #[cfg(test)]
