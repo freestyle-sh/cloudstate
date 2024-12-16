@@ -1,7 +1,7 @@
 use redb::ReadableTable;
 use tracing::debug;
 
-use crate::tables::{ARRAYS_TABLE, BLOBS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
+use crate::tables::{ARRAYS_TABLE, BLOBS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
 
 pub fn print_database(db: &redb::Database) {
     let txn = db.begin_read().unwrap();
@@ -35,6 +35,14 @@ pub fn print_database(db: &redb::Database) {
         for entry in table.iter().unwrap() {
             let entry = entry.unwrap();
             debug!("{:#?}: ({:#?})", entry.0.value().id, entry.1.value().type_,);
+        }
+    }
+
+    debug!("Maps Table");
+    if let Ok(table) = txn.open_table(MAPS_TABLE) {
+        for entry in table.iter().unwrap() {
+            let entry = entry.unwrap();
+            debug!("{:#?}: {:#?}", entry.0.value().id, entry.1.value().data);
         }
     }
 }

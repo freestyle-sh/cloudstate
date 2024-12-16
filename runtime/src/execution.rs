@@ -1,23 +1,15 @@
 use deno_core::*;
-use deno_fetch::FetchPermissions;
-use deno_net::NetPermissions;
-use deno_runtime::deno_permissions::PermissionCheckError;
 // use deno_runtime::ops::runtime::deno_runtime;
 // use deno_node::AllowAllNodePermissions;
-use deno_web::TimersPermission;
 use futures::future::poll_fn;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use std::sync::Arc;
-use tracing::{debug, event};
+use tracing::event;
 
 use crate::blob_storage::CloudstateBlobStorage;
 use crate::cloudstate_extensions::cloudstate_extensions;
-use crate::extensions::bootstrap::bootstrap;
-use crate::extensions::cloudstate::{
-    cloudstate, JavaScriptSpans, ReDBCloudstate, TransactionContext,
-};
+use crate::extensions::cloudstate::{JavaScriptSpans, ReDBCloudstate, TransactionContext};
 use crate::permissions::CloudstatePermissions;
 use crate::transpile;
 
