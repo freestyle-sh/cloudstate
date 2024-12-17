@@ -11,7 +11,7 @@ serde = "1.0.208"
 tokio = { version = "1.36.0", features = ["full"] }
 axum = "0.7.9"
 
-deno_core = "0.324.0"
+deno_core = "0.326.0"
 # old rev = "85709c70abb538cf22df73261bc37453e7cb07a7"
 # last updated (known working) at rev "a19b3f44d469f96eec8dbde0ba3474841061de0d"
 deno_console = { git = "https://github.com/denoland/deno.git" }
