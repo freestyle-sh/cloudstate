@@ -3,11 +3,7 @@ macro_rules! js_test {
     ($name:ident) => {
         #[test]
         fn $name() {
-            let subscriber = tracing_subscriber::FmtSubscriber::new();
-            match tracing::subscriber::set_global_default(subscriber) {
-                Ok(_) => {}
-                Err(_) => {}
-            };
+            let _ = tracing_subscriber::fmt::try_init();
 
             let (cs, result) = $crate::execution::run_script(
                 &format!("tests/{}.js", stringify!($name)),

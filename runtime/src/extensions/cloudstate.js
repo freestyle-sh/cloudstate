@@ -74,6 +74,9 @@ const arrays = new Map();
 const objectIds = new Map();
 const cloudstateObjects = new Map();
 
+// list of objects that we know came from cloudstate and aren't new objects
+const trackedObjects = new Set();
+
 const customClasses = [];
 
 function hydrate(object, key, value) {
@@ -251,6 +254,8 @@ function getMap(objectId) {
         return Deno.core.ops.op_cloudstate_map_size(objectId);
       },
     });
+
+    trackedObjects.add(map);
 
     return map;
   });
@@ -461,6 +466,10 @@ function setObject(object, visited = new Set()) {
       }
 
       if (object instanceof Map) {
+        if (trackedObjects.has(object)) {
+          continue;
+        }
+
         for (const [key, value] of object.entries()) {
           if (isPrimitive(value)) {
             Deno.core.ops.op_cloudstate_map_set(

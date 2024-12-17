@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::{
     bincode::Bincode,
     blob_storage::CloudstateBlobMetadata,
@@ -9,11 +7,7 @@ use crate::{
         CloudstateRootValue,
     },
 };
-
-use redb::{
-    ReadTransaction, ReadableTable, ReadableTableMetadata, TableDefinition, TableHandle,
-    WriteTransaction,
-};
+use redb::TableDefinition;
 
 pub const ROOTS_TABLE: TableDefinition<Bincode<CloudstateRootKey>, Bincode<CloudstateRootValue>> =
     TableDefinition::new("roots");
