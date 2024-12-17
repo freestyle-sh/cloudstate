@@ -11,6 +11,7 @@ use cloudstate_runtime::{
     cloudstate_extensions::cloudstate_extensions,
     extensions::cloudstate::{JavaScriptSpans, TransactionContext},
     gc::mark_and_sweep,
+    permissions::CloudstatePermissions,
 };
 use deno_runtime::deno_permissions::PermissionCheckError;
 
@@ -27,13 +28,13 @@ use deno_web::TimersPermission;
 use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::rc::Rc;
 use std::{
     borrow::BorrowMut,
     cell::RefCell,
     collections::HashMap,
     path::{Path, PathBuf},
 };
-use std::rc::Rc;
 use tracing::{debug, event, instrument};
 
 #[cfg(test)]
@@ -473,6 +474,7 @@ pub async fn execute_script_internal(
     debug!("initializing runtime");
 
     RefCell::borrow_mut(&js_runtime.op_state()).put(cs.clone());
+    RefCell::borrow_mut(&js_runtime.op_state()).put(CloudstatePermissions {});
 
     let main_module = ModuleSpecifier::from_file_path(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/main.js"),
