@@ -19,12 +19,12 @@ js_test!(array_join);
 js_test!(array_last_index_of);
 js_test!(array_length);
 js_test!(array_map);
+js_test!(array_of_arrays);
 js_test!(array_of_maps);
 js_test!(array_of_num_objects);
 js_test!(array_pop_object);
 js_test!(array_pop);
 js_test!(array_on_object_reference);
-
 js_test!(array_push);
 js_test!(array_push_in_class_in_map);
 js_test!(array_push_object);
