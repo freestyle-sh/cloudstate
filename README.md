@@ -10,7 +10,7 @@
 > Try out cloudstate via a freestyle template. Read our [getting started](https://docs.freestyle.dev/getting-started/intro) guide to learn more.
 
 > [!IMPORTANT]
-> If you find a bug in cloudstate, the fastest way you can get it fixed is by contributing a failing JavaScript test. See our [testing for js developers guide].
+> If you find a bug in cloudstate, the fastest way you can get it fixed is by contributing a failing JavaScript test. See our [testing for js developers guide](TESTING_FOR_JS_DEVELOPERS.md).
 
 If you're interested in learning more about how cloudstate works behind the scenes, read on.
 
