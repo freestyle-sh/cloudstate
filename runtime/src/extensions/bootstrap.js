@@ -22,6 +22,7 @@ import * as imageData from "ext:deno_web/16_image_data.js";
 
 import "ext:deno_net/01_net.js";
 import "ext:deno_net/02_tls.js";
+import "ext:deno_net/03_quic.js";
 
 import * as headers from "ext:deno_fetch/20_headers.js";
 import * as formData from "ext:deno_fetch/21_formdata.js";
