@@ -13,6 +13,8 @@ use std::{
 };
 use tower::{util::ServiceExt, Service};
 
+use crate::cloudstate_runner::simple::SimpleCloudstateRunner;
+
 #[tokio::test]
 async fn test_fetch_request() {
     let _ = tracing_subscriber::fmt::try_init();
@@ -34,6 +36,7 @@ async fn test_fetch_request() {
         }"#,
         HashMap::new(),
         "http://localhost:8910/__invalidate__".to_string(),
+        SimpleCloudstateRunner::new(),
     )
     .await;
 

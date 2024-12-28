@@ -15,6 +15,8 @@ use std::{
 };
 use tower::{util::ServiceExt, Service};
 
+use crate::{cloudstate_runner::simple::SimpleCloudstateRunner, CloudstateServer};
+
 // mod concurrency;
 mod fetch_method;
 
@@ -28,7 +30,7 @@ async fn test_method_request() {
             .unwrap(),
     )));
 
-    let mut router = crate::CloudstateServer::new(
+    let mut router = CloudstateServer::new(
         cloudstate.clone(),
         CloudstateBlobStorage::new(Arc::new(InMemoryBlobStore::default())),
         r"export class CounterCS {
@@ -40,6 +42,7 @@ async fn test_method_request() {
         }",
         HashMap::new(),
         "http://localhost:8910/__invalidate__".to_string(),
+        SimpleCloudstateRunner::new(),
     )
     .await;
 
@@ -112,7 +115,7 @@ async fn test_method_request() {
 async fn test_async_write() {
     let _ = tracing_subscriber::fmt::try_init();
 
-    let mut router = crate::CloudstateServer::new(
+    let mut router = CloudstateServer::new(
         ReDBCloudstate::new(Arc::new(Mutex::new(
             redb::Database::builder()
                 .create_with_backend(redb::backends::InMemoryBackend::default())
@@ -132,6 +135,7 @@ async fn test_async_write() {
         }"#,
         HashMap::new(),
         "http://localhost:8910/__invalidate__".to_string(),
+        SimpleCloudstateRunner::new(),
     )
     .await;
 

@@ -6,6 +6,7 @@ use axum::{
     routing::{get, post},
     Json, RequestExt, Router,
 };
+use cloudstate_runner::CloudstateRunner;
 use cloudstate_runtime::{
     blob_storage::CloudstateBlobStorage,
     cloudstate_extensions::cloudstate_extensions,
@@ -13,7 +14,7 @@ use cloudstate_runtime::{
     gc::mark_and_sweep,
     permissions::CloudstatePermissions,
 };
-use deno_runtime::deno_permissions::PermissionCheckError;
+use deno_runtime::{deno_permissions::PermissionCheckError, js};
 
 use cloudstate_runtime::{extensions::cloudstate::ReDBCloudstate, v8_string_key};
 use deno_core::JsRuntime;
@@ -37,75 +38,50 @@ use std::{
 };
 use tracing::{debug, event, instrument};
 
+pub mod cloudstate_runner;
 #[cfg(test)]
 mod tests;
 
-pub struct CloudstateServer {
+pub struct CloudstateServer<R: CloudstateRunner + 'static> {
     pub cloudstate: ReDBCloudstate,
     pub blob_storage: CloudstateBlobStorage,
     pub router: Router,
+    pub cloudstate_runner: R,
 }
 
-struct CloudstateModuleLoader {
-    lib: String,
-}
-
-impl ModuleLoader for CloudstateModuleLoader {
-    fn load(
-        &self,
-        module_specifier: &ModuleSpecifier,
-        _maybe_referrer: Option<&ModuleSpecifier>,
-        _is_dyn_import: bool,
-        _requested_module_type: deno_core::RequestedModuleType,
-    ) -> deno_core::ModuleLoadResponse {
-        ModuleLoadResponse::Sync(Ok(ModuleSource::new(
-            ModuleType::JavaScript,
-            ModuleSourceCode::String(self.lib.clone().into()),
-            module_specifier,
-            None,
-        )))
-    }
-    fn resolve(
-        &self,
-        specifier: &str,
-        referrer: &str,
-        _kind: ResolutionKind,
-    ) -> Result<ModuleSpecifier, anyhow::Error> {
-        Ok(resolve_import(specifier, referrer)?)
-    }
-}
-
-impl CloudstateServer {
+impl<R: CloudstateRunner> CloudstateServer<R> {
     pub async fn new(
         cloudstate: ReDBCloudstate,
         blob_storage: CloudstateBlobStorage,
         classes: &str,
         env: HashMap<String, String>,
         invalidate_endpoint: String,
+        cloudstate_runner: R,
     ) -> Self {
         let env_string = serde_json::to_string(&env).unwrap();
+        cloudstate_runner
+            .run_cloudstate(
+                &include_str!("./initialize.js").replace("env_string", &env_string),
+                classes,
+                cloudstate.clone(),
+                blob_storage.clone(),
+            )
+            .await;
 
-        execute_script(
-            &include_str!("./initialize.js").replace("env_string", &env_string),
-            classes,
-            cloudstate.clone(),
-            blob_storage.clone(),
-        )
-        .await;
-
-        execute_script(
-            "
+        cloudstate_runner
+            .run_cloudstate(
+                "
             import { CloudstateInspectionCS } from './lib.js';
             registerCustomClass(CloudstateInspectionCS);
             if (getRoot('inspection') === undefined) {{
                 setRoot('inspection', new CloudstateInspectionCS());
             }}
             ",
-            include_str!("./inspection.js"),
-            cloudstate.clone(),
-            blob_storage.clone(),
-        )
-        .await;
+                include_str!("./inspection.js"),
+                cloudstate.clone(),
+                blob_storage.clone(),
+            )
+            .await;
 
         let app = Router::new()
             .route(
@@ -124,12 +100,14 @@ impl CloudstateServer {
                 env,
                 invalidate_endpoint,
                 blob_storage: blob_storage.clone(),
+                cloudstate_runner: cloudstate_runner.clone(),
             });
 
         CloudstateServer {
             router: app,
             blob_storage: blob_storage,
             cloudstate,
+            cloudstate_runner,
         }
     }
 
@@ -164,9 +142,9 @@ struct ErrorData {
 }
 
 #[instrument(skip(id, state, host, request))]
-async fn fetch_request(
+async fn fetch_request<R: CloudstateRunner>(
     axum::extract::Path(id): axum::extract::Path<String>,
-    State(state): State<AppState>,
+    State(state): State<AppState<R>>,
     Host(host): Host,
     request: Request,
 ) -> axum::response::Response {
@@ -222,17 +200,19 @@ async fn fetch_request(
 
     debug!("executing script");
 
-    let result = execute_script(
-        script.as_str(),
-        if id == "\"inspection\"" {
-            include_str!("./inspection.js")
-        } else {
-            &state.classes
-        },
-        state.cloudstate,
-        state.blob_storage.clone(),
-    )
-    .await;
+    let result = state
+        .cloudstate_runner
+        .run_cloudstate(
+            script.as_str(),
+            if id == "\"inspection\"" {
+                include_str!("./inspection.js")
+            } else {
+                &state.classes
+            },
+            state.cloudstate,
+            state.blob_storage.clone(),
+        )
+        .await;
 
     debug!("script finished");
 
@@ -266,12 +246,13 @@ async fn fetch_request(
 }
 
 #[derive(Clone)]
-struct AppState {
+struct AppState<R: CloudstateRunner> {
     cloudstate: ReDBCloudstate,
     blob_storage: CloudstateBlobStorage,
     classes: String,
     env: HashMap<String, String>,
     invalidate_endpoint: String,
+    pub cloudstate_runner: R,
 }
 
 #[derive(Debug, Deserialize)]
@@ -279,9 +260,9 @@ struct MethodParams {
     params: Vec<serde_json::Value>,
 }
 
-async fn method_request(
+async fn method_request<R: CloudstateRunner>(
     axum::extract::Path((id, method)): axum::extract::Path<(String, String)>,
-    State(state): State<AppState>,
+    State(state): State<AppState<R>>,
     request: Request<Body>,
 ) -> axum::response::Json<serde_json::Value> {
     debug!("method_request");
@@ -334,32 +315,37 @@ async fn method_request(
         .replace("$PARAMS", &params);
 
     debug!("executing script");
+
     let result = if id == "\"inspection\"" && method == "\"run\"" {
         let run_script = run_script.unwrap().unwrap();
-        execute_script(
-            &include_str!("./inspection_run.js")
-                .replace("env_string", &env_string)
-                .replace("run_script", run_script)
-                .replace("invalidate_endpoint", &invalidate_endpoint),
-            &state.classes,
-            state.cloudstate,
-            state.blob_storage.clone(),
-        )
-        .await
+
+        state
+            .cloudstate_runner
+            .run_cloudstate(
+                &include_str!("./inspection_run.js")
+                    .replace("env_string", &env_string)
+                    .replace("run_script", run_script)
+                    .replace("invalidate_endpoint", &invalidate_endpoint),
+                &state.classes,
+                state.cloudstate,
+                state.blob_storage.clone(),
+            )
+            .await
     } else {
-        execute_script(
-            script.as_str(),
-            if id == "\"inspection\"" {
-                include_str!("./inspection.js")
-            } else {
-                &state.classes
-            },
-            state.cloudstate,
-            state.blob_storage.clone(),
-        )
-        .await
+        state
+            .cloudstate_runner
+            .run_cloudstate(
+                script.as_str(),
+                if id == "\"inspection\"" {
+                    include_str!("./inspection.js")
+                } else {
+                    &state.classes
+                },
+                state.cloudstate,
+                state.blob_storage.clone(),
+            )
+            .await
     };
-    // debug!("script result: {:#?}", result);
 
     Json(serde_json::from_str(&result).unwrap_or(json!({
         "error": {
@@ -428,114 +414,4 @@ impl NetPermissions for CloudstateNetPermissions {
         debug!("checking write path permission");
         Ok(p.to_path_buf().into())
     }
-}
-
-pub async fn execute_script(
-    script: &str,
-    classes_script: &str,
-    cs: ReDBCloudstate,
-    blob_storage: CloudstateBlobStorage,
-) -> String {
-    let script_string = script.to_string();
-    let classes_script_string = classes_script.to_string();
-
-    let span = tracing::info_span!("execute_script");
-
-    tokio::task::spawn_blocking(move || {
-        let _enter = span.enter();
-        debug!("execute_script_internal blocking");
-        execute_script_internal(&script_string, &classes_script_string, cs, blob_storage)
-    })
-    .await
-    .unwrap()
-}
-
-// type CloudstateNodePermissions = AllowAllNodePermissions;
-
-#[instrument(skip(script, classes_script, cs, blob_storage))]
-#[tokio::main(flavor = "current_thread")]
-pub async fn execute_script_internal(
-    script: &str,
-    classes_script: &str,
-    cs: ReDBCloudstate,
-    blob_storage: CloudstateBlobStorage,
-) -> String {
-    let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
-        module_loader: Some(Rc::new(CloudstateModuleLoader {
-            lib: classes_script.to_string(),
-        })),
-        extensions: cloudstate_extensions(),
-        extension_transpiler: Some(Rc::new(|specifier, source| {
-            cloudstate_runtime::transpile::maybe_transpile_source(specifier, source)
-        })),
-        ..Default::default()
-    });
-
-    debug!("initializing runtime");
-
-    RefCell::borrow_mut(&js_runtime.op_state()).put(cs.clone());
-    RefCell::borrow_mut(&js_runtime.op_state()).put(CloudstatePermissions {});
-
-    let main_module = ModuleSpecifier::from_file_path(
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/main.js"),
-    )
-    .unwrap();
-
-    RefCell::borrow_mut(&js_runtime.op_state()).put(CloudstateFetchPermissions {});
-    let transaction_context = TransactionContext::new(cs.clone(), blob_storage.clone());
-    RefCell::borrow_mut(&js_runtime.op_state()).put(transaction_context);
-    RefCell::borrow_mut(&js_runtime.op_state()).put(JavaScriptSpans::new());
-    // RefCell::borrow_mut(&js_runtime.op_state()).put(CloudstateNodePermissions {});
-
-    let script = script.to_string();
-    let future = async move {
-        let mod_id = js_runtime
-            .load_main_es_module_from_code(&main_module, script)
-            .await
-            .unwrap();
-
-        debug!("evaluating module");
-        let evaluation = js_runtime.mod_evaluate(mod_id);
-
-        debug!("starting js event loop polling");
-        let result = poll_fn(|cx| {
-            let poll_result = js_runtime.poll_event_loop(cx, Default::default());
-            let _ = js_runtime.execute_script("<handle>", "globalThis.commit();");
-            poll_result
-        })
-        .await;
-        debug!("ending js event loop polling");
-
-        // let _ = js_runtime.execute_script("<handle>", "globalThis.commit();");
-
-        let _ = evaluation.await;
-        (js_runtime, result)
-    };
-
-    let (mut js_runtime, result) = future.await;
-    event!(tracing::Level::DEBUG, "result: {:#?}", result);
-
-    let mut js_runtime = js_runtime.handle_scope();
-    let scope = js_runtime.borrow_mut();
-    let context = scope.get_current_context();
-
-    let global = context.global(scope);
-    let key = v8_string_key!(scope, "result");
-    let local_value = global.get(scope, key).unwrap();
-
-    let json_value = v8::json::stringify(scope, local_value).unwrap_or(
-        v8::String::new(
-            scope,
-            &json!({
-                "error": {
-                    "message": "Result could not be stringified",
-                    "stack": "Result could not be stringified",
-                }
-            })
-            .to_string(),
-        )
-        .unwrap(),
-    );
-
-    json_value.to_rust_string_lossy(scope)
 }

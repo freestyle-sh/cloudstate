@@ -20,7 +20,8 @@ use redb::{
     backends::{self},
     Database,
 };
-use server::{execute_script, CloudstateServer};
+use server::cloudstate_runner::simple::SimpleCloudstateRunner;
+use server::{cloudstate_runner::execute::execute_script, CloudstateServer};
 use std::io::Write;
 use std::{
     collections::HashMap,
@@ -200,6 +201,7 @@ async fn main() {
                 &classes,
                 env.clone(),
                 "http://localhost:8910/__invalidate__".to_string(),
+                SimpleCloudstateRunner::new(),
             )
             .await;
 
@@ -238,6 +240,7 @@ async fn main() {
                                         &new_classes,
                                         env.clone(),
                                         "http://localhost:8910/__invalidate__".to_string(),
+                                        SimpleCloudstateRunner::new(),
                                     )
                                     .await;
 
@@ -377,7 +380,10 @@ pub enum ProgressBarState {
     Named(String, ProgressBar),
 }
 
-async fn run_server(server: Arc<RwLock<CloudstateServer>>, listener: TcpListener) {
+async fn run_server(
+    server: Arc<RwLock<CloudstateServer<SimpleCloudstateRunner>>>,
+    listener: TcpListener,
+) {
     let handle = |req: Request| async move {
         debug!("{}: {}", req.method().to_string(), req.uri().to_string());
         tokio::task::spawn_blocking(move || handler(server.clone(), req))
@@ -403,7 +409,7 @@ async fn run_server(server: Arc<RwLock<CloudstateServer>>, listener: TcpListener
 
 #[tokio::main(flavor = "current_thread")]
 async fn handler(
-    server: Arc<RwLock<CloudstateServer>>,
+    server: Arc<RwLock<CloudstateServer<SimpleCloudstateRunner>>>,
     req: Request<Body>,
 ) -> axum::http::Response<Body> {
     debug!("Pulling service");
