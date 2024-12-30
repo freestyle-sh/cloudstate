@@ -9,14 +9,16 @@ use deno_core::anyhow::Error;
 use deno_core::error::JsError;
 use deno_core::*;
 use redb::{
-    AccessGuard, Database, Key, ReadOnlyTable, ReadTransaction, ReadableTable, TableDefinition,
-    Value, WriteTransaction,
+    AccessGuard, Database, Key, Range, ReadOnlyTable, ReadTransaction, ReadableTable,
+    TableDefinition, Value, WriteTransaction,
 };
 use serde::{Deserialize, Serialize};
+use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::i32;
+use std::ops::RangeBounds;
 use std::path::Path;
 use std::rc::Rc;
 use std::result::Result::Ok;
@@ -101,6 +103,32 @@ where
             CloudstateTable::Write(table) => table.get(key).map_err(|e| e.into()),
         }
     }
+}
+
+impl<'txn, K: Key + 'static, V: Value + 'static> CloudstateTable<'txn, K, V> {
+    fn range<'a, KR>(&self, range: impl RangeBounds<KR> + 'a) -> redb::Result<Range<K, V>>
+    where
+        KR: Borrow<K::SelfType<'a>> + 'a,
+    {
+        match self {
+            CloudstateTable::Read(table) => table.range(range),
+            CloudstateTable::Write(table) => table.range(range),
+        }
+    }
+
+    // fn first(&self) -> redb::Result<Option<(AccessGuard<K>, AccessGuard<V>)>> {
+    //     match self {
+    //         CloudstateTable::Read(table) => table.first(),
+    //         CloudstateTable::Write(table) => table.first(),
+    //     }
+    // }
+
+    // fn last(&self) -> redb::Result<Option<(AccessGuard<K>, AccessGuard<V>)>> {
+    //     match self {
+    //         CloudstateTable::Read(table) => table.last(),
+    //         CloudstateTable::Write(table) => table.last(),
+    //     }
+    // }
 }
 
 impl Transaction {
@@ -544,9 +572,16 @@ fn op_cloudstate_array_length(state: &mut OpState, #[string] id: String) -> i32 
     let table = transaction.open_table(ARRAYS_TABLE).unwrap();
 
     let count = table
-        .iter()
+        .range(
+            CloudstateArrayItemKey {
+                id: id.clone(),
+                index: 0,
+            }..CloudstateArrayItemKey {
+                id: id.clone() + "\u{0}",
+                index: 0,
+            },
+        )
         .unwrap()
-        .filter(|entry| entry.as_ref().unwrap().0.value().id == id)
         .count();
 
     count as i32
