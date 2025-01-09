@@ -37,3 +37,4 @@ tracing = "0.1"
 url.workspace = true
 tracing-subscriber = "0.3.18"
 rust-s3.workspace = true
+deno_error = "0.5.3"
