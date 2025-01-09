@@ -1,5 +1,6 @@
 [package]
-version = "0.1.54"edition = "2021"
+version = "0.1.54"
+edition = "2021"
 
 name = "server"
 [dependencies]
