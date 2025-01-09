@@ -1,8 +1,7 @@
 [package]
-name = "server"
-version = "0.1.53"
-edition = "2021"
+version = "0.1.54"edition = "2021"
 
+name = "server"
 [dependencies]
 cloudstate = { path = "../runtime" }
 

@@ -1,8 +1,7 @@
 [package]
-name = "cloudstate"
-version = "0.1.53"
-edition = "2021"
+version = "0.1.54"edition = "2021"
 
+name = "cloudstate"
 [lib]
 name = "cloudstate_runtime"
 path = "src/lib.rs"
