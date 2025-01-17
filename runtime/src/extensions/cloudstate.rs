@@ -8,10 +8,10 @@ use anyhow::anyhow;
 use anyhow::Result;
 use chrono::{DateTime, TimeZone, Utc};
 use deno_core::anyhow::Error;
-use deno_core::error::JsError;
+// use deno_core::error::JsError;
+
 use deno_core::*;
 use deno_error::JsErrorBox;
-use error::OpError;
 use redb::{
   AccessGuard, Database, Key, Range, ReadOnlyTable, ReadTransaction,
   ReadableTable, TableDefinition, Value, WriteTransaction,
@@ -1017,7 +1017,7 @@ impl ToV8<'_> for CloudstateObjectData {
   fn to_v8<'a>(
     self,
     scope: &mut v8::HandleScope<'a>,
-  ) -> Result<deno_core::v8::Local<'a, deno_core::v8::Value>, JsError> {
+  ) -> Result<deno_core::v8::Local<'a, deno_core::v8::Value>, JsErrorBox> {
     let object = v8::Object::new(scope);
     for (key, value) in self.fields.iter() {
       let key =
@@ -1037,7 +1037,7 @@ impl ToV8<'_> for CloudstateObjectData {
     Ok(v8::Local::<v8::Value>::from(object))
   }
 
-  type Error = JsError;
+  type Error = JsErrorBox;
 }
 
 impl FromV8<'_> for CloudstateObjectData {
@@ -1087,7 +1087,7 @@ impl FromV8<'_> for CloudstateObjectData {
     })
   }
 
-  type Error = JsError;
+  type Error = JsErrorBox;
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
@@ -1149,7 +1149,7 @@ impl ToV8<'_> for CloudstateEntriesVec {
   fn to_v8<'a>(
     self,
     scope: &mut v8::HandleScope<'a>,
-  ) -> Result<v8::Local<'a, v8::Value>, JsError> {
+  ) -> Result<v8::Local<'a, v8::Value>, JsErrorBox> {
     let array = v8::Array::new(scope, self.data.len() as i32);
     for (i, entry) in self.data.iter().enumerate() {
       let key = entry[0].clone();
@@ -1167,11 +1167,11 @@ impl ToV8<'_> for CloudstateEntriesVec {
     Ok(array.into())
   }
 
-  type Error = JsError;
+  type Error = JsErrorBox;
 }
 
 impl ToV8<'_> for CloudstatePrimitiveDataVec {
-  type Error = JsError;
+  type Error = JsErrorBox;
 
   fn to_v8<'a>(
     self,
@@ -1190,7 +1190,7 @@ impl ToV8<'_> for CloudstatePrimitiveData {
   fn to_v8<'a>(
     self,
     scope: &mut v8::HandleScope<'a>,
-  ) -> Result<v8::Local<'a, v8::Value>, JsError> {
+  ) -> Result<v8::Local<'a, v8::Value>, JsErrorBox> {
     Ok(match self {
       CloudstatePrimitiveData::Date(value) => {
         deno_core::v8::Local::<v8::Value>::from(
@@ -1326,7 +1326,7 @@ impl ToV8<'_> for CloudstatePrimitiveData {
     })
   }
 
-  type Error = JsError;
+  type Error = JsErrorBox;
 }
 
 impl FromV8<'_> for CloudstatePrimitiveData {
@@ -1429,11 +1429,16 @@ impl FromV8<'_> for CloudstatePrimitiveData {
     } else {
       let msg_str = v8::String::new(scope, "Not implemented").unwrap();
       let msg = v8::Exception::error(scope, msg_str);
-      Err(JsError::from_v8_exception(scope, msg))
+      Err(JsErrorBox::generic(
+        format!(
+          "Conversion from V8 to CloudstatePrimitiveData not implemented for {:?}",
+          msg
+        )
+      ))
     }
   }
 
-  type Error = JsError;
+  type Error = JsErrorBox;
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]

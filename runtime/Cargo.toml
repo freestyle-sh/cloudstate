@@ -1,5 +1,5 @@
 [package]
-version = "0.1.56"
+version = "0.1.57"
 edition = "2021"
 
 name = "cloudstate"
@@ -28,6 +28,9 @@ deno_runtime.workspace = true
 deno_telemetry.workspace = true
 deno_ast.workspace = true
 
+
+deno_error.workspace = true
+
 redb.workspace = true
 serde.workspace = true
 
@@ -37,4 +40,3 @@ tracing = "0.1"
 url.workspace = true
 tracing-subscriber = "0.3.18"
 rust-s3.workspace = true
-deno_error = "0.5.3"
