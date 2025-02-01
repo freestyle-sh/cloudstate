@@ -926,7 +926,7 @@ checksum = "f46ad14479a25103f283c0f10005961cf086d8dc42205bb44c46ac563475dca6"
 
 [[package]]
 name = "cli"
-version = "0.1.57"
+version = "0.1.58"
 dependencies = [
  "axum 0.8.1",
  "clap",
@@ -962,7 +962,7 @@ dependencies = [
 
 [[package]]
 name = "cloudstate"
-version = "0.1.57"
+version = "0.1.58"
 dependencies = [
  "anyhow",
  "bincode",
@@ -6529,7 +6529,7 @@ dependencies = [
 
 [[package]]
 name = "server"
-version = "0.1.57"
+version = "0.1.58"
 dependencies = [
  "anyhow",
  "axum 0.8.1",
@@ -6546,6 +6546,7 @@ dependencies = [
  "deno_url",
  "deno_web",
  "deno_webidl",
+ "futures-util",
  "http-body-util",
  "mime",
  "redb",

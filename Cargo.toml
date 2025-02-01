@@ -34,3 +34,5 @@ rust-s3 = { version = "0.35.1", default-features = false, features = [
   "http-credentials",
   "sync-rustls-tls",
 ] }
+
+futures-util = "0.3.31"
