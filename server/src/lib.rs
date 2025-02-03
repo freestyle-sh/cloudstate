@@ -13,8 +13,9 @@ use cloudstate_runtime::{
     extensions::cloudstate::{JavaScriptSpans, TransactionContext},
     gc::mark_and_sweep,
     permissions::CloudstatePermissions,
+    ServerInfo,
 };
-use deno_runtime::{deno_permissions::PermissionCheckError, js};
+use deno_runtime::{deno_permissions::PermissionCheckError, deno_tls::rustls::server, js};
 
 use cloudstate_runtime::{extensions::cloudstate::ReDBCloudstate, v8_string_key};
 use deno_core::JsRuntime;
@@ -47,6 +48,7 @@ pub struct CloudstateServer<R: CloudstateRunner + 'static> {
     pub blob_storage: CloudstateBlobStorage,
     pub router: Router,
     pub cloudstate_runner: R,
+    pub server_info: ServerInfo,
 }
 
 impl<R: CloudstateRunner> CloudstateServer<R> {
@@ -57,6 +59,7 @@ impl<R: CloudstateRunner> CloudstateServer<R> {
         env: HashMap<String, String>,
         invalidate_endpoint: String,
         cloudstate_runner: R,
+        server_info: ServerInfo,
     ) -> Self {
         let env_string = serde_json::to_string(&env).unwrap();
         cloudstate_runner
@@ -65,6 +68,7 @@ impl<R: CloudstateRunner> CloudstateServer<R> {
                 classes,
                 cloudstate.clone(),
                 blob_storage.clone(),
+                server_info.clone(),
             )
             .await;
 
@@ -80,10 +84,11 @@ impl<R: CloudstateRunner> CloudstateServer<R> {
                 include_str!("./inspection.js"),
                 cloudstate.clone(),
                 blob_storage.clone(),
+                server_info.clone(),
             )
             .await;
 
-        let app = Router::new()
+        let router = Router::new()
             .route(
                 "/cloudstate/instances/{id}",
                 get(fetch_request)
@@ -101,13 +106,15 @@ impl<R: CloudstateRunner> CloudstateServer<R> {
                 invalidate_endpoint,
                 blob_storage: blob_storage.clone(),
                 cloudstate_runner: cloudstate_runner.clone(),
+                server_info: server_info.clone(),
             });
 
         CloudstateServer {
-            router: app,
-            blob_storage: blob_storage,
+            router,
+            blob_storage,
             cloudstate,
             cloudstate_runner,
+            server_info,
         }
     }
 
@@ -216,6 +223,7 @@ async fn fetch_request<R: CloudstateRunner>(
             },
             state.cloudstate,
             state.blob_storage.clone(),
+            state.server_info.clone(),
         )
         .await;
 
@@ -258,6 +266,7 @@ struct AppState<R: CloudstateRunner> {
     env: HashMap<String, String>,
     invalidate_endpoint: String,
     pub cloudstate_runner: R,
+    server_info: ServerInfo,
 }
 
 #[derive(Debug, Deserialize)]
@@ -334,6 +343,7 @@ async fn method_request<R: CloudstateRunner>(
                 &state.classes,
                 state.cloudstate,
                 state.blob_storage.clone(),
+                state.server_info.clone(),
             )
             .await
     } else {
@@ -348,6 +358,7 @@ async fn method_request<R: CloudstateRunner>(
                 },
                 state.cloudstate,
                 state.blob_storage.clone(),
+                state.server_info.clone(),
             )
             .await
     };

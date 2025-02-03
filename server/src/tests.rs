@@ -6,6 +6,7 @@ use cloudstate_runtime::{
     blob_storage::{in_memory_store::InMemoryBlobStore, CloudstateBlobStorage},
     extensions::cloudstate::ReDBCloudstate,
     print::print_database,
+    ServerInfo,
 };
 use http_body_util::BodyExt;
 use serde_json::json;
@@ -43,6 +44,9 @@ async fn test_method_request() {
         HashMap::new(),
         "http://localhost:8910/__invalidate__".to_string(),
         SimpleCloudstateRunner::new(),
+        ServerInfo {
+            deployment_id: None,
+        },
     )
     .await;
 
@@ -136,6 +140,9 @@ async fn test_async_write() {
         HashMap::new(),
         "http://localhost:8910/__invalidate__".to_string(),
         SimpleCloudstateRunner::new(),
+        ServerInfo {
+            deployment_id: None,
+        },
     )
     .await;
 

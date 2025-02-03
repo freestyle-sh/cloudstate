@@ -8,6 +8,7 @@ use chrono::{DateTime, TimeZone, Utc};
 use deno_core::anyhow::Error;
 // use deno_core::error::JsError;
 
+use crate::ServerInfo;
 use deno_core::*;
 use deno_error::JsErrorBox;
 use redb::{
@@ -890,14 +891,19 @@ fn op_cloudstate_blob_get_type(
     }
 }
 
-#[instrument(skip(_state))]
+// #[instrument(skip(state))]
 #[op2(fast)]
-pub fn op_print_with_tracing(_state: &mut OpState, #[string] msg: &str, is_err: bool) {
-    // tracing
-    if is_err {
-        error!("{}", msg);
+pub fn op_print_with_tracing(state: &mut OpState, #[string] msg: &str, is_err: bool) {
+    let info = state.borrow_mut::<ServerInfo>();
+
+    if let Some(deployment_id) = info.deployment_id.clone() {
+        if is_err {
+            tracing::error!(javascript_error = msg, deployment_id = deployment_id);
+        } else {
+            tracing::info!(javascript_log = msg, deployment_id = deployment_id);
+        }
     } else {
-        info!("{}", msg);
+        println!("{}", msg);
     }
 }
 

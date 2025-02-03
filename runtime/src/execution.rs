@@ -11,7 +11,7 @@ use crate::blob_storage::CloudstateBlobStorage;
 use crate::cloudstate_extensions::cloudstate_extensions;
 use crate::extensions::cloudstate::{JavaScriptSpans, ReDBCloudstate, TransactionContext};
 use crate::permissions::CloudstatePermissions;
-use crate::transpile;
+use crate::{transpile, ServerInfo};
 
 pub fn run_script(
     path: &str,
@@ -66,6 +66,9 @@ pub fn run_script_source(
         .op_state()
         .borrow_mut()
         .put(JavaScriptSpans::new());
+    js_runtime.op_state().borrow_mut().put(ServerInfo {
+        deployment_id: None,
+    });
 
     let script = script.to_string();
     let future = async move {

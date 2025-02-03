@@ -15,3 +15,8 @@ pub mod v8_macros;
 
 #[cfg(test)]
 mod tests;
+
+#[derive(Clone, Debug)]
+pub struct ServerInfo {
+    pub deployment_id: Option<String>,
+}

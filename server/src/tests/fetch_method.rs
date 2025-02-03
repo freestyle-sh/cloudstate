@@ -37,6 +37,9 @@ async fn test_fetch_request() {
         HashMap::new(),
         "http://localhost:8910/__invalidate__".to_string(),
         SimpleCloudstateRunner::new(),
+        crate::ServerInfo {
+            deployment_id: None,
+        },
     )
     .await;
 

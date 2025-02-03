@@ -6,6 +6,7 @@ use axum::extract::DefaultBodyLimit;
 use axum::{body::Body, extract::Request, routing::get, Json};
 use clap::{Parser, ValueHint};
 use cloudstate_runtime::backup::BackupProgress;
+use cloudstate_runtime::ServerInfo;
 use cloudstate_runtime::{
     blob_storage::{
         fs_store::FsBlobStore, in_memory_store::InMemoryBlobStore, CloudstateBlobStorage,
@@ -160,6 +161,9 @@ async fn main() {
                 "",
                 ReDBCloudstate::new(Arc::new(Mutex::new(db))),
                 blob_storage,
+                ServerInfo {
+                    deployment_id: None,
+                },
             )
             .await;
 
@@ -201,6 +205,9 @@ async fn main() {
                 env.clone(),
                 "http://localhost:8910/__invalidate__".to_string(),
                 SimpleCloudstateRunner::new(),
+                ServerInfo {
+                    deployment_id: None,
+                },
             )
             .await;
 
@@ -240,6 +247,9 @@ async fn main() {
                                         env.clone(),
                                         "http://localhost:8910/__invalidate__".to_string(),
                                         SimpleCloudstateRunner::new(),
+                                        ServerInfo {
+                                            deployment_id: None,
+                                        },
                                     )
                                     .await;
 
