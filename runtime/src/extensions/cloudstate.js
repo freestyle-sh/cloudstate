@@ -739,7 +739,11 @@ function handleArrayMethods(key, array, id) {
     }
     case "at": {
       return (index) => {
-        return array[index];
+        if (index < 0) {
+          return array[array.length + index];
+        } else {
+          return array[index];
+        }
       };
     }
     case "pop": {
