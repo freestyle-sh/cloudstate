@@ -39,6 +39,7 @@ async fn test_fetch_request() {
         SimpleCloudstateRunner::new(),
         crate::ServerInfo {
             deployment_id: None,
+            domain: None,
         },
     )
     .await;

@@ -19,4 +19,5 @@ mod tests;
 #[derive(Clone, Debug)]
 pub struct ServerInfo {
     pub deployment_id: Option<String>,
+    pub domain: Option<String>,
 }

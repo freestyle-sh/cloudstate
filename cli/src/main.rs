@@ -163,6 +163,7 @@ async fn main() {
                 blob_storage,
                 ServerInfo {
                     deployment_id: None,
+                    domain: None,
                 },
             )
             .await;
@@ -207,6 +208,7 @@ async fn main() {
                 SimpleCloudstateRunner::new(),
                 ServerInfo {
                     deployment_id: None,
+                    domain: None,
                 },
             )
             .await;
@@ -249,6 +251,7 @@ async fn main() {
                                         SimpleCloudstateRunner::new(),
                                         ServerInfo {
                                             deployment_id: None,
+                                            domain: None,
                                         },
                                     )
                                     .await;

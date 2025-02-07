@@ -46,6 +46,7 @@ async fn test_method_request() {
         SimpleCloudstateRunner::new(),
         ServerInfo {
             deployment_id: None,
+            domain: None,
         },
     )
     .await;
@@ -142,6 +143,7 @@ async fn test_async_write() {
         SimpleCloudstateRunner::new(),
         ServerInfo {
             deployment_id: None,
+            domain: None,
         },
     )
     .await;

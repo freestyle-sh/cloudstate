@@ -68,6 +68,7 @@ pub fn run_script_source(
         .put(JavaScriptSpans::new());
     js_runtime.op_state().borrow_mut().put(ServerInfo {
         deployment_id: None,
+        domain: None,
     });
 
     let script = script.to_string();
