@@ -898,9 +898,17 @@ pub fn op_print_with_tracing(state: &mut OpState, #[string] msg: &str, is_err: b
 
     if let Some(deployment_id) = info.deployment_id.clone() {
         if is_err {
-            tracing::error!(javascript_error = msg, deployment_id = deployment_id);
+            tracing::error!(
+                javascript_error = msg,
+                deployment_id = deployment_id,
+                domain = info.domain
+            );
         } else {
-            tracing::info!(javascript_log = msg, deployment_id = deployment_id);
+            tracing::info!(
+                javascript_log = msg,
+                deployment_id = deployment_id,
+                domain = info.domain
+            );
         }
     } else {
         println!("{}", msg);
