@@ -159,12 +159,18 @@ async fn fetch_request<R: CloudstateRunner>(
     let http_method = parts.method.to_string();
 
     let headers = parts.headers;
-    let Some(host) = parts.uri.host() else {
-        return Response::builder()
-            .status(axum::http::StatusCode::BAD_REQUEST)
-            .body(Body::from("Host header is required"))
-            .unwrap();
+    let Some(Ok(host)) = headers.get("Host").map(|h| h.to_str()) else {
+        return axum::response::Response::new(
+            json!({
+                "error": {
+                    "message": "Host header is required",
+                }
+            })
+            .to_string()
+            .into(),
+        );
     };
+    let host = host.to_string();
     // TODO: find a way to not need the http:// prefix
     let uri = format!("http://{}{}", host, parts.uri.path());
     let uri = serde_json::to_string(&uri).unwrap();
@@ -285,9 +291,12 @@ async fn method_request<R: CloudstateRunner>(
     let method = serde_json::to_string(&method).unwrap();
 
     // get host from request
-    let host = match request.headers().get("Host") {
-        Some(h) => h.to_str().unwrap(),
-        None => "www.example.com",
+    let Some(Ok(host)) = request.headers().get("Host").map(|h| h.to_str()) else {
+        return Json(json!({
+            "error": {
+                "message": "Host header is required",
+            }
+        }));
     };
 
     // TODO: find a way to not need the http:// prefix
