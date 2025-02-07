@@ -58,14 +58,15 @@ pub async fn execute_script_internal(
     server_info: crate::ServerInfo,
 ) -> String {
     let (sender, reciever) = tokio::sync::oneshot::channel();
-    let js_runtime = initialize_cloudstate_runtime(reciever, server_info.clone());
+    let mut js_runtime = initialize_cloudstate_runtime(reciever);
+
+    RefCell::borrow_mut(&js_runtime.op_state()).put(server_info);
 
     run_script(script, classes_script, cs, blob_storage, js_runtime, sender).await
 }
 
 pub fn initialize_cloudstate_runtime(
     reciever: tokio::sync::oneshot::Receiver<String>,
-    server_info: ServerInfo,
 ) -> JsRuntime {
     let mut js_runtime = JsRuntime::new(deno_core::RuntimeOptions {
         module_loader: Some(Rc::new(CloudstateModuleLoader::new_async(reciever))),
@@ -81,7 +82,6 @@ pub fn initialize_cloudstate_runtime(
     RefCell::borrow_mut(&js_runtime.op_state()).put(CloudstatePermissions {});
     RefCell::borrow_mut(&js_runtime.op_state()).put(CloudstateFetchPermissions {});
     RefCell::borrow_mut(&js_runtime.op_state()).put(JavaScriptSpans::new());
-    RefCell::borrow_mut(&js_runtime.op_state()).put(server_info);
 
     // RefCell::borrow_mut(&js_runtime.op_state()).put(CloudstateNodePermissions {});
 
