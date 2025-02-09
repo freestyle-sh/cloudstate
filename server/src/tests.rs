@@ -60,6 +60,7 @@ async fn test_method_request() {
             Request::builder()
                 .uri("/cloudstate/instances/counter/increment")
                 .method("POST")
+                .header(http::header::HOST, "localhost")
                 .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
                 .body(Body::from(
                     serde_json::to_vec(&json!({
@@ -92,6 +93,7 @@ async fn test_method_request() {
             Request::builder()
                 .uri("/cloudstate/instances/counter/increment")
                 .method("POST")
+                .header(http::header::HOST, "localhost:8080")
                 .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
                 .body(Body::from(
                     serde_json::to_vec(&json!({
@@ -155,6 +157,7 @@ async fn test_async_write() {
             Request::builder()
                 .uri("/cloudstate/instances/delayed-counter/increment")
                 .method("POST")
+                .header(http::header::HOST, "localhost")
                 .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
                 .body(Body::from(
                     serde_json::to_vec(&json!({
@@ -192,6 +195,7 @@ async fn test_async_write() {
             Request::builder()
                 .uri("/cloudstate/instances/delayed-counter/getCount")
                 .method("POST")
+                .header(http::header::HOST, "localhost")
                 .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
                 .body(Body::from(
                     serde_json::to_vec(&json!({
