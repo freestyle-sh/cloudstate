@@ -8,7 +8,6 @@
     "arm64"
   ],
   "bin": {
-    "cloudstate-linux-arm": "bin/cloudstate",
     "cloudstate": "bin/cloudstate"
   },
   "author": {

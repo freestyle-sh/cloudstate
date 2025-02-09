@@ -8,7 +8,6 @@
     "x64"
   ],
   "bin": {
-    "cloudstate-darwin-x64": "bin/cloudstate",
     "cloudstate": "bin/cloudstate"
   },
   "author": {
