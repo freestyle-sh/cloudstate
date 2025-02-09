@@ -7,10 +7,7 @@
   "cpu": [
     "x64"
   ],
-  "bin": {
-    "cloudstate-darwin-x64": "bin/cloudstate",
-    "cloudstate": "bin/cloudstate"
-  },
+  "bin": "bin/cloudstate",
   "author": {
     "name": "Freestyle Cloud",
     "email": "ben@freestyle.sh"
