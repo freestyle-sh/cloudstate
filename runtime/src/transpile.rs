@@ -1,9 +1,7 @@
-use deno_ast::diagnostics::Diagnostic;
 use deno_ast::MediaType;
 use deno_ast::ParseParams;
 use deno_ast::SourceMapOption;
 use deno_ast::TranspileModuleOptions;
-use deno_core::error::AnyError;
 use deno_core::ModuleCodeString;
 use deno_core::ModuleName;
 use deno_core::SourceMapData;

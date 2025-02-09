@@ -27,7 +27,7 @@ use std::rc::Rc;
 use std::result::Result::Ok;
 use std::sync::Arc;
 use std::sync::{Mutex, MutexGuard};
-use tracing::{debug, error, event, info, info_span, instrument};
+use tracing::{debug, event, info_span, instrument};
 use url::Url;
 use v8::GetPropertyNamesArgs;
 

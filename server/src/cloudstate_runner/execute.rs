@@ -8,14 +8,12 @@ use cloudstate_runtime::{
     v8_string_key,
 };
 use deno_core::{v8, JsRuntime, ModuleSpecifier};
-use deno_runtime::js;
 use futures_util::FutureExt;
 use serde_json::json;
 use tracing::{debug, event, instrument};
 
 use crate::{
     cloudstate_runner::module_loader::CloudstateModuleLoader, CloudstateFetchPermissions,
-    ServerInfo,
 };
 
 pub async fn execute_script(

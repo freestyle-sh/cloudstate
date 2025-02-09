@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use deno_core::{
     error::ModuleLoaderError, resolve_import, ModuleLoadResponse, ModuleLoader, ModuleSource,

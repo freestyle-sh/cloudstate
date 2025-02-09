@@ -9,35 +9,24 @@ use axum::{
 use cloudstate_runner::CloudstateRunner;
 use cloudstate_runtime::{
     blob_storage::CloudstateBlobStorage,
-    cloudstate_extensions::cloudstate_extensions,
-    extensions::cloudstate::{JavaScriptSpans, TransactionContext},
     gc::mark_and_sweep,
-    permissions::CloudstatePermissions,
     ServerInfo,
 };
-use deno_runtime::{deno_permissions::PermissionCheckError, deno_tls::rustls::server, js};
+use deno_runtime::deno_permissions::PermissionCheckError;
 
-use cloudstate_runtime::{extensions::cloudstate::ReDBCloudstate, v8_string_key};
-use deno_core::JsRuntime;
+use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
 use deno_core::*;
-use deno_core::{
-    futures::future::poll_fn, resolve_import, ModuleLoadResponse, ModuleLoader, ModuleSource,
-    ModuleSourceCode, ModuleSpecifier, ModuleType, ResolutionKind,
-};
 use deno_fetch::FetchPermissions;
 use deno_net::NetPermissions;
 use deno_web::TimersPermission;
 use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::rc::Rc;
 use std::{
-    borrow::BorrowMut,
-    cell::RefCell,
     collections::HashMap,
     path::{Path, PathBuf},
 };
-use tracing::{debug, event, instrument};
+use tracing::{debug, instrument};
 
 pub mod cloudstate_runner;
 #[cfg(test)]
