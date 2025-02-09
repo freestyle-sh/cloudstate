@@ -7,25 +7,16 @@ use axum::{
     Json, RequestExt, Router,
 };
 use cloudstate_runner::CloudstateRunner;
-use cloudstate_runtime::{
-    blob_storage::CloudstateBlobStorage,
-    gc::mark_and_sweep,
-    ServerInfo,
-};
+use cloudstate_runtime::{blob_storage::CloudstateBlobStorage, gc::mark_and_sweep, ServerInfo};
 use deno_runtime::deno_permissions::PermissionCheckError;
 
 use cloudstate_runtime::extensions::cloudstate::ReDBCloudstate;
 use deno_core::*;
 use deno_fetch::FetchPermissions;
-use deno_net::NetPermissions;
-use deno_web::TimersPermission;
 use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::{
-    collections::HashMap,
-    path::{Path, PathBuf},
-};
+use std::{collections::HashMap, path::Path};
 use tracing::{debug, instrument};
 
 pub mod cloudstate_runner;
@@ -368,13 +359,13 @@ async fn method_request<R: CloudstateRunner>(
     })))
 }
 
-struct CloudstateTimerPermissions {}
+// struct CloudstateTimerPermissions {}
 
-impl TimersPermission for CloudstateTimerPermissions {
-    fn allow_hrtime(&mut self) -> bool {
-        false
-    }
-}
+// impl TimersPermission for CloudstateTimerPermissions {
+//     fn allow_hrtime(&mut self) -> bool {
+//         false
+//     }
+// }
 
 struct CloudstateFetchPermissions {}
 
@@ -398,34 +389,34 @@ impl FetchPermissions for CloudstateFetchPermissions {
     }
 }
 
-struct CloudstateNetPermissions {}
+// struct CloudstateNetPermissions {}
 
-impl NetPermissions for CloudstateNetPermissions {
-    fn check_net<T: AsRef<str>>(
-        &mut self,
-        _host: &(T, Option<u16>),
-        _api_name: &str,
-    ) -> Result<(), PermissionCheckError> {
-        debug!("checking net permission");
-        Ok(())
-    }
+// impl NetPermissions for CloudstateNetPermissions {
+//     fn check_net<T: AsRef<str>>(
+//         &mut self,
+//         _host: &(T, Option<u16>),
+//         _api_name: &str,
+//     ) -> Result<(), PermissionCheckError> {
+//         debug!("checking net permission");
+//         Ok(())
+//     }
 
-    fn check_read(&mut self, p: &str, _api_name: &str) -> Result<PathBuf, PermissionCheckError> {
-        debug!("checking read permission");
-        Ok(p.to_string().into())
-    }
+//     fn check_read(&mut self, p: &str, _api_name: &str) -> Result<PathBuf, PermissionCheckError> {
+//         debug!("checking read permission");
+//         Ok(p.to_string().into())
+//     }
 
-    fn check_write(&mut self, p: &str, _api_name: &str) -> Result<PathBuf, PermissionCheckError> {
-        debug!("checking write permission");
-        Ok(p.to_string().into())
-    }
+//     fn check_write(&mut self, p: &str, _api_name: &str) -> Result<PathBuf, PermissionCheckError> {
+//         debug!("checking write permission");
+//         Ok(p.to_string().into())
+//     }
 
-    fn check_write_path<'a>(
-        &mut self,
-        p: &'a std::path::Path,
-        _api_name: &str,
-    ) -> Result<std::borrow::Cow<'a, std::path::Path>, PermissionCheckError> {
-        debug!("checking write path permission");
-        Ok(p.to_path_buf().into())
-    }
-}
+//     fn check_write_path<'a>(
+//         &mut self,
+//         p: &'a std::path::Path,
+//         _api_name: &str,
+//     ) -> Result<std::borrow::Cow<'a, std::path::Path>, PermissionCheckError> {
+//         debug!("checking write path permission");
+//         Ok(p.to_path_buf().into())
+//     }
+// }
