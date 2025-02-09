@@ -116,7 +116,12 @@ async fn main() {
     // #[cfg(feature = "dhat-heap")]
     // let _profiler = dhat::Profiler::new_heap();
 
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt()
+        .without_time()
+        .with_target(false)
+        .with_level(true)
+        .compact()
+        .init();
 
     debug!("Starting cloudstate");
 
