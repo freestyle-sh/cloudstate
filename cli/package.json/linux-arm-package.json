@@ -1,9 +1,16 @@
 {
   "$schema": "https://json.schemastore.org/package",
   "name": "cloudstate-linux-arm",
-  "os": ["linux"],
-  "cpu": ["arm64"],
-  "bin": "bin/cloudstate",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "bin": {
+    "cloudstate-linux-arm": "bin/cloudstate",
+    "cloudstate": "bin/cloudstate"
+  },
   "author": {
     "name": "Freestyle Cloud",
     "email": "ben@freestyle.sh"

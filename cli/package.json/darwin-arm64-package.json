@@ -1,9 +1,16 @@
 {
   "$schema": "https://json.schemastore.org/package",
   "name": "cloudstate-darwin-arm64",
-  "os": ["darwin"],
-  "cpu": ["arm64"],
-  "bin": "bin/cloudstate",
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "bin": {
+    "cloudstate-darwin-arm64": "bin/cloudstate",
+    "cloudstate": "bin/cloudstate"
+  },
   "author": {
     "name": "Freestyle Cloud",
     "email": "ben@freestyle.sh"
