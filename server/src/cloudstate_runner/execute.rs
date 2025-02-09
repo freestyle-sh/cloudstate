@@ -12,9 +12,7 @@ use futures_util::FutureExt;
 use serde_json::json;
 use tracing::{debug, event, instrument};
 
-use crate::{
-    cloudstate_runner::module_loader::CloudstateModuleLoader, CloudstateFetchPermissions,
-};
+use crate::{cloudstate_runner::module_loader::CloudstateModuleLoader, CloudstateFetchPermissions};
 
 pub async fn execute_script(
     script: &str,
