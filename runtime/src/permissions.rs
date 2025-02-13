@@ -27,11 +27,21 @@ impl FetchPermissions for CloudstatePermissions {
     fn check_read<'a>(
         &mut self,
         p: &'a Path,
-        _api_name: &str,
+        api_name: &str,
     ) -> Result<std::borrow::Cow<'a, Path>, PermissionCheckError> {
         debug!("checking read fetch permission");
         Ok(p.to_path_buf().into())
     }
+
+    // fn check_read<'a>(
+    //     &mut self,
+    //     p: &'a Path,
+    //     _api_name: &str,
+    //     _
+    // ) -> Result<std::borrow::Cow<'a, Path>, PermissionCheckError> {
+    //     debug!("checking read fetch permission");
+    //     Ok(p.to_path_buf().into())
+    // }
 
     // fn check_read<'a>(
     //     &mut self,
