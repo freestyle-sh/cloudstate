@@ -264,108 +264,178 @@ async fn method_request<R: CloudstateRunner>(
     axum::extract::Path((id, method)): axum::extract::Path<(String, String)>,
     State(state): State<AppState<R>>,
     request: Request<Body>,
-) -> axum::response::Json<serde_json::Value> {
+) -> Json<serde_json::Value> {
     debug!("method_request");
-    // turn into valid, sanitized, json string
-    let id = serde_json::to_string(&id).unwrap();
-    let method = serde_json::to_string(&method).unwrap();
 
-    // get host from request
-    let Some(Ok(host)) = request.headers().get("Host").map(|h| h.to_str()) else {
-        return Json(json!({
-            "error": {
-                "message": "Host header is required",
-            }
-        }));
+    // Convert id, method to JSON strings
+    let id = match serde_json::to_string(&id) {
+        Ok(s) => s,
+        Err(e) => {
+            return Json(json!({ "error": { "message": format!("Error parsing id: {}", e) } }));
+        }
+    };
+    let method = match serde_json::to_string(&method) {
+        Ok(s) => s,
+        Err(e) => {
+            return Json(json!({ "error": { "message": format!("Error parsing method: {}", e) } }));
+        }
     };
 
-    // TODO: find a way to not need the http:// prefix
-    let uri = format!("https://{}{}", host, request.uri().path());
-    let uri = serde_json::to_string(&uri).unwrap();
+    // Extract Host header
+    let Some(Ok(host)) = request.headers().get("Host").map(|h| h.to_str()) else {
+        return Json(json!({ "error": { "message": "Host header is required" } }));
+    };
 
-    let headers = request.headers();
-    let headers = headers
-        .iter()
-        .map(|(key, value)| {
-            format!(
-                "{}: {}",
-                serde_json::to_string(&key.to_string()).unwrap(),
-                serde_json::to_string(&value.to_str().unwrap_or_default().to_string()).unwrap()
-            )
-        })
-        .collect::<Vec<String>>()
-        .join(", ");
-    let headers = format!("{{{}}}", headers);
+    // Build full URI
+    let uri_str = format!("https://{}{}", host, request.uri().path());
+    let uri = match serde_json::to_string(&uri_str) {
+        Ok(u) => u,
+        Err(e) => {
+            return Json(json!({ "error": { "message": format!("Error parsing uri: {}", e) } }));
+        }
+    };
 
-    let Json::<MethodParams>(params) = request.extract().await.unwrap();
+    // Gather headers into JSON-friendly string
+    let mut header_strings = vec![];
+    for (key, value) in request.headers().iter() {
+        let key_str = match serde_json::to_string(&key.to_string()) {
+            Ok(k) => k,
+            Err(e) => {
+                return Json(
+                    json!({ "error": { "message": format!("Error parsing header key: {}", e) } }),
+                );
+            }
+        };
+        let val_str = match value.to_str() {
+            Ok(v) => match serde_json::to_string(&v.to_string()) {
+                Ok(vv) => vv,
+                Err(e) => {
+                    return Json(
+                        json!({ "error": { "message": format!("Error parsing header value: {}", e) } }),
+                    );
+                }
+            },
+            Err(e) => {
+                return Json(
+                    json!({ "error": { "message": format!("Invalid header value: {}", e) } }),
+                );
+            }
+        };
+        header_strings.push(format!("{}: {}", key_str, val_str));
+    }
+    let headers = format!("{{{}}}", header_strings.join(", "));
 
-    // only used for inspection api
-    let run_script = &params.params.first().map(|p| p.as_str());
+    // Extract body -> params
+    let params = match request.extract::<Json<MethodParams>>().await {
+        Ok(Json(params)) => params,
+        Err(e) => {
+            return Json(
+                json!({ "error": { "message": format!("Error extracting params: {}", e) } }),
+            );
+        }
+    };
 
-    let params = serde_json::to_string(&params.params).unwrap();
-    let params = serde_json::to_string(&params).unwrap();
-    let env_string = serde_json::to_string(&state.env).unwrap();
+    // Prepare params JSON
+    let param_list = match serde_json::to_string(&params.params) {
+        Ok(p) => p,
+        Err(e) => {
+            return Json(json!({ "error": { "message": format!("Error parsing params: {}", e) } }));
+        }
+    };
+    let params_json = match serde_json::to_string(&param_list) {
+        Ok(p) => p,
+        Err(e) => {
+            return Json(
+                json!({ "error": { "message": format!("Error serializing params: {}", e) } }),
+            );
+        }
+    };
+
+    // Setup environment
+    let env_string = match serde_json::to_string(&state.env) {
+        Ok(s) => s,
+        Err(e) => {
+            return Json(
+                json!({ "error": { "message": format!("Error serializing env: {}", e) } }),
+            );
+        }
+    };
     let invalidate_endpoint = state.invalidate_endpoint.clone();
 
-    // TODO: fix injection vulnerability
-    let script = include_str!("./method_request.js")
+    // Inject into script
+    let base_script = include_str!("./method_request.js")
         .replace("$ENV_STRING", &env_string)
         .replace("$URI", &uri)
         .replace("$HEADERS", &headers)
         .replace("$INVALIDATE_ENDPOINT", &invalidate_endpoint)
         .replace("$ID", &id)
         .replace("$METHOD", &method)
-        .replace("$PARAMS", &params);
+        .replace("$PARAMS", &params_json);
 
     debug!("executing script");
 
-    let result = if id == "\"inspection\"" && method == "\"run\"" {
-        let run_script = run_script.unwrap().unwrap();
+    // Special inspection case
+    let run_result = if id == "\"inspection\"" && method == "\"run\"" {
+        // We need the first param as the run script
+        let Some(run_script_str) = params.params.first() else {
+            return Json(json!({ "error": { "message": "No run script provided" } }));
+        };
+        let inspection_script = include_str!("./inspection_run.js")
+            .replace("env_string", &env_string)
+            .replace("run_script", run_script_str)
+            .replace("invalidate_endpoint", &invalidate_endpoint);
 
-        state
+        match state
             .cloudstate_runner
             .run_cloudstate(
-                &include_str!("./inspection_run.js")
-                    .replace("env_string", &env_string)
-                    .replace("run_script", run_script)
-                    .replace("invalidate_endpoint", &invalidate_endpoint),
+                &inspection_script,
                 &state.classes,
                 state.cloudstate,
                 state.blob_storage.clone(),
                 state.server_info.clone(),
             )
             .await
+        {
+            Ok(res) => res,
+            Err(e) => {
+                return Json(
+                    json!({ "error": { "message": format!("Error running inspection script: {}", e) } }),
+                );
+            }
+        }
     } else {
-        state
+        let classes = if id == "\"inspection\"" {
+            include_str!("./inspection.js")
+        } else {
+            &state.classes
+        };
+
+        match state
             .cloudstate_runner
             .run_cloudstate(
-                script.as_str(),
-                if id == "\"inspection\"" {
-                    include_str!("./inspection.js")
-                } else {
-                    &state.classes
-                },
+                &base_script,
+                classes,
                 state.cloudstate,
                 state.blob_storage.clone(),
                 state.server_info.clone(),
             )
             .await
+        {
+            Ok(res) => res,
+            Err(e) => {
+                return Json(
+                    json!({ "error": { "message": format!("Error running script: {}", e) } }),
+                );
+            }
+        }
     };
 
-    Json(serde_json::from_str(&result).unwrap_or(json!({
-        "error": {
-            "message": "Error executing script",
-        }
-    })))
+    // Final JSON output
+    match serde_json::from_str(&run_result) {
+        Ok(json_output) => Json(json_output),
+        Err(_) => Json(json!({ "error": { "message": "Error executing script" } })),
+    }
 }
-
-// struct CloudstateTimerPermissions {}
-
-// impl TimersPermission for CloudstateTimerPermissions {
-//     fn allow_hrtime(&mut self) -> bool {
-//         false
-//     }
-// }
 
 struct CloudstateFetchPermissions {}
 
@@ -388,45 +458,4 @@ impl FetchPermissions for CloudstateFetchPermissions {
         debug!("checking read fetch permission");
         Ok(p.to_path_buf().into())
     }
-
-    // fn check_read<'a>(
-    //     &mut self,
-    //     p: &'a Path,
-    //     _api_name: &str,
-    // ) -> Result<std::borrow::Cow<'a, Path>, PermissionCheckError> {
-    //     debug!("checking read fetch permission");
-    //     Ok(p.to_path_buf().into())
-    // }
 }
-
-// struct CloudstateNetPermissions {}
-
-// impl NetPermissions for CloudstateNetPermissions {
-//     fn check_net<T: AsRef<str>>(
-//         &mut self,
-//         _host: &(T, Option<u16>),
-//         _api_name: &str,
-//     ) -> Result<(), PermissionCheckError> {
-//         debug!("checking net permission");
-//         Ok(())
-//     }
-
-//     fn check_read(&mut self, p: &str, _api_name: &str) -> Result<PathBuf, PermissionCheckError> {
-//         debug!("checking read permission");
-//         Ok(p.to_string().into())
-//     }
-
-//     fn check_write(&mut self, p: &str, _api_name: &str) -> Result<PathBuf, PermissionCheckError> {
-//         debug!("checking write permission");
-//         Ok(p.to_string().into())
-//     }
-
-//     fn check_write_path<'a>(
-//         &mut self,
-//         p: &'a std::path::Path,
-//         _api_name: &str,
-//     ) -> Result<std::borrow::Cow<'a, std::path::Path>, PermissionCheckError> {
-//         debug!("checking write path permission");
-//         Ok(p.to_path_buf().into())
-//     }
-// }
