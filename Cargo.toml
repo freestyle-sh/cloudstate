@@ -10,7 +10,7 @@ redb = "2.1.1"
 serde = "1.0.208"
 tokio = { version = "1.36.0", features = ["full"] }
 axum = { version = "0.8.1", features = ["macros"] }
-deno_core = "0.336.0"
+deno_core = "0.338.0"
 deno_error = "0.5.3"
 # old rev = "85709c70abb538cf22df73261bc37453e7cb07a7"
 # last updated (known working) at rev "a19b3f44d469f96eec8dbde0ba3474841061de0d"
