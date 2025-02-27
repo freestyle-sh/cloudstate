@@ -58,7 +58,15 @@ pub async fn execute_script_internal(
 
     RefCell::borrow_mut(&js_runtime.op_state()).put(server_info);
 
-    run_script(script, classes_script, cs, blob_storage, js_runtime, sender).await
+    run_script(
+        script,
+        classes_script,
+        cs,
+        blob_storage,
+        &mut js_runtime,
+        sender,
+    )
+    .await
 }
 
 pub fn initialize_cloudstate_runtime(
@@ -89,7 +97,7 @@ pub async fn run_script(
     classes_script: &str,
     cs: ReDBCloudstate,
     blob_storage: CloudstateBlobStorage,
-    mut js_runtime: JsRuntime,
+    js_runtime: &mut JsRuntime,
     sender: tokio::sync::oneshot::Sender<String>,
 ) -> String {
     sender
@@ -129,7 +137,7 @@ pub async fn run_script(
         (js_runtime, result)
     };
 
-    let (mut js_runtime, result) = future.await;
+    let (js_runtime, result) = future.await;
     event!(tracing::Level::DEBUG, "result: {:#?}", result);
 
     let mut js_runtime = js_runtime.handle_scope();
