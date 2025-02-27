@@ -1,9 +1,9 @@
-use crate::backup::{backup_all_tables, BackupProgress};
+use crate::backup::{BackupProgress, backup_all_tables};
 use crate::blob_storage::{CloudstateBlobMetadata, CloudstateBlobStorage, CloudstateBlobValue};
 use crate::tables::{ARRAYS_TABLE, MAPS_TABLE, OBJECTS_TABLE, ROOTS_TABLE};
 use crate::v8_string_key;
-use anyhow::anyhow;
 use anyhow::Result;
+use anyhow::anyhow;
 use chrono::{DateTime, TimeZone, Utc};
 use deno_core::anyhow::Error;
 // use deno_core::error::JsError;
@@ -69,8 +69,8 @@ where
         value: impl std::borrow::Borrow<V::SelfType<'a>>,
     ) -> Result<(), Error> {
         match self {
-            CloudstateTable::Read(ref _table) => Ok(()), //panic!("Cannot insert into read-only table"),
-            CloudstateTable::Write(ref mut table) => match table.insert(key, value) {
+            CloudstateTable::Read(_table) => Ok(()), //panic!("Cannot insert into read-only table"),
+            CloudstateTable::Write(table) => match table.insert(key, value) {
                 Ok(_) => Ok(()),
                 Err(e) => Err(e.into()),
             },
