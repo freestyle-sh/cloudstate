@@ -1395,7 +1395,13 @@ impl FromV8<'_> for CloudstatePrimitiveData {
                             .to_rust_string_lossy(scope),
                     ));
                 }
-                _ => panic!("Custom classes not implemented yet"),
+                _ => {
+                    tracing::error!("Not implemented: {:?}", constructor);
+                    return Err(JsErrorBox::generic(format!(
+                        "Conversion from V8 to CloudstatePrimitiveData not implemented for {:?}",
+                        constructor
+                    )));
+                }
             }
         } else {
             let msg_str = v8::String::new(scope, "Not implemented").unwrap();
