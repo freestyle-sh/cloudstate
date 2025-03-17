@@ -5,8 +5,8 @@ edition = "2021"
 rust-version.workspace = true
 
 [dependencies]
-deno_graph = "0.83.1"
-deno_semver = "0.5.14"
+deno_graph = "0.89.2"
+deno_semver = "0.7.1"
 futures = "0.3.30"
 indexmap = "2.6.0"
 url.workspace = true

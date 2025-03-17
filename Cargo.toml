@@ -26,7 +26,7 @@ deno_fs = { git = "https://github.com/denoland/deno.git" }
 deno_runtime = { git = "https://github.com/denoland/deno.git" }
 deno_permissions = { git = "https://github.com/denoland/deno.git" }
 deno_telemetry = { git = "https://github.com/denoland/deno.git" }
-deno_ast = { version = "0.44.0", features = ["transpiling"] }
+deno_ast = { version = "0.46.2", features = ["transpiling"] }
 anyhow = "1.0.86"
 bincode = "1.3.3"
 rust-s3 = { version = "0.35.1", default-features = false, features = [

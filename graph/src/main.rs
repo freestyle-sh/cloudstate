@@ -6,6 +6,7 @@ use deno_graph::ModuleGraph;
 use deno_graph::ModuleSpecifier;
 use deno_graph::WorkspaceFastCheckOption;
 use deno_graph::WorkspaceMember;
+use deno_semver::StackString;
 use futures::executor::block_on;
 
 fn main() {
@@ -36,7 +37,7 @@ fn main() {
     let workspace_members = vec![WorkspaceMember {
         base: url::Url::parse("file:///").unwrap(),
         exports: exports.clone(),
-        name: "@foo/bar".to_string(),
+        name: StackString::from_str("@foo/bar"),
         version: Some(deno_semver::Version::parse_standard("1.0.0").unwrap()),
     }];
 
