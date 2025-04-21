@@ -15,7 +15,7 @@ impl S3BlobStore {
 
 impl CloudstateBlobStorageEngine for S3BlobStore {
     fn get_blob_data(&self, blob_id: &str) -> Result<super::CloudstateBlobValue, anyhow::Error> {
-        let res = self.bucket.get_object(blob_id)?;
+        let res = tokio::runtime::Handle::current().block_on(self.bucket.get_object(blob_id))?;
         let binary = res.bytes().to_vec();
         Ok(binary.into())
     }
@@ -26,13 +26,13 @@ impl CloudstateBlobStorageEngine for S3BlobStore {
         blob_data: super::CloudstateBlobValue,
     ) -> Result<(), anyhow::Error> {
         let binary = blob_data.data;
-        self.bucket.put_object(blob_id, &binary)?;
+        tokio::runtime::Handle::current().block_on(self.bucket.put_object(blob_id, &binary))?;
 
         Ok(())
     }
 
     fn delete_blob(&self, blob_id: &str) -> Result<(), anyhow::Error> {
-        self.bucket.delete_object(blob_id)?;
+        tokio::runtime::Handle::current().block_on(self.bucket.delete_object(blob_id))?;
         Ok(())
     }
 
@@ -51,13 +51,14 @@ impl CloudstateBlobStorageEngine for S3BlobStore {
             None => None,
         };
 
-        let res = self.bucket.get_object_range(blob_id, start, end)?;
+        let res = tokio::runtime::Handle::current()
+            .block_on(self.bucket.get_object_range(blob_id, start, end))?;
 
         Ok(res.bytes().to_vec())
     }
 
     fn has_blob(&self, blob_id: &str) -> Result<bool, anyhow::Error> {
-        match self.bucket.head_object(blob_id) {
+        match tokio::runtime::Handle::current().block_on(self.bucket.head_object(blob_id)) {
             Ok(_) => Ok(true),
             Err(e) => {
                 if e.to_string().contains("404") {

@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use deno_fetch::FetchPermissions;
 use deno_net::NetPermissions;
-use deno_runtime::deno_permissions::PermissionCheckError;
+use deno_runtime::deno_permissions::{PermissionCheckError, PermissionDeniedError};
 use deno_web::TimersPermission;
 use tracing::debug;
 
@@ -90,5 +90,21 @@ impl NetPermissions for CloudstatePermissions {
     ) -> Result<std::borrow::Cow<'a, std::path::Path>, PermissionCheckError> {
         debug!("checking write path permission");
         Ok(p.to_path_buf().into())
+    }
+
+    fn check_vsock(
+        &mut self,
+        cid: u32,
+        port: u32,
+        api_name: &str,
+    ) -> Result<(), PermissionCheckError> {
+        Err(PermissionCheckError::PermissionDenied(
+            PermissionDeniedError::Fatal {
+                access: format!(
+                    "Vsock access to {}:{} via {} is not permitted.",
+                    cid, port, api_name
+                ),
+            },
+        ))
     }
 }
