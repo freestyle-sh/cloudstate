@@ -952,7 +952,7 @@ checksum = "f46ad14479a25103f283c0f10005961cf086d8dc42205bb44c46ac563475dca6"
 
 [[package]]
 name = "cli"
-version = "0.1.62"
+version = "0.1.64"
 dependencies = [
  "axum 0.8.3",
  "clap",
@@ -988,7 +988,7 @@ dependencies = [
 
 [[package]]
 name = "cloudstate"
-version = "0.1.62"
+version = "0.1.64"
 dependencies = [
  "anyhow",
  "bincode",
@@ -1459,7 +1459,7 @@ dependencies = [
 [[package]]
 name = "deno_broadcast_channel"
 version = "0.196.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "async-trait",
  "deno_core",
@@ -1472,7 +1472,7 @@ dependencies = [
 [[package]]
 name = "deno_cache"
 version = "0.134.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -1529,7 +1529,7 @@ dependencies = [
 [[package]]
 name = "deno_canvas"
 version = "0.71.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "bytemuck",
  "deno_core",
@@ -1570,7 +1570,7 @@ dependencies = [
 [[package]]
 name = "deno_console"
 version = "0.202.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "deno_core",
 ]
@@ -1622,7 +1622,7 @@ checksum = "fe4dccb6147bb3f3ba0c7a48e993bfeb999d2c2e47a81badee80e2b370c8d695"
 [[package]]
 name = "deno_cron"
 version = "0.82.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "async-trait",
  "chrono",
@@ -1636,7 +1636,7 @@ dependencies = [
 [[package]]
 name = "deno_crypto"
 version = "0.216.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "aes",
  "aes-gcm",
@@ -1700,7 +1700,7 @@ dependencies = [
 [[package]]
 name = "deno_fetch"
 version = "0.226.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -1738,7 +1738,7 @@ dependencies = [
 [[package]]
 name = "deno_ffi"
 version = "0.189.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "cranelift",
  "cranelift-native",
@@ -1763,7 +1763,7 @@ dependencies = [
 [[package]]
 name = "deno_fs"
 version = "0.112.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "async-trait",
  "base32",
@@ -1822,7 +1822,7 @@ dependencies = [
 [[package]]
 name = "deno_http"
 version = "0.200.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "async-compression",
  "async-trait",
@@ -1862,7 +1862,7 @@ dependencies = [
 [[package]]
 name = "deno_io"
 version = "0.112.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "async-trait",
  "deno_core",
@@ -1885,7 +1885,7 @@ dependencies = [
 [[package]]
 name = "deno_kv"
 version = "0.110.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1942,7 +1942,7 @@ dependencies = [
 [[package]]
 name = "deno_napi"
 version = "0.133.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "deno_core",
  "deno_error",
@@ -1972,7 +1972,7 @@ dependencies = [
 [[package]]
 name = "deno_net"
 version = "0.194.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "deno_core",
  "deno_error",
@@ -1996,7 +1996,7 @@ dependencies = [
 [[package]]
 name = "deno_node"
 version = "0.140.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "aead-gcm-stream",
  "aes",
@@ -2123,7 +2123,7 @@ dependencies = [
 [[package]]
 name = "deno_os"
 version = "0.19.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "deno_core",
  "deno_error",
@@ -2176,7 +2176,7 @@ dependencies = [
 [[package]]
 name = "deno_permissions"
 version = "0.61.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "capacity_builder",
  "deno_core",
@@ -2197,7 +2197,7 @@ dependencies = [
 [[package]]
 name = "deno_process"
 version = "0.17.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "deno_core",
  "deno_error",
@@ -2225,7 +2225,7 @@ dependencies = [
 [[package]]
 name = "deno_resolver"
 version = "0.33.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "anyhow",
  "async-once-cell",
@@ -2259,7 +2259,7 @@ dependencies = [
 [[package]]
 name = "deno_runtime"
 version = "0.210.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "color-print",
  "deno_broadcast_channel",
@@ -2339,7 +2339,7 @@ dependencies = [
 [[package]]
 name = "deno_telemetry"
 version = "0.24.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "async-trait",
  "deno_core",
@@ -2375,7 +2375,7 @@ dependencies = [
 [[package]]
 name = "deno_tls"
 version = "0.189.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "deno_core",
  "deno_error",
@@ -2404,7 +2404,7 @@ dependencies = [
 [[package]]
 name = "deno_url"
 version = "0.202.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "deno_core",
  "deno_error",
@@ -2414,7 +2414,7 @@ dependencies = [
 [[package]]
 name = "deno_web"
 version = "0.233.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "async-trait",
  "base64-simd 0.8.0",
@@ -2434,7 +2434,7 @@ dependencies = [
 [[package]]
 name = "deno_webgpu"
 version = "0.169.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "deno_core",
  "deno_error",
@@ -2452,7 +2452,7 @@ dependencies = [
 [[package]]
 name = "deno_webidl"
 version = "0.202.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "deno_core",
 ]
@@ -2460,7 +2460,7 @@ dependencies = [
 [[package]]
 name = "deno_websocket"
 version = "0.207.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "bytes",
  "deno_core",
@@ -2484,7 +2484,7 @@ dependencies = [
 [[package]]
 name = "deno_webstorage"
 version = "0.197.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "deno_core",
  "deno_error",
@@ -2572,7 +2572,7 @@ dependencies = [
 [[package]]
 name = "denort_helper"
 version = "0.1.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "deno_error",
  "deno_path_util",
@@ -4793,7 +4793,7 @@ dependencies = [
 [[package]]
 name = "napi_sym"
 version = "0.132.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "quote",
  "serde",
@@ -4879,7 +4879,7 @@ dependencies = [
 [[package]]
 name = "node_resolver"
 version = "0.40.0"
-source = "git+https://github.com/denoland/deno.git#5bee29223deb081be8d6b0c7ad7c93d1a0015c0b"
+source = "git+https://github.com/freestyle-sh/deno.git?branch=removeunwraps#c7af1f26f0e64e02b2efc80f65735bb0f4735c80"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6751,7 +6751,7 @@ dependencies = [
 
 [[package]]
 name = "server"
-version = "0.1.62"
+version = "0.1.64"
 dependencies = [
  "anyhow",
  "axum 0.8.3",
