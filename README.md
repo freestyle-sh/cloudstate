@@ -1,3 +1,6 @@
+> [!WARNING]
+> Cloudstate is deprecated and no longer supported. We recommend looking into alternatives like Convex and InstantDB.
+> 
 <h1 align="center">Cloudstate</h1>
 
 <p align="center">
